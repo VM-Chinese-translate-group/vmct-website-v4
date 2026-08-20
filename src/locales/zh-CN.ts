@@ -82,6 +82,8 @@ export default {
     tools: '翻译工具',
     disclaimer:
       '本站所提供内容与 Minecraft 官方无关，未获 Mojang 或 Microsoft 任何形式的认可或授权',
+    icpLicense: '豫ICP备2024105509号-4',
+    policeRecord: '豫公网安备41019702001135号',
   },
   DownloadCards: {
     filters: '筛选',

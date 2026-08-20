@@ -96,6 +96,31 @@
     <div class="text-center text-[0.85rem] text-[var(--text-medium)]">
       <p>{{ $t('footer.disclaimer') }}</p>
     </div>
+
+    <!-- 国内版备案信息 -->
+    <div class="mt-4 text-center text-[0.85rem] text-[var(--text-medium)]">
+      <p class="mb-1">
+        <a
+          href="https://beian.miit.gov.cn/"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="text-[var(--text-medium)] no-underline transition-colors duration-300 hover:text-[var(--footer-link-hover)]"
+        >
+          {{ $t('footer.icpLicense') }}
+        </a>
+      </p>
+      <p>
+        <a
+          href="http://www.beian.gov.cn/portal/registerSystemInfo?recordcode=41019702001135"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="text-[var(--text-medium)] no-underline transition-colors duration-300 hover:text-[var(--footer-link-hover)] inline-flex items-center gap-1"
+        >
+          <img src="/imgs/beian.png" alt="公安备案" class="h-4 w-4" v-if="false" />
+          {{ $t('footer.policeRecord') }}
+        </a>
+      </p>
+    </div>
   </footer>
 </template>
 

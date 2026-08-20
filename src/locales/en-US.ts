@@ -86,6 +86,8 @@ export default {
     tools: 'Translation Tools',
     disclaimer:
       'The content provided on this site is not related to official Minecraft and has not been endorsed or authorized by Mojang or Microsoft in any form',
+    icpLicense: 'ICP License: 豫ICP备2024105509号-4',
+    policeRecord: 'Police Record: 豫公网安备41019702001135号',
   },
   DownloadCards: {
     filters: 'Filters',
