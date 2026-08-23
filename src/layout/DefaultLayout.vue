@@ -1,7 +1,7 @@
 <template>
   <div class="flex flex-col">
     <NavBar />
-    <SiteAnnouncement />
+    <SiteAnnouncement v-if="route.name !== 'content-admin'" />
 
     <DocLayout v-if="isDocLayout">
       <router-view />

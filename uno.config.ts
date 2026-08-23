@@ -9,6 +9,21 @@ export default defineConfig({
   },
   presets: [presetWind3()],
   shortcuts: {
+    'cms-label': 'grid gap-1.5 text-sm font-600 text-[var(--text-2)]',
+    'cms-field':
+      'box-border min-h-11 w-full rounded-lg border border-solid border-[var(--switcher-border)] bg-[var(--bg-alt)] px-3 py-2 text-[var(--text-1)] outline-none transition-colors placeholder:text-[var(--text-muted)] hover:border-[color-mix(in_srgb,var(--info-1)_55%,var(--switcher-border))] focus-visible:border-[var(--info-1)] focus-visible:ring-3 focus-visible:ring-[color-mix(in_srgb,var(--info-1)_16%,transparent)]',
+    'cms-button':
+      'inline-flex min-h-10 cursor-pointer items-center justify-center rounded-lg border border-solid border-[var(--switcher-border)] bg-[var(--bg-soft)] px-3 py-2 font-600 text-sm text-[var(--text-1)] transition-colors hover:border-[var(--info-1)] hover:bg-[var(--info-soft)] disabled:pointer-events-none disabled:opacity-50',
+    'cms-icon-button':
+      'cms-button aspect-square px-0 text-lg text-[var(--text-2)] hover:text-[var(--warning-1)]',
+    'cms-danger-button':
+      'cms-button border-[color-mix(in_srgb,#dc2626_35%,var(--switcher-border))] text-red-600 dark:text-red-400 hover:border-red-500 hover:bg-red-500/10',
+    'cms-primary-button':
+      'inline-flex min-h-10 cursor-pointer items-center justify-center rounded-lg border-0 bg-[var(--info-1)] px-4 py-2 font-700 text-sm text-white shadow-sm transition hover:brightness-110 disabled:pointer-events-none disabled:opacity-50',
+    'cms-check':
+      'flex cursor-pointer items-center gap-2 rounded-lg border border-[var(--switcher-border)] bg-[var(--bg-soft)] px-3 py-2 text-sm font-600 text-[var(--text-2)] [&_input]:accent-[var(--info-1)]',
+    'cms-page-row':
+      'flex w-full cursor-pointer items-center justify-between gap-2 overflow-hidden rounded-lg border-0 bg-transparent px-2.5 py-2.5 text-left text-sm text-[var(--text-1)] transition-colors hover:bg-[var(--switcher-item-hover)] [&_span]:overflow-hidden [&_span]:text-ellipsis [&_span]:whitespace-nowrap',
     'vm-link-underline':
       "relative inline-block text-[var(--text-medium)] no-underline transition-colors duration-300 after:content-[''] after:absolute after:left-0 after:-bottom-0.5 after:h-0.5 after:w-0 after:[background:var(--footer-underline-gradient)] after:transition-width after:duration-300 hover:text-[var(--footer-link-hover)] hover:after:w-full",
     // Keep input borders explicitly solid: browser UA styles can otherwise fall back to inset.

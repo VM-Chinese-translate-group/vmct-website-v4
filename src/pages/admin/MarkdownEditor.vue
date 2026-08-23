@@ -1,21 +1,44 @@
 <template>
-  <section class="markdown-editor">
-    <div class="toolbar">
+  <section class="grid content-start gap-2">
+    <div
+      class="flex flex-wrap items-center gap-1.5 rounded-xl border border-[var(--switcher-border)] bg-[var(--bg-soft)] p-2"
+    >
       <button
         v-for="tool in tools"
         :key="tool.name"
         type="button"
         :title="tool.name"
+        class="cms-button min-h-8 px-2.5 py-1"
         @click="insert(tool.before, tool.after, tool.placeholder)"
       >
         {{ tool.label }}
       </button>
-      <span></span>
-      <button type="button" @click="insertContainer('warning', '重要提示')">警告</button>
-      <button type="button" @click="insertContainer('info', '信息')">信息</button>
-      <button type="button" @click="insertDownload">下载组件</button>
+      <span class="flex-1"></span>
+      <button
+        class="cms-button min-h-8 px-2.5 py-1"
+        type="button"
+        @click="insertContainer('warning', '重要提示')"
+      >
+        警告
+      </button>
+      <button
+        class="cms-button min-h-8 px-2.5 py-1"
+        type="button"
+        @click="insertContainer('info', '信息')"
+      >
+        信息
+      </button>
+      <button class="cms-button min-h-8 px-2.5 py-1" type="button" @click="insertDownload">
+        下载组件
+      </button>
     </div>
-    <textarea ref="textarea" v-model="model" spellcheck="false" placeholder="Markdown 正文" />
+    <textarea
+      ref="textarea"
+      v-model="model"
+      class="cms-field h-130 min-h-105 resize-y p-3 font-mono leading-relaxed"
+      spellcheck="false"
+      placeholder="Markdown 正文"
+    />
   </section>
 </template>
 <script setup lang="ts">
@@ -52,50 +75,3 @@ function insertDownload() {
   )
 }
 </script>
-<style scoped>
-.markdown-editor {
-  display: grid;
-  gap: 6px;
-  align-content: start;
-  grid-template-rows: auto auto;
-}
-.toolbar {
-  display: flex;
-  gap: 5px;
-  flex-wrap: wrap;
-  align-items: center;
-  align-self: start;
-}
-.toolbar span {
-  flex: 1;
-}
-.toolbar button {
-  flex: 0 0 auto;
-  min-height: 34px;
-  line-height: 1;
-  padding: 6px 9px;
-  border: 1px solid var(--border-color);
-  border-radius: 5px;
-  background: var(--bg-off-white);
-  color: var(--text-color);
-  cursor: pointer;
-}
-.markdown-editor textarea {
-  align-self: start;
-  width: 100%;
-  min-height: 420px;
-  height: 520px;
-  box-sizing: border-box;
-  padding: 12px;
-  border: 1px solid var(--border-color);
-  border-radius: 8px;
-  background: var(--bg-color);
-  color: var(--text-color);
-  font:
-    14px/1.6 ui-monospace,
-    SFMono-Regular,
-    Consolas,
-    monospace;
-  resize: vertical;
-}
-</style>

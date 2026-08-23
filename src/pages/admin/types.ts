@@ -3,6 +3,7 @@ export interface ContentLink {
   text: string
   link: string
   icon: string
+  project: string
 }
 
 export interface ContentMetadata {
@@ -95,12 +96,18 @@ export function parseMetadata(source: string): ContentMetadata {
   for (const line of indentedBlock(source, 'links')) {
     const first = line.match(/^\s*-\s*id:\s*(.+)$/)
     if (first) {
-      links.push({ id: first[1].trim().replace(/^['"]|['"]$/g, ''), text: '', link: '', icon: '' })
+      links.push({
+        id: first[1].trim().replace(/^['"]|['"]$/g, ''),
+        text: '',
+        link: '',
+        icon: '',
+        project: '',
+      })
       continue
     }
-    const property = line.match(/^\s+(text|link|icon):\s*(.+)$/)
+    const property = line.match(/^\s+(text|link|icon|project):\s*(.+)$/)
     if (property && links.length)
-      links.at(-1)![property[1] as 'text' | 'link' | 'icon'] = property[2]
+      links.at(-1)![property[1] as 'text' | 'link' | 'icon' | 'project'] = property[2]
         .trim()
         .replace(/^['"]|['"]$/g, '')
   }
@@ -144,6 +151,7 @@ export function stringifyMetadata(meta: ContentMetadata) {
       if (link.text) lines.push(`    text: ${quote(link.text)}`)
       if (link.link) lines.push(`    link: ${quote(link.link)}`)
       if (link.icon) lines.push(`    icon: ${quote(link.icon)}`)
+      if (link.project) lines.push(`    project: ${quote(link.project)}`)
     }
   return lines.filter((line, index) => line || lines[index - 1] !== '').join('\n')
 }
