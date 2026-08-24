@@ -103,7 +103,7 @@
       <div
         v-for="(link, index) in model.links"
         :key="index"
-        class="grid grid-cols-[10rem_minmax(10rem,1fr)_minmax(14rem,2fr)_auto] items-start gap-2 rounded-xl border border-[var(--switcher-border)] bg-[var(--bg-soft)] p-3 max-lg:grid-cols-1"
+        class="grid grid-cols-[10rem_minmax(10rem,1fr)_minmax(14rem,2fr)_auto] items-end gap-2 rounded-xl border border-[var(--switcher-border)] bg-[var(--bg-soft)] p-3 max-lg:grid-cols-1 max-lg:items-stretch"
       >
         <div class="grid gap-2">
           <SelectMenu

@@ -8,7 +8,6 @@
     >
       <p class="mb-2 text-xs font-800 tracking-[0.14em] text-[var(--info-1)]">CONTENT CMS</p>
       <h1 class="m-0 text-2xl">{{ needsSetup ? '设置后台密码' : '后台登录' }}</h1>
-      <p class="text-sm text-[var(--text-2)]">使用 6 位数字密码直接管理网站内容。</p>
       <p
         v-if="notice"
         class="my-4 rounded-lg bg-red-500/10 px-3 py-2 text-sm text-red-600 dark:text-red-400"
@@ -16,16 +15,7 @@
         {{ notice }}
       </p>
       <form class="mt-6 grid gap-3" @submit.prevent="authenticate">
-        <input
-          v-model="password"
-          inputmode="numeric"
-          maxlength="6"
-          pattern="[0-9]{6}"
-          type="password"
-          placeholder="6 位数字密码"
-          class="cms-field"
-          required
-        />
+        <input v-model="password" type="password" placeholder="密码" class="cms-field" required />
         <button class="cms-primary-button" :disabled="busy">
           {{ needsSetup ? '设置并进入后台' : '登录' }}
         </button>
