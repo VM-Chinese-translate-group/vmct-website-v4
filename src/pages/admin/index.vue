@@ -15,7 +15,14 @@
         {{ notice }}
       </p>
       <form class="mt-6 grid gap-3" @submit.prevent="authenticate">
-        <input v-model="password" type="password" placeholder="密码" class="cms-field" required />
+        <input
+          v-model="password"
+          type="password"
+          placeholder="至少 6 位，可含数字、字母或符号"
+          class="cms-field"
+          minlength="6"
+          required
+        />
         <button class="cms-primary-button" :disabled="busy">
           {{ needsSetup ? '设置并进入后台' : '登录' }}
         </button>
@@ -78,8 +85,16 @@
           >
             ＋ 新页面
           </button>
+          <label class="sr-only" for="page-search">搜索页面</label>
+          <input
+            id="page-search"
+            v-model="pageSearch"
+            class="cms-field my-2 w-full text-sm"
+            type="search"
+            placeholder="搜索页面路径"
+          />
           <button
-            v-for="page in pages"
+            v-for="page in filteredPages"
             :key="page.id"
             class="cms-page-row"
             :class="{ 'bg-[var(--info-soft)] text-[var(--info-1)]': page.id === draft.id }"
@@ -88,6 +103,12 @@
             <span>{{ page.path }}</span>
             <small class="shrink-0" :class="stateClass(page.state)">{{ label(page.state) }}</small>
           </button>
+          <p
+            v-if="pageSearch && !filteredPages.length"
+            class="px-3 py-2 text-sm text-[var(--text-muted)]"
+          >
+            未找到匹配页面
+          </p>
         </aside>
         <section class="grid min-w-0 gap-5 p-6 max-sm:p-3">
           <div class="flex items-center justify-between gap-3 max-sm:items-start max-sm:flex-col">
@@ -170,6 +191,7 @@ const loggedIn = ref(false),
   notice = ref(''),
   noticeKind = ref<'success' | 'error'>('success'),
   pages = ref<ContentPageSummary[]>([]),
+  pageSearch = ref(''),
   deployHook = ref('')
 const draft = reactive({
   id: '',
@@ -179,6 +201,11 @@ const draft = reactive({
   state: '' as ContentPage['state'] | '',
 })
 const canSave = computed(() => Boolean(draft.path.trim() && draft.body.trim()))
+const filteredPages = computed(() => {
+  const keyword = pageSearch.value.trim().toLocaleLowerCase()
+  if (!keyword) return pages.value
+  return pages.value.filter((page) => page.path.toLocaleLowerCase().includes(keyword))
+})
 const show = (message: string, kind: 'success' | 'error' = 'success') => {
   notice.value = message
   noticeKind.value = kind

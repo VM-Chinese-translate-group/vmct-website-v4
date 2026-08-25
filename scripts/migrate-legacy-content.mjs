@@ -29,7 +29,7 @@ async function walk(dir, pages = []) {
 }
 
 const prompt = createInterface({ input: stdin, output: stdout })
-const password = await prompt.question('请输入 /admin 的 6 位后台密码（输入会显示在终端）：')
+const password = await prompt.question('请输入 /admin 后台密码（输入会显示在终端）：')
 prompt.close()
 
 const login = await fetch(SITE_ORIGIN + '/api/content/admin/auth/login', {

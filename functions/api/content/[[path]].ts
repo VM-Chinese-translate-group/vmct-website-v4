@@ -84,9 +84,10 @@ function equal(left: string, right: string) {
   return difference === 0
 }
 
-function sixDigitPassword(value: unknown) {
+function passwordFrom(value: unknown) {
   const password = String(value || '')
-  if (!/^\d{6}$/.test(password)) throw new ApiError(400, '后台密码必须是 6 位数字')
+  if (!/^[\x21-\x7E]{6,}$/.test(password))
+    throw new ApiError(400, '密码须至少 6 位，且只能包含数字、字母或符号')
   return password
 }
 
@@ -205,7 +206,7 @@ async function setup(context: any) {
   if (await setting(context.env.CONTENT_DB, 'admin_password_hash'))
     throw new ApiError(409, '后台已初始化')
   const ip = await assertLoginAllowed(context)
-  const password = sixDigitPassword((await readJson(context.request))?.password)
+  const password = passwordFrom((await readJson(context.request))?.password)
   const salt = randomToken(16)
   await saveSetting(context.env.CONTENT_DB, 'admin_password_salt', salt)
   await saveSetting(
@@ -222,7 +223,7 @@ async function setup(context: any) {
 async function login(context: any) {
   requireSameOrigin(context.request)
   const ip = await assertLoginAllowed(context)
-  const password = sixDigitPassword((await readJson(context.request))?.password)
+  const password = passwordFrom((await readJson(context.request))?.password)
   const salt = await setting(context.env.CONTENT_DB, 'admin_password_salt')
   const expected = await setting(context.env.CONTENT_DB, 'admin_password_hash')
   if (!salt || !expected || !equal(await hashPassword(password, salt), expected)) {

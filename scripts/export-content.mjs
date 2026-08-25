@@ -26,7 +26,7 @@ const existing = await fs.readdir(OUTPUT_DIR).catch(() => [])
 if (existing.length) throw new Error('导出目录非空：' + OUTPUT_DIR + '。请指定新的 --output 目录。')
 
 const prompt = createInterface({ input: stdin, output: stdout })
-const password = await prompt.question('请输入后台 6 位密码：')
+const password = await prompt.question('请输入后台密码：')
 prompt.close()
 
 const login = await fetch(SITE_ORIGIN + '/api/content/admin/auth/login', {
