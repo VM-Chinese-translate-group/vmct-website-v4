@@ -36,7 +36,7 @@ export const emptyMetadata = (): ContentMetadata => ({
   loader: '',
   minecraft: '',
   pack: '',
-  authors: ['（作者）', '（翻译）'],
+  authors: ['XXX(作者)', 'XXX(翻译)'],
   links: [],
 })
 
