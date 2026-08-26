@@ -23,7 +23,12 @@
       </label>
       <label class="cms-label">
         更新日期
-        <input v-model="calendarDate" class="cms-field" type="date" />
+        <input
+          v-model="calendarDate"
+          class="cms-field cms-date-field"
+          type="date"
+          @click="openCalendar"
+        />
       </label>
       <label class="cms-label">
         发布状态
@@ -188,7 +193,6 @@ const linkOptions = [
   { value: 'github', label: 'GitHub' },
   { value: 'bilibili', label: 'Bilibili' },
   { value: 'planetminecraft', label: 'Planet Minecraft' },
-  { value: 'lazy', label: '懒汉下载' },
   { value: 'paratranz', label: 'Paratranz（项目 ID）' },
   { value: 'i18n', label: 'i18n 下载（自动）' },
 ]
@@ -209,7 +213,18 @@ function updateLinkPlatform(link: ContentLink, value: string) {
     link.project = ''
   }
 }
+
+function openCalendar(event: MouseEvent) {
+  event.currentTarget instanceof HTMLInputElement && event.currentTarget.showPicker()
+}
+
 function newLink(): ContentLink {
   return { id: 'curseforge', text: '', link: '', icon: '', project: '' }
 }
 </script>
+
+<style scoped>
+.cms-date-field::-webkit-calendar-picker-indicator {
+  display: none;
+}
+</style>

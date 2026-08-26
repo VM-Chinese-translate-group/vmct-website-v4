@@ -40,7 +40,29 @@
           </p>
         </div>
         <div class="flex gap-2">
-          <button class="cms-button" @click="newPage">＋ 新建页面</button>
+          <div class="relative">
+            <button
+              class="cms-button"
+              @click="newPageMenuLocation = newPageMenuLocation === 'header' ? '' : 'header'"
+            >
+              ＋ 新建页面
+            </button>
+            <div
+              v-if="newPageMenuLocation === 'header'"
+              class="absolute right-0 z-10 mt-2 grid w-52 gap-1 rounded-xl border border-[var(--switcher-border)] bg-[var(--bg-alt)] p-1.5 shadow-[var(--switcher-shadow)]"
+            >
+              <button
+                v-for="type in pageTypes"
+                :key="type.value"
+                class="cms-page-row"
+                type="button"
+                @click="newPage(type.value)"
+              >
+                <span>{{ type.label }}</span>
+                <small class="text-[var(--text-muted)]">{{ type.hint }}</small>
+              </button>
+            </div>
+          </div>
           <button class="cms-button" @click="logout">退出</button>
         </div>
       </header>
@@ -81,10 +103,22 @@
           <button
             class="cms-page-row"
             :class="{ 'bg-[var(--info-soft)] text-[var(--info-1)]': !draft.id }"
-            @click="newPage"
+            @click="newPageMenuLocation = newPageMenuLocation === 'aside' ? '' : 'aside'"
           >
             ＋ 新页面
           </button>
+          <div v-if="newPageMenuLocation === 'aside'" class="grid gap-1 px-1 py-1">
+            <button
+              v-for="type in pageTypes"
+              :key="type.value"
+              class="cms-page-row"
+              type="button"
+              @click="newPage(type.value)"
+            >
+              <span>{{ type.label }}</span>
+              <small class="text-[var(--text-muted)]">{{ type.hint }}</small>
+            </button>
+          </div>
           <label class="sr-only" for="page-search">搜索页面</label>
           <input
             id="page-search"
@@ -101,7 +135,14 @@
             @click="openPage(page.id)"
           >
             <span>{{ page.path }}</span>
-            <small class="shrink-0" :class="stateClass(page.state)">{{ label(page.state) }}</small>
+            <span class="flex shrink-0 items-center gap-1.5">
+              <small
+                class="rounded bg-[var(--bg-alt)] px-1.5 py-0.5 text-[10px] text-[var(--text-muted)]"
+              >
+                {{ pageType(page.path).label }}
+              </small>
+              <small :class="stateClass(page.state)">{{ label(page.state) }}</small>
+            </span>
           </button>
           <p
             v-if="pageSearch && !filteredPages.length"
@@ -115,7 +156,7 @@
             <div>
               <h2 class="m-0 text-xl">{{ draft.id ? '编辑页面' : '新建页面' }}</h2>
               <p class="mb-0 mt-1 text-xs text-[var(--text-muted)]">
-                {{ draft.id ? draft.path : '填写路径并开始创建内容' }}
+                {{ draft.id ? draft.path : '选择类型后填写页面标识' }}
               </p>
             </div>
             <div class="flex flex-wrap gap-2">
@@ -139,13 +180,32 @@
               </button>
             </div>
           </div>
+          <div class="grid gap-2">
+            <span class="cms-label">页面类型</span>
+            <div class="grid grid-cols-3 gap-2 max-sm:grid-cols-1">
+              <button
+                v-for="type in pageTypes"
+                :key="type.value"
+                class="cms-button justify-start text-left"
+                :class="
+                  pageKind === type.value
+                    ? 'border-[var(--info-1)] bg-[var(--info-soft)] text-[var(--info-1)]'
+                    : ''
+                "
+                type="button"
+                @click="selectPageType(type.value)"
+              >
+                <span>{{ type.label }}</span>
+                <small class="ml-auto text-[var(--text-muted)]">{{ type.hint }}</small>
+              </button>
+            </div>
+          </div>
           <label class="cms-label">
-            页面路径
-            <input
-              v-model="draft.path"
-              class="cms-field font-mono"
-              placeholder="例如 map/evergrowth"
-            />
+            {{ pageKind === 'document' ? '页面路径' : '页面标识' }}
+            <input v-model="pageSlug" class="cms-field font-mono" :placeholder="pathPlaceholder" />
+            <small v-if="pagePrefix" class="text-[var(--text-muted)]">
+              将创建为 /{{ pagePrefix }}{{ pageSlug || '页面标识' }}
+            </small>
           </label>
           <MetadataForm v-model="draft.metadata" />
           <div
@@ -184,6 +244,13 @@ import MarkdownEditor from './MarkdownEditor.vue'
 import MarkdownPreview from './MarkdownPreview.vue'
 import MetadataForm from './MetadataForm.vue'
 import { emptyMetadata, parseMetadata, stringifyMetadata } from './types'
+type PageKind = 'document' | 'modpack' | 'map'
+
+const pageTypes: { value: PageKind; label: string; hint: string; prefix: string }[] = [
+  { value: 'document', label: '文档', hint: '普通页面', prefix: '' },
+  { value: 'modpack', label: '整合包', hint: '/modpacks/', prefix: 'modpacks/' },
+  { value: 'map', label: '地图', hint: '/map/', prefix: 'map/' },
+]
 const loggedIn = ref(false),
   needsSetup = ref(false),
   password = ref(''),
@@ -192,7 +259,9 @@ const loggedIn = ref(false),
   noticeKind = ref<'success' | 'error'>('success'),
   pages = ref<ContentPageSummary[]>([]),
   pageSearch = ref(''),
-  deployHook = ref('')
+  deployHook = ref(''),
+  newPageMenuLocation = ref<'header' | 'aside' | ''>(''),
+  pageKind = ref<PageKind>('document')
 const draft = reactive({
   id: '',
   path: '',
@@ -201,6 +270,20 @@ const draft = reactive({
   state: '' as ContentPage['state'] | '',
 })
 const canSave = computed(() => Boolean(draft.path.trim() && draft.body.trim()))
+const selectedPageType = computed(() => pageTypes.find((type) => type.value === pageKind.value)!)
+const pagePrefix = computed(() => selectedPageType.value.prefix)
+const pageSlug = computed({
+  get: () =>
+    pagePrefix.value && draft.path.startsWith(pagePrefix.value)
+      ? draft.path.slice(pagePrefix.value.length)
+      : draft.path,
+  set: (value: string) => {
+    draft.path = `${pagePrefix.value}${value.replace(/^\/+/, '')}`
+  },
+})
+const pathPlaceholder = computed(() =>
+  pageKind.value === 'document' ? '例如 guides/getting-started' : '例如 evergrowth',
+)
 const filteredPages = computed(() => {
   const keyword = pageSearch.value.trim().toLocaleLowerCase()
   if (!keyword) return pages.value
@@ -225,13 +308,28 @@ function apply(page: ContentPage) {
   draft.metadata = parseMetadata(page.draftFrontmatter)
   draft.body = page.draftBody
   draft.state = page.state
+  pageKind.value = pageType(page.path).value
 }
-function newPage() {
+function pageType(path: string) {
+  return pageTypes.find((type) => type.prefix && path.startsWith(type.prefix)) || pageTypes[0]
+}
+function selectPageType(type: PageKind) {
+  const previousPrefix = pagePrefix.value
+  const slug =
+    previousPrefix && draft.path.startsWith(previousPrefix)
+      ? draft.path.slice(previousPrefix.length)
+      : draft.path
+  pageKind.value = type
+  draft.path = `${pageTypes.find((item) => item.value === type)!.prefix}${slug}`
+}
+function newPage(type: PageKind = 'document') {
   draft.id = ''
   draft.path = ''
   draft.metadata = emptyMetadata()
   draft.body = ''
   draft.state = ''
+  pageKind.value = type
+  newPageMenuLocation.value = ''
 }
 async function refresh() {
   pages.value = (await listContentPages()).pages

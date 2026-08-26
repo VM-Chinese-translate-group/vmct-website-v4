@@ -33,7 +33,7 @@
     "@mdit/plugin-img-size": "^1.1.0",
     "@shikijs/markdown-it": "^4.4.3",
     "@types/markdown-it": "^14.2.0",
-    "@types/node": "^26.2.0",
+    "@types/node": "^26.3.0",
     "@vitejs/plugin-vue": "^6.0.8",
     "@vue/server-renderer": "3.5.40",
     "@vue/tsconfig": "^0.9.1",
@@ -45,11 +45,11 @@
     "typescript": "^7.0.2",
     "unocss": "^66.8.1",
     "unplugin-vue-components": "^32.1.0",
-    "unplugin-vue-markdown": "^32.0.0",
+    "unplugin-vue-markdown": "^32.1.1",
     "vite": "^8.2.2",
     "vite-plugin-compression2": "^2.5.3",
     "vite-plugin-sitemap": "^0.8.2",
     "vue-tsc": "^3.3.11"
   },
-  "packageManager": "pnpm@11.22.0"
+  "packageManager": "pnpm@11.24.0"
 }

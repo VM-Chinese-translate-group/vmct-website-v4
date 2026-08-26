@@ -71,7 +71,7 @@ function insertDownload() {
   insert(
     '\n<DownloadLinks :methods="[\n  ',
     '\n]" />\n',
-    "{ id: 'curseforge', text: '下载地图和汉化', link: 'https://www.curseforge.com/minecraft/worlds/evergrowth/files/7111682' },\n  { id: 'lazy', link: 'https://www.curseforge.com/minecraft/worlds/evergrowth/files/7111682' }",
+    "{ id: 'curseforge', text: '下载地图和汉化', link: 'https://www.curseforge.com/minecraft/worlds/evergrowth/files/7111682' }",
   )
 }
 </script>
