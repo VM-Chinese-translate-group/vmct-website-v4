@@ -193,7 +193,7 @@ export default {
   },
   translationFeedback: {
     widgetLabel: '想让我们汉化什么？',
-    widgetTooltip: '投票征集汉化项目，也可以提交你想汉化的项目',
+    widgetTooltip: '投票征集汉化项目，也可以提交你想让我们汉化的项目',
     widgetClose: '关闭汉化小人',
     widgetRestore: '显示汉化小人',
     dismiss: '暂时关闭意见征集入口',
@@ -246,7 +246,7 @@ export default {
     empty: '暂时还没有符合条件的项目，欢迎提交第一个建议。',
     loadError: '项目加载失败，请稍后重试。',
     voteError: '点赞操作失败，请稍后重试。',
-    like: '想汉化',
+    like: '求汉化',
     unlike: '取消点赞',
     categories: {
       modpack: '整合包',

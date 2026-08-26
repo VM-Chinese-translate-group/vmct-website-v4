@@ -194,7 +194,7 @@ export default {
   },
   translationFeedback: {
     widgetLabel: '想讓我們漢化什麼？',
-    widgetTooltip: '投票徵集漢化項目，也可以提交你想漢化的項目',
+    widgetTooltip: '投票徵集漢化項目，也可以提交你想讓我們漢化的項目',
     widgetClose: '關閉漢化小人',
     widgetRestore: '顯示漢化小人',
     dismiss: '暫時關閉意見徵集入口',
@@ -247,7 +247,7 @@ export default {
     empty: '暫時還沒有符合條件的項目，歡迎提交第一個建議。',
     loadError: '項目載入失敗，請稍後重試。',
     voteError: '點讚操作失敗，請稍後重試。',
-    like: '想漢化',
+    like: '求漢化',
     unlike: '取消點讚',
     categories: {
       modpack: '模組包',
