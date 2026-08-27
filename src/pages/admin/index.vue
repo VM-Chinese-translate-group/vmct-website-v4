@@ -1,6 +1,6 @@
 <template>
   <main
-    class="mx-auto min-h-[70vh] w-[min(1500px,calc(100%-2rem))] pb-18 pt-26 text-[var(--text-1)] max-sm:w-[calc(100%-1.25rem)] max-sm:pt-22"
+    class="mx-auto min-h-[70vh] w-[min(1500px,calc(100%-2rem))] pb-14 pt-3 text-[var(--text-1)] max-sm:w-[calc(100%-1.25rem)] max-sm:pt-3"
   >
     <section
       v-if="!loggedIn"
@@ -10,7 +10,12 @@
       <h1 class="m-0 text-2xl">{{ needsSetup ? '设置后台密码' : '后台登录' }}</h1>
       <p
         v-if="notice"
-        class="my-4 rounded-lg bg-red-500/10 px-3 py-2 text-sm text-red-600 dark:text-red-400"
+        class="my-4 rounded-lg px-3 py-2 text-sm"
+        :class="
+          noticeKind === 'success'
+            ? 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-300'
+            : 'bg-red-500/10 text-red-600 dark:text-red-400'
+        "
       >
         {{ notice }}
       </p>
@@ -30,39 +35,27 @@
     </section>
     <template v-else>
       <header
-        class="mb-5 flex items-end justify-between gap-4 max-sm:items-stretch max-sm:flex-col"
+        class="mb-4 flex items-center justify-between gap-4 max-sm:items-stretch max-sm:flex-col"
       >
         <div>
-          <p class="mb-2 text-xs font-800 tracking-[0.14em] text-[var(--info-1)]">CONTENT CMS</p>
-          <h1 class="m-0 text-3xl max-sm:text-2xl">页面内容管理</h1>
-          <p class="mb-0 mt-2 text-sm text-[var(--text-2)]">
-            编辑元数据、正文并实时检查最终页面效果。
+          <p class="mb-1.5 text-xs font-800 tracking-[0.14em] text-[var(--info-1)]">CONTENT CMS</p>
+          <h1 class="m-0 text-3xl leading-tight max-sm:text-2xl">
+            {{ isSettingsPage ? '高级设置' : '页面内容管理' }}
+          </h1>
+          <p class="mb-0 mt-1.5 text-sm text-[var(--text-2)]">
+            {{
+              isSettingsPage
+                ? '管理内容部署和后台登录安全。'
+                : '编辑元数据、正文并实时检查最终页面效果。'
+            }}
           </p>
         </div>
-        <div class="flex gap-2">
-          <div class="relative">
-            <button
-              class="cms-button"
-              @click="newPageMenuLocation = newPageMenuLocation === 'header' ? '' : 'header'"
-            >
-              ＋ 新建页面
-            </button>
-            <div
-              v-if="newPageMenuLocation === 'header'"
-              class="absolute right-0 z-10 mt-2 grid w-52 gap-1 rounded-xl border border-[var(--switcher-border)] bg-[var(--bg-alt)] p-1.5 shadow-[var(--switcher-shadow)]"
-            >
-              <button
-                v-for="type in pageTypes"
-                :key="type.value"
-                class="cms-page-row"
-                type="button"
-                @click="newPage(type.value)"
-              >
-                <span>{{ type.label }}</span>
-                <small class="text-[var(--text-muted)]">{{ type.hint }}</small>
-              </button>
-            </div>
-          </div>
+        <div
+          class="flex flex-wrap gap-1.5 rounded-xl border border-[var(--switcher-border)] bg-[var(--bg-alt)] p-1.5 shadow-sm max-sm:w-full"
+        >
+          <button class="cms-button" @click="openAdminSection">
+            {{ isSettingsPage ? '返回编辑器' : '高级设置' }}
+          </button>
           <button class="cms-button" @click="logout">退出</button>
         </div>
       </header>
@@ -77,79 +70,137 @@
       >
         {{ notice }}
       </p>
-      <details
-        class="group mb-5 rounded-xl border border-[var(--switcher-border)] bg-[var(--bg-soft)] p-4"
-      >
-        <summary class="cursor-pointer font-700 text-[var(--text-1)]">部署设置</summary>
-        <p class="text-sm text-[var(--text-2)]">
-          粘贴 Cloudflare Pages 的 Production Deploy Hook URL。发布时只触发一次完整构建。
-        </p>
-        <div class="flex gap-2 max-sm:flex-col">
-          <input
-            v-model="deployHook"
-            class="cms-field flex-1"
-            type="url"
-            placeholder="https://api.cloudflare.com/..."
-          />
-          <button class="cms-button" @click="saveSettings">保存</button>
-        </div>
-      </details>
+      <div v-if="isSettingsPage" class="grid gap-5">
+        <section
+          class="rounded-2xl border border-[var(--switcher-border)] bg-[var(--bg-alt)] p-6 shadow-[var(--vp-shadow-1)] max-sm:p-4"
+        >
+          <h2 class="m-0 text-xl">部署设置</h2>
+          <p class="text-sm text-[var(--text-2)]">
+            粘贴 Cloudflare Pages 的 Production Deploy Hook URL。发布时只触发一次完整构建。
+          </p>
+          <div class="flex gap-2 max-sm:flex-col">
+            <input
+              v-model="deployHook"
+              class="cms-field flex-1"
+              type="url"
+              placeholder="https://api.cloudflare.com/..."
+            />
+            <button class="cms-button" @click="saveSettings">保存部署设置</button>
+          </div>
+        </section>
+        <section
+          class="rounded-2xl border border-[var(--switcher-border)] bg-[var(--bg-alt)] p-6 shadow-[var(--vp-shadow-1)] max-sm:p-4"
+        >
+          <h2 class="m-0 text-xl">安全设置</h2>
+          <p class="text-sm text-[var(--text-2)]">
+            新密码只在本机派生，服务器不会收到原始密码。修改后所有设备会退出登录。
+          </p>
+          <div v-if="passwordManagedByEnvironment" class="text-sm text-[var(--text-muted)]">
+            当前密码由 Cloudflare 加密变量管理，请在项目设置中更新。
+          </div>
+          <form v-else class="grid max-w-lg gap-2" @submit.prevent="changePassword">
+            <input
+              v-model="newPassword"
+              class="cms-field"
+              type="password"
+              minlength="6"
+              placeholder="新密码（至少 6 位）"
+              required
+            />
+            <input
+              v-model="newPasswordConfirmation"
+              class="cms-field"
+              type="password"
+              minlength="6"
+              placeholder="再次输入新密码"
+              required
+            />
+            <button class="cms-button w-fit" :disabled="busy">修改密码</button>
+          </form>
+        </section>
+      </div>
       <div
-        class="grid grid-cols-[17rem_minmax(0,1fr)] items-start overflow-visible rounded-2xl border border-[var(--switcher-border)] bg-[var(--bg-alt)] shadow-[var(--vp-shadow-1)] max-lg:grid-cols-1"
+        v-else
+        class="grid grid-cols-[17rem_minmax(0,1fr)] items-start overflow-visible rounded-2xl border border-[var(--switcher-border)] bg-[var(--bg-soft)] shadow-[var(--vp-shadow-1)] max-lg:grid-cols-1"
       >
         <aside
-          class="sticky top-22 max-h-[calc(100vh-6.5rem)] overflow-y-auto rounded-l-2xl border-r border-[var(--switcher-border)] bg-[var(--bg-soft)] p-2.5 max-lg:relative max-lg:top-auto max-lg:max-h-60 max-lg:rounded-t-2xl max-lg:rounded-bl-none max-lg:border-b max-lg:border-r-0"
+          class="sticky top-22 flex max-h-[calc(100vh-6.5rem)] flex-col overflow-hidden rounded-l-2xl border-r border-[var(--switcher-border)] bg-[var(--bg-soft)] p-2.5 max-lg:relative max-lg:top-auto max-lg:max-h-60 max-lg:rounded-t-2xl max-lg:rounded-bl-none max-lg:border-b max-lg:border-r-0"
         >
-          <button
-            class="cms-page-row"
-            :class="{ 'bg-[var(--info-soft)] text-[var(--info-1)]': !draft.id }"
-            @click="newPageMenuLocation = newPageMenuLocation === 'aside' ? '' : 'aside'"
-          >
-            ＋ 新页面
-          </button>
-          <div v-if="newPageMenuLocation === 'aside'" class="grid gap-1 px-1 py-1">
+          <div class="shrink-0">
             <button
-              v-for="type in pageTypes"
-              :key="type.value"
               class="cms-page-row"
-              type="button"
-              @click="newPage(type.value)"
+              :class="{ 'bg-[var(--info-soft)] text-[var(--info-1)]': !draft.id }"
+              @click="newPageMenuLocation = newPageMenuLocation === 'aside' ? '' : 'aside'"
             >
-              <span>{{ type.label }}</span>
-              <small class="text-[var(--text-muted)]">{{ type.hint }}</small>
+              ＋ 新页面
             </button>
-          </div>
-          <label class="sr-only" for="page-search">搜索页面</label>
-          <input
-            id="page-search"
-            v-model="pageSearch"
-            class="cms-field my-2 w-full text-sm"
-            type="search"
-            placeholder="搜索页面路径"
-          />
-          <button
-            v-for="page in filteredPages"
-            :key="page.id"
-            class="cms-page-row"
-            :class="{ 'bg-[var(--info-soft)] text-[var(--info-1)]': page.id === draft.id }"
-            @click="openPage(page.id)"
-          >
-            <span>{{ page.path }}</span>
-            <span class="flex shrink-0 items-center gap-1.5">
-              <small
-                class="rounded bg-[var(--bg-alt)] px-1.5 py-0.5 text-[10px] text-[var(--text-muted)]"
+            <div v-if="newPageMenuLocation === 'aside'" class="grid gap-1 px-1 py-1">
+              <button
+                v-for="type in pageTypes"
+                :key="type.value"
+                class="cms-page-row"
+                type="button"
+                @click="newPage(type.value)"
               >
-                {{ pageType(page.path).label }}
-              </small>
-              <small :class="stateClass(page.state)">{{ label(page.state) }}</small>
-            </span>
-          </button>
-          <p
-            v-if="pageSearch && !filteredPages.length"
-            class="px-3 py-2 text-sm text-[var(--text-muted)]"
-          >
-            未找到匹配页面
-          </p>
+                <span>{{ type.label }}</span>
+                <small class="text-[var(--text-muted)]">{{ type.hint }}</small>
+              </button>
+            </div>
+            <label class="sr-only" for="page-search">搜索页面</label>
+            <input
+              id="page-search"
+              v-model="pageSearch"
+              class="cms-field my-2 w-full text-sm"
+              type="search"
+              placeholder="搜索页面路径"
+            />
+          </div>
+          <div class="min-h-0 flex-1 overflow-y-auto overscroll-contain pr-1">
+            <details
+              v-for="group in groupedPages"
+              :key="group.type.value"
+              class="group/category my-1"
+              :open="group.type.value !== 'document' && Boolean(group.pages.length)"
+            >
+              <summary
+                class="cms-category-summary flex cursor-pointer list-none items-center gap-2 rounded-lg px-3 py-2 font-700 hover:bg-[var(--bg-alt)]"
+              >
+                <span
+                  class="w-4 shrink-0 text-center transition-transform group-open/category:rotate-90"
+                >
+                  ›
+                </span>
+                <span>{{ group.type.label }}</span>
+                <small class="ml-auto text-[var(--text-muted)]">{{ group.pages.length }}</small>
+              </summary>
+              <div class="grid gap-0.5 pl-3">
+                <button
+                  v-for="page in group.pages"
+                  :key="page.id"
+                  class="cms-page-row"
+                  :class="{ 'bg-[var(--info-soft)] text-[var(--info-1)]': page.id === draft.id }"
+                  @click="openPage(page.id)"
+                >
+                  <span class="truncate">{{ pageDisplayTitle(page) }}</span>
+                  <small class="shrink-0" :class="stateClass(page.state)">
+                    {{ label(page.state) }}
+                  </small>
+                </button>
+                <p
+                  v-if="!group.pages.length"
+                  class="m-0 px-3 py-2 text-xs text-[var(--text-muted)]"
+                >
+                  暂无内容
+                </p>
+              </div>
+            </details>
+            <p
+              v-if="pageSearch && !filteredPages.length"
+              class="px-3 py-2 text-sm text-[var(--text-muted)]"
+            >
+              未找到匹配页面
+            </p>
+          </div>
         </aside>
         <section class="grid min-w-0 gap-5 p-6 max-sm:p-3">
           <div class="flex items-center justify-between gap-3 max-sm:items-start max-sm:flex-col">
@@ -207,7 +258,7 @@
               将创建为 /{{ pagePrefix }}{{ pageSlug || '页面标识' }}
             </small>
           </label>
-          <MetadataForm v-model="draft.metadata" />
+          <MetadataForm v-model="draft.metadata" :page-kind="pageKind" />
           <div
             class="grid grid-cols-[minmax(0,1fr)_minmax(20rem,0.9fr)] gap-5 xl:grid-cols-2 max-xl:grid-cols-1"
           >
@@ -222,10 +273,17 @@
     </template>
   </main>
 </template>
+<style scoped>
+.cms-category-summary::marker {
+  display: none;
+}
+</style>
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import {
   archiveContentPage,
+  changeContentAdminPassword,
   createContentPage,
   getContentAuthStatus,
   getContentPage,
@@ -246,6 +304,10 @@ import MetadataForm from './MetadataForm.vue'
 import { emptyMetadata, parseMetadata, stringifyMetadata } from './types'
 type PageKind = 'document' | 'modpack' | 'map'
 
+const route = useRoute()
+const router = useRouter()
+const isSettingsPage = computed(() => route.name === 'content-admin-settings')
+
 const pageTypes: { value: PageKind; label: string; hint: string; prefix: string }[] = [
   { value: 'document', label: '文档', hint: '普通页面', prefix: '' },
   { value: 'modpack', label: '整合包', hint: '/modpacks/', prefix: 'modpacks/' },
@@ -253,7 +315,10 @@ const pageTypes: { value: PageKind; label: string; hint: string; prefix: string 
 ]
 const loggedIn = ref(false),
   needsSetup = ref(false),
+  passwordManagedByEnvironment = ref(false),
   password = ref(''),
+  newPassword = ref(''),
+  newPasswordConfirmation = ref(''),
   busy = ref(false),
   notice = ref(''),
   noticeKind = ref<'success' | 'error'>('success'),
@@ -287,8 +352,18 @@ const pathPlaceholder = computed(() =>
 const filteredPages = computed(() => {
   const keyword = pageSearch.value.trim().toLocaleLowerCase()
   if (!keyword) return pages.value
-  return pages.value.filter((page) => page.path.toLocaleLowerCase().includes(keyword))
+  return pages.value.filter(
+    (page) =>
+      page.path.toLocaleLowerCase().includes(keyword) ||
+      pageDisplayTitle(page).toLocaleLowerCase().includes(keyword),
+  )
 })
+const groupedPages = computed(() =>
+  pageTypes.map((type) => ({
+    type,
+    pages: filteredPages.value.filter((page) => pageType(page.path).value === type.value),
+  })),
+)
 const show = (message: string, kind: 'success' | 'error' = 'success') => {
   notice.value = message
   noticeKind.value = kind
@@ -313,6 +388,14 @@ function apply(page: ContentPage) {
 function pageType(path: string) {
   return pageTypes.find((type) => type.prefix && path.startsWith(type.prefix)) || pageTypes[0]
 }
+function displayPagePath(path: string) {
+  const type = pageType(path)
+  return type.prefix && path.startsWith(type.prefix) ? path.slice(type.prefix.length) : path
+}
+function pageDisplayTitle(page: ContentPageSummary) {
+  const title = parseMetadata(page.draftFrontmatter || '').title
+  return title.replace(/\s*汉化下载\s*$/, '') || title || displayPagePath(page.path)
+}
 function selectPageType(type: PageKind) {
   const previousPrefix = pagePrefix.value
   const slug =
@@ -320,6 +403,7 @@ function selectPageType(type: PageKind) {
       ? draft.path.slice(previousPrefix.length)
       : draft.path
   pageKind.value = type
+  if (type !== 'document') draft.metadata.sidebar = false
   draft.path = `${pageTypes.find((item) => item.value === type)!.prefix}${slug}`
 }
 function newPage(type: PageKind = 'document') {
@@ -330,6 +414,10 @@ function newPage(type: PageKind = 'document') {
   draft.state = ''
   pageKind.value = type
   newPageMenuLocation.value = ''
+}
+function openAdminSection() {
+  newPageMenuLocation.value = ''
+  void router.push(isSettingsPage.value ? '/admin' : '/admin/settings')
 }
 async function refresh() {
   pages.value = (await listContentPages()).pages
@@ -350,6 +438,7 @@ async function authenticate() {
   try {
     if (needsSetup.value) await setupContentAdmin(password.value)
     else await loginContentAdmin(password.value)
+    needsSetup.value = false
     password.value = ''
     loggedIn.value = true
     await Promise.all([refresh(), loadSettings()])
@@ -361,6 +450,24 @@ async function authenticate() {
 }
 async function loadSettings() {
   deployHook.value = (await getContentSettings()).deploymentHookUrl
+}
+async function changePassword() {
+  if (newPassword.value !== newPasswordConfirmation.value) {
+    show('两次输入的新密码不一致。', 'error')
+    return
+  }
+  busy.value = true
+  try {
+    await changeContentAdminPassword(newPassword.value)
+    newPassword.value = ''
+    newPasswordConfirmation.value = ''
+    loggedIn.value = false
+    show('密码已修改，所有设备均已退出。请使用新密码重新登录。')
+  } catch (error) {
+    show(error instanceof Error ? error.message : '修改密码失败', 'error')
+  } finally {
+    busy.value = false
+  }
 }
 async function saveSettings() {
   busy.value = true
@@ -441,6 +548,7 @@ onMounted(async () => {
   try {
     const status = await getContentAuthStatus()
     needsSetup.value = status.needsSetup
+    passwordManagedByEnvironment.value = status.managedByEnvironment
     if (!status.needsSetup) {
       try {
         await Promise.all([refresh(), loadSettings()])

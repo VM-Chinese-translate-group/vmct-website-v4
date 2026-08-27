@@ -24,7 +24,7 @@
     "sweetalert2": "^11.26.25",
     "vue": "^3.5.41",
     "vue-easy-lightbox": "^1.19.0",
-    "vue-i18n": "^11.4.9",
+    "vue-i18n": "^11.4.10",
     "vue-lazyload": "^3.0.0",
     "vue-router": "^5.2.0"
   },

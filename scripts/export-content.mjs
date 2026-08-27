@@ -2,6 +2,7 @@ import fs from 'node:fs/promises'
 import path from 'node:path'
 import { createInterface } from 'node:readline/promises'
 import { stdin, stdout } from 'node:process'
+import { loginContentAdmin } from './content-auth.mjs'
 
 const SITE_ORIGIN = 'https://vmct-cn.top'
 const outputArgument = process.argv.indexOf('--output')
@@ -29,13 +30,7 @@ const prompt = createInterface({ input: stdin, output: stdout })
 const password = await prompt.question('请输入后台密码：')
 prompt.close()
 
-const login = await fetch(SITE_ORIGIN + '/api/content/admin/auth/login', {
-  method: 'POST',
-  headers: { 'Content-Type': 'application/json', Origin: SITE_ORIGIN },
-  body: JSON.stringify({ password }),
-})
-const cookie = login.headers.get('set-cookie')?.split(';')[0]
-if (!login.ok || !cookie) throw new Error('登录失败，请检查后台密码。')
+const cookie = await loginContentAdmin(SITE_ORIGIN, password)
 
 const response = await fetch(SITE_ORIGIN + '/api/content/admin/export', {
   headers: { Cookie: cookie },

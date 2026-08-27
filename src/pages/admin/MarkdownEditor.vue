@@ -11,25 +11,39 @@
         class="cms-button min-h-8 px-2.5 py-1"
         @click="insert(tool.before, tool.after, tool.placeholder)"
       >
-        {{ tool.label }}
+        <Icon :icon="tool.icon" width="17" height="17" aria-hidden="true" />
+        <span class="sr-only">{{ tool.name }}</span>
       </button>
       <span class="flex-1"></span>
       <button
         class="cms-button min-h-8 px-2.5 py-1"
         type="button"
+        title="插入警告提示块"
+        aria-label="插入警告提示块"
         @click="insertContainer('warning', '重要提示')"
       >
-        警告
+        <Icon icon="lucide:triangle-alert" width="17" height="17" aria-hidden="true" />
+        <span class="sr-only">警告</span>
       </button>
       <button
         class="cms-button min-h-8 px-2.5 py-1"
         type="button"
+        title="插入信息提示块"
+        aria-label="插入信息提示块"
         @click="insertContainer('info', '信息')"
       >
-        信息
+        <Icon icon="lucide:info" width="17" height="17" aria-hidden="true" />
+        <span class="sr-only">信息</span>
       </button>
-      <button class="cms-button min-h-8 px-2.5 py-1" type="button" @click="insertDownload">
-        下载组件
+      <button
+        class="cms-button min-h-8 px-2.5 py-1"
+        type="button"
+        title="下载组件"
+        aria-label="下载组件"
+        @click="insertDownload"
+      >
+        <Icon icon="lucide:download" width="17" height="17" aria-hidden="true" />
+        <span class="sr-only">下载组件</span>
       </button>
     </div>
     <textarea
@@ -43,15 +57,16 @@
 </template>
 <script setup lang="ts">
 import { ref } from 'vue'
+import { Icon } from '@iconify/vue'
 const model = defineModel<string>({ required: true })
 const textarea = ref<HTMLTextAreaElement>()
 const tools = [
-  { name: '粗体', label: 'B', before: '**', after: '**', placeholder: '粗体文字' },
-  { name: '斜体', label: 'I', before: '*', after: '*', placeholder: '斜体文字' },
-  { name: '标题', label: 'H2', before: '## ', after: '', placeholder: '标题' },
-  { name: '链接', label: '链接', before: '[', after: '](https://)', placeholder: '链接文字' },
-  { name: '代码', label: '代码', before: '`', after: '`', placeholder: '代码' },
-  { name: '列表', label: '列表', before: '- ', after: '', placeholder: '列表项' },
+  { name: '粗体', icon: 'lucide:bold', before: '**', after: '**', placeholder: '粗体文字' },
+  { name: '斜体', icon: 'lucide:italic', before: '*', after: '*', placeholder: '斜体文字' },
+  { name: '标题', icon: 'lucide:heading-2', before: '## ', after: '', placeholder: '标题' },
+  { name: '链接', icon: 'lucide:link', before: '[', after: '](https://)', placeholder: '链接文字' },
+  { name: '代码', icon: 'lucide:code-2', before: '`', after: '`', placeholder: '代码' },
+  { name: '列表', icon: 'lucide:list', before: '- ', after: '', placeholder: '列表项' },
 ]
 function insert(before: string, after: string, placeholder: string) {
   const el = textarea.value

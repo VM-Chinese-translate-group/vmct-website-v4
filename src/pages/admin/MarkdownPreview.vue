@@ -13,89 +13,53 @@
       </span>
     </div>
 
-    <header class="border-b border-[var(--switcher-border)] p-5">
-      <div class="flex items-start gap-4">
-        <img
-          v-if="metadata.icon"
-          :src="metadata.icon"
-          :alt="metadata.title"
-          class="size-16 shrink-0 rounded-xl border border-[var(--switcher-border)] object-cover"
-        />
-        <div
-          v-else
-          class="grid size-16 shrink-0 place-items-center rounded-xl bg-[var(--bg-soft)] text-2xl text-[var(--text-muted)]"
-        >
-          ◇
-        </div>
-        <div class="min-w-0">
-          <h1 class="m-0 break-words text-xl">{{ metadata.title || '未命名页面' }}</h1>
-          <p v-if="metadata.originalName" class="mb-0 mt-1 text-sm text-[var(--text-2)]">
-            {{ metadata.originalName }}
-          </p>
-          <div class="mt-2 flex flex-wrap gap-1.5 text-xs text-[var(--text-2)]">
-            <span v-if="metadata.minecraft" class="rounded-md bg-[var(--bg-soft)] px-2 py-1">
-              MC {{ metadata.minecraft }}
-            </span>
-            <span v-if="metadata.loader" class="rounded-md bg-[var(--bg-soft)] px-2 py-1">
-              {{ metadata.loader }}
-            </span>
-            <span v-if="metadata.pack" class="rounded-md bg-[var(--bg-soft)] px-2 py-1">
-              版本 {{ metadata.pack }}
-            </span>
-          </div>
-        </div>
-      </div>
-      <p
-        v-if="metadata.description"
-        class="mb-0 mt-4 whitespace-pre-line text-sm leading-relaxed text-[var(--text-2)]"
-      >
-        {{ metadata.description }}
-      </p>
-      <p
-        v-if="metadata.authors.filter(Boolean).length"
-        class="mb-0 mt-3 text-xs text-[var(--text-muted)]"
-      >
-        by {{ metadata.authors.filter(Boolean).join(' · ') }}
-      </p>
-      <div v-if="relatedLinks.length" class="mt-4 flex flex-wrap gap-2">
-        <a
-          v-for="(link, index) in relatedLinks"
-          :key="`${link.id}-${index}`"
-          :href="link.link"
-          target="_blank"
-          rel="noopener noreferrer"
-          class="rounded-lg border border-[var(--switcher-border)] bg-[var(--bg-soft)] px-2.5 py-1.5 text-xs font-600 text-[var(--info-1)] no-underline"
-        >
-          {{ link.text }}
-        </a>
-      </div>
-    </header>
-
-    <article
-      class="max-h-[42rem] overflow-auto p-5 text-sm leading-7 text-[var(--text-1)] [&_a]:text-[var(--info-1)] [&_blockquote]:my-4 [&_blockquote]:border-l-4 [&_blockquote]:border-[var(--warning-1)] [&_blockquote]:bg-[var(--warning-soft)] [&_blockquote]:px-4 [&_blockquote]:py-2 [&_code]:rounded [&_code]:bg-[var(--bg-soft)] [&_code]:px-1.5 [&_h1]:text-2xl [&_h2]:mb-2 [&_h2]:mt-7 [&_h2]:text-xl [&_h3]:mt-5 [&_img]:h-auto [&_img]:max-w-full [&_img]:rounded-lg [&_pre]:overflow-auto [&_pre]:rounded-lg [&_pre]:bg-[var(--bg-soft)] [&_pre]:p-3"
-      v-html="rendered"
-    />
+    <div class="admin-preview-viewport">
+      <DownloadLayout :meta="previewMeta">
+        <article class="admin-preview-content" v-html="rendered" />
+      </DownloadLayout>
+    </div>
   </section>
 </template>
 
 <script setup lang="ts">
 import { computed } from 'vue'
 import MarkdownIt from 'markdown-it'
-import { resolveRelatedLink } from '@/data/relatedLinks'
+import { container } from '@mdit/plugin-container'
+import DownloadLayout from '@/layout/DownloadLayout.vue'
 import type { ContentMetadata } from './types'
 
 const props = defineProps<{ body: string; metadata: ContentMetadata }>()
-const md = new MarkdownIt({ html: false, breaks: true, linkify: true })
+const md = new MarkdownIt({ html: false, linkify: true })
 
-const relatedLinks = computed(() =>
-  props.metadata.links
-    .map((item) =>
-      resolveRelatedLink(item, (key) =>
-        key === 'pack.links.i18n' ? 'i18n 下载' : key === 'pack.links.github' ? 'GitHub 仓库' : key,
-      ),
-    )
-    .filter((item) => item.text && item.link),
-)
+for (const type of ['tip', 'warning', 'info', 'details']) {
+  md.use(container, {
+    name: type,
+    openRenderer: (tokens, index) => {
+      const info = tokens[index].info
+      const title = info.length > type.length ? info.slice(type.length + 1) : type.toUpperCase()
+      if (type === 'details')
+        return `<details class="custom-block details"><summary>${md.utils.escapeHtml(title)}</summary>\n`
+      return `<div class="custom-block ${type}"><p class="custom-block-title">${md.utils.escapeHtml(title)}</p>\n`
+    },
+    closeRenderer: () => (type === 'details' ? '</details>\n' : '</div>\n'),
+  })
+}
+
+const previewMeta = computed(() => ({
+  title: props.metadata.title,
+  originalName: props.metadata.originalName,
+  icon: props.metadata.icon,
+  description: props.metadata.description,
+  updateDate: props.metadata.updateDate,
+  authors: props.metadata.authors.filter(Boolean),
+  links: props.metadata.links,
+  status: props.metadata.statusType ? { type: props.metadata.statusType } : undefined,
+  compatibility: {
+    minecraft: props.metadata.minecraft,
+    loader: props.metadata.loader,
+    pack: props.metadata.pack,
+  },
+}))
 
 function stringProperty(source: string, key: string) {
   return source.match(new RegExp(`${key}\\s*:\\s*(['"])(.*?)\\1`))?.[2] || ''
@@ -145,3 +109,76 @@ function previewSource(body: string) {
 
 const rendered = computed(() => md.render(previewSource(props.body)))
 </script>
+
+<style scoped>
+.admin-preview-viewport {
+  max-height: 42rem;
+  overflow: auto;
+  background: var(--bg-off-white);
+}
+
+.admin-preview-viewport :deep(.pack-page-container) {
+  min-height: 0;
+  padding: 1.25rem;
+}
+
+.admin-preview-viewport :deep(.pack-header) {
+  margin-bottom: 1.25rem;
+  padding-bottom: 1.25rem;
+}
+
+.admin-preview-viewport :deep(.header-content) {
+  gap: 1.25rem;
+}
+
+.admin-preview-viewport :deep(.pack-icon),
+.admin-preview-viewport :deep(.pack-icon-placeholder) {
+  width: 5rem;
+  height: 5rem;
+  border-radius: 0.875rem;
+}
+
+.admin-preview-viewport :deep(.title-row h1) {
+  font-size: 1.65rem;
+}
+
+.admin-preview-viewport :deep(.pack-main) {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.admin-preview-viewport :deep(.pack-main > aside) {
+  display: none;
+}
+
+.admin-preview-viewport :deep(.pack-content-body) {
+  padding: 1.5rem;
+}
+
+.admin-preview-content :deep(img) {
+  max-width: 100%;
+  height: auto;
+}
+
+@media (max-width: 640px) {
+  .admin-preview-viewport :deep(.pack-page-container) {
+    padding: 1rem;
+  }
+
+  .admin-preview-viewport :deep(.header-content) {
+    align-items: flex-start;
+    flex-direction: row;
+    text-align: left;
+  }
+
+  .admin-preview-viewport :deep(.title-row) {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .admin-preview-viewport :deep(.author-row),
+  .admin-preview-viewport :deep(.download-button-wrapper) {
+    align-items: flex-start;
+    justify-content: flex-start;
+  }
+}
+</style>

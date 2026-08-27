@@ -20,6 +20,16 @@ CREATE TABLE IF NOT EXISTS cms_login_attempts (
   locked_until TEXT
 );
 
+CREATE TABLE IF NOT EXISTS cms_auth_challenges (
+  id TEXT PRIMARY KEY,
+  challenge TEXT NOT NULL,
+  client_ip TEXT NOT NULL,
+  expires_at TEXT NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS cms_auth_challenges_expires_idx
+  ON cms_auth_challenges(expires_at);
+
 CREATE TABLE IF NOT EXISTS content_pages (
   id TEXT PRIMARY KEY,
   path TEXT NOT NULL UNIQUE,

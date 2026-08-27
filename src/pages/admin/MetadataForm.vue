@@ -11,11 +11,13 @@
     <div class="grid grid-cols-2 gap-4 max-md:grid-cols-1">
       <label class="cms-label">
         标题
-        <input v-model="model.title" class="cms-field" />
+        <input v-model="model.title" class="cms-field" placeholder="XXX 汉化下载" />
+        <small class="text-[var(--text-muted)]">默认按“XXX 汉化下载”填写。</small>
       </label>
       <label class="cms-label">
-        原始名称
-        <input v-model="model.originalName" class="cms-field" />
+        英文名
+        <input v-model="model.originalName" class="cms-field" placeholder="填写整合包英文原名" />
+        <small class="text-[var(--text-muted)]">例如：Prominence II RPG: Hasturian Era</small>
       </label>
       <label class="cms-label">
         封面 / 图标 URL
@@ -74,7 +76,7 @@
         <input v-model="model.search" type="checkbox" />
         搜索收录
       </label>
-      <label class="cms-check">
+      <label v-if="pageKind === 'document'" class="cms-check">
         <input v-model="model.sidebar" type="checkbox" />
         侧栏显示
       </label>
@@ -163,6 +165,7 @@ import { computed } from 'vue'
 import SelectMenu from '@/components/SelectMenu.vue'
 import type { ContentLink, ContentMetadata } from './types'
 const model = defineModel<ContentMetadata>({ required: true })
+defineProps<{ pageKind: 'document' | 'modpack' | 'map' }>()
 const calendarDate = computed({
   get: () => {
     const match = model.value.updateDate.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/)
@@ -174,26 +177,25 @@ const calendarDate = computed({
   },
 })
 const statusOptions = [
-  { value: '', label: '未设置' },
-  { value: 'maintaining', label: '维护中' },
-  { value: 'translating', label: '翻译中' },
-  { value: 'stopped', label: '暂不跟进' },
+  { value: '', label: '未设置', icon: 'lucide:circle-dashed' },
+  { value: 'maintaining', label: '维护中', icon: 'lucide:circle-check' },
+  { value: 'translating', label: '翻译中', icon: 'lucide:languages' },
+  { value: 'stopped', label: '暂不跟进', icon: 'lucide:circle-pause' },
 ]
 const loaderOptions = [
-  { value: '', label: '未设置' },
-  { value: 'vanilla', label: '原版' },
-  { value: 'forge', label: 'Forge' },
-  { value: 'neoforge', label: 'NeoForge' },
-  { value: 'fabric', label: 'Fabric' },
-  { value: 'quilt', label: 'Quilt' },
+  { value: '', label: '未设置', icon: 'lucide:circle-dashed' },
+  { value: 'vanilla', label: '原版', icon: '/imgs/svg/vanilla.svg' },
+  { value: 'forge', label: 'Forge', icon: '/imgs/svg/forge.svg' },
+  { value: 'neoforge', label: 'NeoForge', icon: '/imgs/svg/neoforge.svg' },
+  { value: 'fabric', label: 'Fabric', icon: '/imgs/svg/fabric.svg' },
 ]
 const linkOptions = [
   { value: 'curseforge', label: 'CurseForge' },
   { value: 'modrinth', label: 'Modrinth' },
   { value: 'github', label: 'GitHub' },
   { value: 'bilibili', label: 'Bilibili' },
-  { value: 'planetminecraft', label: 'Planet Minecraft' },
-  { value: 'paratranz', label: 'Paratranz（项目 ID）' },
+  { value: 'planetminecraft', label: 'PlanetMinecraft' },
+  { value: 'paratranz', label: 'Paratranz' },
   { value: 'i18n', label: 'i18n 下载（自动）' },
 ]
 linkOptions.push({ value: '__custom__', label: '自定义平台' })

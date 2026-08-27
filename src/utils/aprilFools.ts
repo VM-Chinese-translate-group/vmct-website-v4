@@ -1,7 +1,7 @@
 const APRIL_FOOLS_MONTH = 3
 const APRIL_FOOLS_DAY = 1
 const EMAIL_PATTERN = /[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/gi
-const SKIPPED_PAGE_PATTERN = /^\/(?:agreement|privacy)(?:\/|$)/
+const SKIPPED_PAGE_PATTERN = /^\/(?:admin|agreement|privacy)(?:\/|$)/
 
 export const SITE_LOGO_128 = '/imgs/logo/logo_128.png'
 export const APRIL_FOOLS_FAVICON = '/imgs/logo/fool/favicon.ico'

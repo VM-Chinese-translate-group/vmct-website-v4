@@ -1,5 +1,7 @@
 interface Env {
   CONTENT_DB: any
+  CMS_ADMIN_VERIFIER?: string
+  CMS_ADMIN_SALT?: string
 }
 
 const JSON_HEADERS = {
@@ -7,7 +9,9 @@ const JSON_HEADERS = {
   'Content-Type': 'application/json; charset=utf-8',
 }
 const encoder = new TextEncoder()
-const PASSWORD_ITERATIONS = 10
+const PASSWORD_ITERATIONS = 100
+const LEGACY_PASSWORD_ITERATIONS = 10
+const CHALLENGE_MAX_AGE_MS = 2 * 60 * 1000
 const SESSION_MAX_AGE_SECONDS = 60 * 60 * 24 * 14
 
 class ApiError extends Error {
@@ -64,16 +68,19 @@ async function hash(value: string) {
   return toBase64Url(new Uint8Array(await crypto.subtle.digest('SHA-256', encoder.encode(value))))
 }
 
-async function hashPassword(password: string, salt: string) {
-  const key = await crypto.subtle.importKey('raw', encoder.encode(password), 'PBKDF2', false, [
-    'deriveBits',
-  ])
-  const bits = await crypto.subtle.deriveBits(
-    { name: 'PBKDF2', hash: 'SHA-256', salt: fromBase64Url(salt), iterations: PASSWORD_ITERATIONS },
-    key,
-    256,
+async function proof(verifier: string, challenge: string) {
+  const key = await crypto.subtle.importKey(
+    'raw',
+    fromBase64Url(verifier),
+    { name: 'HMAC', hash: 'SHA-256' },
+    false,
+    ['sign'],
   )
-  return toBase64Url(new Uint8Array(bits))
+  return toBase64Url(
+    new Uint8Array(
+      await crypto.subtle.sign('HMAC', key, encoder.encode(`vmct-content-admin-v1:${challenge}`)),
+    ),
+  )
 }
 
 function equal(left: string, right: string) {
@@ -82,13 +89,6 @@ function equal(left: string, right: string) {
   for (let index = 0; index < left.length; index += 1)
     difference |= left.charCodeAt(index) ^ right.charCodeAt(index)
   return difference === 0
-}
-
-function passwordFrom(value: unknown) {
-  const password = String(value || '')
-  if (!/^[\x21-\x7E]{6,}$/.test(password))
-    throw new ApiError(400, '密码须至少 6 位，且只能包含数字、字母或符号')
-  return password
 }
 
 function documentFrom(input: any) {
@@ -139,6 +139,47 @@ async function saveSetting(db: any, key: string, value: string) {
       "INSERT INTO cms_settings (setting_key, setting_value, updated_at) VALUES (?, ?, strftime('%Y-%m-%dT%H:%M:%fZ', 'now')) ON CONFLICT(setting_key) DO UPDATE SET setting_value = excluded.setting_value, updated_at = excluded.updated_at",
     )
     .bind(key, value)
+    .run()
+}
+
+async function passwordConfig(context: any) {
+  let salt =
+    context.env.CMS_ADMIN_SALT || (await setting(context.env.CONTENT_DB, 'admin_password_salt'))
+  if (!salt) {
+    salt = randomToken(16)
+    await saveSetting(context.env.CONTENT_DB, 'admin_password_salt', salt)
+  }
+  if (context.env.CMS_ADMIN_VERIFIER) {
+    if (!/^[A-Za-z0-9_-]{43}$/.test(context.env.CMS_ADMIN_VERIFIER))
+      throw new Error('CMS_ADMIN_VERIFIER 格式无效')
+    return {
+      salt,
+      iterations: PASSWORD_ITERATIONS,
+      verifier: context.env.CMS_ADMIN_VERIFIER,
+      managedByEnvironment: true,
+    }
+  }
+  const verifier = await setting(context.env.CONTENT_DB, 'admin_password_hash')
+  const storedIterations = Number(
+    (await setting(context.env.CONTENT_DB, 'admin_password_iterations')) ||
+      LEGACY_PASSWORD_ITERATIONS,
+  )
+  return {
+    salt,
+    iterations:
+      Number.isSafeInteger(storedIterations) && storedIterations > 0
+        ? storedIterations
+        : LEGACY_PASSWORD_ITERATIONS,
+    verifier,
+    managedByEnvironment: false,
+  }
+}
+
+async function ensureChallengeTable(db: any) {
+  await db
+    .prepare(
+      'CREATE TABLE IF NOT EXISTS cms_auth_challenges (id TEXT PRIMARY KEY, challenge TEXT NOT NULL, client_ip TEXT NOT NULL, expires_at TEXT NOT NULL)',
+    )
     .run()
 }
 
@@ -198,21 +239,68 @@ async function requireAdmin(context: any) {
 }
 
 async function authStatus(context: any) {
-  return json({ needsSetup: !(await setting(context.env.CONTENT_DB, 'admin_password_hash')) })
+  const config = await passwordConfig(context)
+  return json({
+    needsSetup: !config.verifier,
+    managedByEnvironment: config.managedByEnvironment,
+  })
+}
+
+async function authChallenge(context: any) {
+  const ip = await assertLoginAllowed(context)
+  const config = await passwordConfig(context)
+  await ensureChallengeTable(context.env.CONTENT_DB)
+  const id = randomToken(18)
+  const challenge = randomToken()
+  const now = new Date()
+  await context.env.CONTENT_DB.batch([
+    context.env.CONTENT_DB.prepare('DELETE FROM cms_auth_challenges WHERE expires_at <= ?').bind(
+      now.toISOString(),
+    ),
+    context.env.CONTENT_DB.prepare(
+      'INSERT INTO cms_auth_challenges (id, challenge, client_ip, expires_at) VALUES (?, ?, ?, ?)',
+    ).bind(id, challenge, ip, new Date(now.getTime() + CHALLENGE_MAX_AGE_MS).toISOString()),
+  ])
+  return json({
+    id,
+    challenge,
+    salt: config.salt,
+    iterations: config.iterations,
+    needsSetup: !config.verifier,
+  })
+}
+
+async function consumeChallenge(context: any, id: unknown) {
+  const challengeId = String(id || '')
+  if (!/^[A-Za-z0-9_-]{20,}$/.test(challengeId)) throw new ApiError(400, '登录挑战无效')
+  await ensureChallengeTable(context.env.CONTENT_DB)
+  const ip = context.request.headers.get('CF-Connecting-IP') || 'unknown'
+  const item = await context.env.CONTENT_DB.prepare(
+    'SELECT challenge, client_ip AS clientIp, expires_at AS expiresAt FROM cms_auth_challenges WHERE id = ? LIMIT 1',
+  )
+    .bind(challengeId)
+    .first()
+  await context.env.CONTENT_DB.prepare('DELETE FROM cms_auth_challenges WHERE id = ?')
+    .bind(challengeId)
+    .run()
+  if (!item || item.clientIp !== ip || new Date(item.expiresAt).getTime() <= Date.now())
+    throw new ApiError(401, '登录挑战已失效，请重试')
+  return String(item.challenge)
 }
 
 async function setup(context: any) {
   requireSameOrigin(context.request)
-  if (await setting(context.env.CONTENT_DB, 'admin_password_hash'))
-    throw new ApiError(409, '后台已初始化')
+  if ((await passwordConfig(context)).verifier) throw new ApiError(409, '后台已初始化')
   const ip = await assertLoginAllowed(context)
-  const password = passwordFrom((await readJson(context.request))?.password)
-  const salt = randomToken(16)
-  await saveSetting(context.env.CONTENT_DB, 'admin_password_salt', salt)
+  const input = await readJson(context.request)
+  await consumeChallenge(context, input?.challengeId)
+  const verifier = String(input?.verifier || '')
+  if (!/^[A-Za-z0-9_-]{43}$/.test(verifier)) throw new ApiError(400, '密码凭据无效')
+  await saveSetting(context.env.CONTENT_DB, 'admin_password_hash', verifier)
   await saveSetting(
     context.env.CONTENT_DB,
-    'admin_password_hash',
-    await hashPassword(password, salt),
+    'admin_password_iterations',
+    String(PASSWORD_ITERATIONS),
   )
   await context.env.CONTENT_DB.prepare('DELETE FROM cms_login_attempts WHERE client_ip = ?')
     .bind(ip)
@@ -223,10 +311,11 @@ async function setup(context: any) {
 async function login(context: any) {
   requireSameOrigin(context.request)
   const ip = await assertLoginAllowed(context)
-  const password = passwordFrom((await readJson(context.request))?.password)
-  const salt = await setting(context.env.CONTENT_DB, 'admin_password_salt')
-  const expected = await setting(context.env.CONTENT_DB, 'admin_password_hash')
-  if (!salt || !expected || !equal(await hashPassword(password, salt), expected)) {
+  const input = await readJson(context.request)
+  const challenge = await consumeChallenge(context, input?.challengeId)
+  const config = await passwordConfig(context)
+  const submittedProof = String(input?.proof || '')
+  if (!config.verifier || !equal(await proof(config.verifier, challenge), submittedProof)) {
     await loginFailure(context, ip)
     throw new ApiError(401, '密码错误')
   }
@@ -234,6 +323,30 @@ async function login(context: any) {
     .bind(ip)
     .run()
   return json({ ok: true }, 200, { 'Set-Cookie': sessionCookie(await createSession(context)) })
+}
+
+async function changePassword(context: any) {
+  requireSameOrigin(context.request)
+  if (context.env.CMS_ADMIN_VERIFIER)
+    throw new ApiError(409, '密码由 CMS_ADMIN_VERIFIER 环境变量管理')
+  const input = await readJson(context.request)
+  const salt = String(input?.salt || '')
+  const verifier = String(input?.verifier || '')
+  if (!/^[A-Za-z0-9_-]{22}$/.test(salt) || !/^[A-Za-z0-9_-]{43}$/.test(verifier))
+    throw new ApiError(400, '密码凭据无效')
+  await context.env.CONTENT_DB.batch([
+    context.env.CONTENT_DB.prepare(
+      "INSERT INTO cms_settings (setting_key, setting_value, updated_at) VALUES ('admin_password_salt', ?, strftime('%Y-%m-%dT%H:%M:%fZ', 'now')) ON CONFLICT(setting_key) DO UPDATE SET setting_value = excluded.setting_value, updated_at = excluded.updated_at",
+    ).bind(salt),
+    context.env.CONTENT_DB.prepare(
+      "INSERT INTO cms_settings (setting_key, setting_value, updated_at) VALUES ('admin_password_hash', ?, strftime('%Y-%m-%dT%H:%M:%fZ', 'now')) ON CONFLICT(setting_key) DO UPDATE SET setting_value = excluded.setting_value, updated_at = excluded.updated_at",
+    ).bind(verifier),
+    context.env.CONTENT_DB.prepare(
+      "INSERT INTO cms_settings (setting_key, setting_value, updated_at) VALUES ('admin_password_iterations', ?, strftime('%Y-%m-%dT%H:%M:%fZ', 'now')) ON CONFLICT(setting_key) DO UPDATE SET setting_value = excluded.setting_value, updated_at = excluded.updated_at",
+    ).bind(String(PASSWORD_ITERATIONS)),
+    context.env.CONTENT_DB.prepare('DELETE FROM cms_sessions'),
+  ])
+  return json({ ok: true }, 200, { 'Set-Cookie': sessionCookie('', 0) })
 }
 
 async function logout(context: any) {
@@ -289,7 +402,7 @@ async function page(db: any, id: string) {
 
 async function listPages(context: any) {
   const result = await context.env.CONTENT_DB.prepare(
-    'SELECT id, path, state, published_revision AS publishedRevision, created_at AS createdAt, updated_at AS updatedAt, published_at AS publishedAt FROM content_pages ORDER BY updated_at DESC, path ASC',
+    'SELECT id, path, draft_frontmatter AS draftFrontmatter, state, published_revision AS publishedRevision, created_at AS createdAt, updated_at AS updatedAt, published_at AS publishedAt FROM content_pages ORDER BY updated_at DESC, path ASC',
   ).all()
   return json({ pages: result.results || [] })
 }
@@ -454,6 +567,8 @@ export const onRequest = async (context: any) => {
       return await exportContent(context)
     if (path === 'admin/auth/status' && context.request.method === 'GET')
       return await authStatus(context)
+    if (path === 'admin/auth/challenge' && context.request.method === 'GET')
+      return await authChallenge(context)
     if (path === 'admin/auth/setup' && context.request.method === 'POST')
       return await setup(context)
     if (path === 'admin/auth/login' && context.request.method === 'POST')
@@ -461,6 +576,8 @@ export const onRequest = async (context: any) => {
     if (path === 'admin/auth/logout' && context.request.method === 'POST')
       return await logout(context)
     await requireAdmin(context)
+    if (path === 'admin/auth/password' && context.request.method === 'PUT')
+      return await changePassword(context)
     if (path === 'admin/settings' && context.request.method === 'GET')
       return await getSettings(context)
     if (path === 'admin/settings' && context.request.method === 'PUT')

@@ -1,7 +1,7 @@
 <template>
   <div class="flex flex-col">
     <NavBar />
-    <SiteAnnouncement v-if="route.name !== 'content-admin'" />
+    <SiteAnnouncement v-if="!route.path.startsWith('/admin')" />
 
     <DocLayout v-if="isDocLayout">
       <router-view />
