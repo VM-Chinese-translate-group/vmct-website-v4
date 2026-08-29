@@ -1,9 +1,15 @@
+import { parse, stringify } from 'yaml'
+
+export type PageKind = 'document' | 'modpack' | 'map'
+export type SaveState = 'idle' | 'dirty' | 'saving' | 'saved' | 'error' | 'conflict'
+
 export interface ContentLink {
   id: string
   text: string
   link: string
   icon: string
   project: string
+  _extra?: Record<string, unknown>
 }
 
 export interface ContentMetadata {
@@ -21,6 +27,13 @@ export interface ContentMetadata {
   pack: string
   authors: string[]
   links: ContentLink[]
+  _raw: Record<string, unknown>
+}
+
+export interface ValidationIssue {
+  field: string
+  message: string
+  level: 'error' | 'warning'
 }
 
 export const emptyMetadata = (): ContentMetadata => ({
@@ -36,125 +49,91 @@ export const emptyMetadata = (): ContentMetadata => ({
   loader: '',
   minecraft: '',
   pack: '',
-  authors: ['XXX(作者)', 'XXX(翻译)'],
+  authors: [],
   links: [],
+  _raw: {},
 })
 
-function value(source: string, key: string) {
-  return (
-    source
-      .match(new RegExp(`^${key}:\\s*(.+)$`, 'm'))?.[1]
-      ?.trim()
-      .replace(/^['"]|['"]$/g, '') || ''
-  )
-}
-function bool(source: string, key: string, fallback: boolean) {
-  const raw = value(source, key)
-  return raw ? raw === 'true' : fallback
-}
-function nested(source: string, parent: string, key: string) {
-  return (
-    source
-      .match(new RegExp(`^${parent}:\\s*\\n(?:  .*\\n)*?  ${key}:\\s*(.+)$`, 'm'))?.[1]
-      ?.trim()
-      .replace(/^['"]|['"]$/g, '') || ''
-  )
-}
-function indentedBlock(source: string, key: string) {
-  const lines = source.replace(/\r\n/g, '\n').split('\n')
-  const start = lines.findIndex((line) => line === `${key}:`)
-  if (start < 0) return []
-  const block: string[] = []
-  for (const line of lines.slice(start + 1)) {
-    if (line && !/^\s/.test(line)) break
-    block.push(line)
-  }
-  return block
-}
+const record = (value: unknown): Record<string, any> =>
+  value && typeof value === 'object' && !Array.isArray(value) ? (value as Record<string, any>) : {}
+const text = (value: unknown) => (value == null ? '' : String(value))
 
 export function parseMetadata(source: string): ContentMetadata {
   const meta = emptyMetadata()
-  meta.title = value(source, 'title')
-  meta.originalName = value(source, 'originalName')
-  meta.icon = value(source, 'icon')
-  meta.updateDate = value(source, 'updateDate')
-  meta.featured = bool(source, 'featured', false)
-  meta.search = bool(source, 'search', true)
-  meta.sidebar = bool(source, 'sidebar', false)
-  meta.statusType = nested(source, 'status', 'type')
-  meta.loader = nested(source, 'compatibility', 'loader')
-  meta.minecraft = nested(source, 'compatibility', 'minecraft')
-  meta.pack = nested(source, 'compatibility', 'pack')
-  const description = source.match(/^description:\s*\|\s*\n((?:  .*\n?)*)/m)?.[1]
-  meta.description = description
-    ? description.replace(/^  /gm, '').trim()
-    : value(source, 'description')
-  meta.authors = indentedBlock(source, 'authors')
-    .map((line) => line.match(/^\s*-\s*['"]?(.*?)['"]?\s*$/)?.[1] || '')
-    .filter(Boolean)
-  const links: ContentLink[] = []
-  for (const line of indentedBlock(source, 'links')) {
-    const first = line.match(/^\s*-\s*id:\s*(.+)$/)
-    if (first) {
-      links.push({
-        id: first[1].trim().replace(/^['"]|['"]$/g, ''),
-        text: '',
-        link: '',
-        icon: '',
-        project: '',
-      })
-      continue
-    }
-    const property = line.match(/^\s+(text|link|icon|project):\s*(.+)$/)
-    if (property && links.length)
-      links.at(-1)![property[1] as 'text' | 'link' | 'icon' | 'project'] = property[2]
-        .trim()
-        .replace(/^['"]|['"]$/g, '')
+  let raw: Record<string, any> = {}
+  try {
+    raw = record(parse(source || '') || {})
+  } catch {
+    raw = {}
   }
-  meta.links = links.filter((item) => item.id || item.link)
+  const status = record(raw.status)
+  const compatibility = record(raw.compatibility)
+  meta.title = text(raw.title)
+  meta.originalName = text(raw.originalName)
+  meta.description = text(raw.description)
+  meta.icon = text(raw.icon)
+  meta.updateDate = text(raw.updateDate)
+  meta.featured = raw.featured === true
+  meta.search = raw.search !== false
+  meta.sidebar = raw.sidebar === true
+  meta.statusType = text(status.type)
+  meta.loader = text(compatibility.loader)
+  meta.minecraft = text(compatibility.minecraft)
+  meta.pack = text(compatibility.pack)
+  meta.authors = Array.isArray(raw.authors) ? raw.authors.map(text).filter(Boolean) : []
+  meta.links = Array.isArray(raw.links)
+    ? raw.links.map((value: unknown) => {
+        const link = record(value)
+        const { id, text: label, link: url, icon, project, ...extra } = link
+        return {
+          id: text(id),
+          text: text(label),
+          link: text(url),
+          icon: text(icon),
+          project: text(project),
+          _extra: extra,
+        }
+      })
+    : []
+  meta._raw = raw
   return meta
 }
 
-function quote(value: string) {
-  return JSON.stringify(value)
+function setOrDelete(target: Record<string, any>, key: string, value: unknown, keep = false) {
+  if (keep || (typeof value === 'string' ? value.trim() : value != null)) target[key] = value
+  else delete target[key]
 }
+
 export function stringifyMetadata(meta: ContentMetadata) {
-  const lines: string[] = []
-  const scalar = (key: string, value: string) => {
-    if (value.trim()) lines.push(`${key}: ${quote(value.trim())}`)
-  }
-  scalar('title', meta.title)
-  scalar('originalName', meta.originalName)
-  scalar('icon', meta.icon)
-  if (meta.description.trim())
-    lines.push(
-      'description: |',
-      ...meta.description
-        .trim()
-        .split('\n')
-        .map((line) => `  ${line}`),
-    )
-  scalar('updateDate', meta.updateDate)
-  lines.push(`featured: ${meta.featured}`, `search: ${meta.search}`, `sidebar: ${meta.sidebar}`)
-  if (meta.statusType) lines.push('status:', `  type: ${quote(meta.statusType)}`)
-  if (meta.loader || meta.minecraft || meta.pack) {
-    lines.push('compatibility:')
-    scalarNested(lines, 'loader', meta.loader)
-    scalarNested(lines, 'minecraft', meta.minecraft)
-    scalarNested(lines, 'pack', meta.pack)
-  }
-  if (meta.authors.filter(Boolean).length)
-    lines.push('authors:', ...meta.authors.filter(Boolean).map((author) => `  - ${quote(author)}`))
+  const raw = record(parse(stringify(record(meta._raw))) || {})
+  setOrDelete(raw, 'title', meta.title.trim())
+  setOrDelete(raw, 'originalName', meta.originalName.trim())
+  setOrDelete(raw, 'icon', meta.icon.trim())
+  setOrDelete(raw, 'description', meta.description.trim())
+  setOrDelete(raw, 'updateDate', meta.updateDate.trim())
+  raw.featured = meta.featured
+  raw.search = meta.search
+  raw.sidebar = meta.sidebar
+  const status = record(raw.status)
+  setOrDelete(status, 'type', meta.statusType.trim())
+  setOrDelete(raw, 'status', status, Object.keys(status).length > 0)
+  const compatibility = record(raw.compatibility)
+  setOrDelete(compatibility, 'loader', meta.loader.trim())
+  setOrDelete(compatibility, 'minecraft', meta.minecraft.trim())
+  setOrDelete(compatibility, 'pack', meta.pack.trim())
+  setOrDelete(raw, 'compatibility', compatibility, Object.keys(compatibility).length > 0)
+  if (meta.authors.filter((author) => author.trim()).length)
+    raw.authors = meta.authors.map((author) => author.trim()).filter(Boolean)
+  else delete raw.authors
   if (meta.links.length)
-    for (const [index, link] of meta.links.entries()) {
-      lines.push(index === 0 ? 'links:' : '', `  - id: ${quote(link.id)}`)
-      if (link.text) lines.push(`    text: ${quote(link.text)}`)
-      if (link.link) lines.push(`    link: ${quote(link.link)}`)
-      if (link.icon) lines.push(`    icon: ${quote(link.icon)}`)
-      if (link.project) lines.push(`    project: ${quote(link.project)}`)
-    }
-  return lines.filter((line, index) => line || lines[index - 1] !== '').join('\n')
-}
-function scalarNested(lines: string[], key: string, value: string) {
-  if (value.trim()) lines.push(`  ${key}: ${quote(value.trim())}`)
+    raw.links = meta.links.map((link) => ({
+      ...record(link._extra),
+      id: link.id,
+      ...(link.text ? { text: link.text } : {}),
+      ...(link.link ? { link: link.link } : {}),
+      ...(link.icon ? { icon: link.icon } : {}),
+      ...(link.project ? { project: link.project } : {}),
+    }))
+  else delete raw.links
+  return stringify(raw, { indent: 2, lineWidth: 0 }).trim()
 }

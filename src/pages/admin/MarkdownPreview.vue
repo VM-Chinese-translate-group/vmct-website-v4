@@ -14,7 +14,10 @@
     </div>
 
     <div class="admin-preview-viewport">
-      <DownloadLayout :meta="previewMeta">
+      <DocLayout v-if="pageKind === 'document'" :meta="previewMeta">
+        <article class="admin-preview-content" v-html="rendered" />
+      </DocLayout>
+      <DownloadLayout v-else :meta="previewMeta">
         <article class="admin-preview-content" v-html="rendered" />
       </DownloadLayout>
     </div>
@@ -26,9 +29,10 @@ import { computed } from 'vue'
 import MarkdownIt from 'markdown-it'
 import { container } from '@mdit/plugin-container'
 import DownloadLayout from '@/layout/DownloadLayout.vue'
-import type { ContentMetadata } from './types'
+import DocLayout from '@/layout/DocLayout.vue'
+import type { ContentMetadata, PageKind } from './types'
 
-const props = defineProps<{ body: string; metadata: ContentMetadata }>()
+const props = defineProps<{ body: string; metadata: ContentMetadata; pageKind: PageKind }>()
 const md = new MarkdownIt({ html: false, linkify: true })
 
 for (const type of ['tip', 'warning', 'info', 'details']) {
@@ -90,6 +94,8 @@ function previewSource(body: string) {
   return body
     .replace(/<DownloadLayout\b[^>]*>/g, '')
     .replace(/<\/DownloadLayout>/g, '')
+    .replace(/<DocLayout\b[^>]*>/g, '')
+    .replace(/<\/DocLayout>/g, '')
     .replace(
       /<DocSupport\s*\/>/g,
       `
@@ -104,7 +110,6 @@ function previewSource(body: string) {
 加入我们的 QQ 交流群，可以进一步了解翻译进度等最新消息。也欢迎参与贡献并加入 VM 汉化组！`,
     )
     .replace(/<DownloadLinks[\s\S]*?\/>/g, (source) => downloadPreview(source))
-    .replace(/::: (warning|info|tip|details) (.*)\n([\s\S]*?)\n:::/g, '> **$2**\n>\n> $3')
 }
 
 const rendered = computed(() => md.render(previewSource(props.body)))
@@ -120,6 +125,19 @@ const rendered = computed(() => md.render(previewSource(props.body)))
 .admin-preview-viewport :deep(.pack-page-container) {
   min-height: 0;
   padding: 1.25rem;
+}
+
+.admin-preview-viewport :deep(.doc-page-container) {
+  min-height: 0;
+  padding: 1.25rem;
+}
+
+.admin-preview-viewport :deep(.doc-main) {
+  display: block;
+}
+
+.admin-preview-viewport :deep(.doc-sidebar) {
+  display: none;
 }
 
 .admin-preview-viewport :deep(.pack-header) {

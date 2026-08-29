@@ -6,10 +6,28 @@ export interface ContentPageSummary {
   path: string
   draftFrontmatter: string
   state: 'draft' | 'published' | 'archived'
+  draftVersion: number
   publishedRevision: number | null
   createdAt: string
   updatedAt: string
   publishedAt: string | null
+}
+
+export interface ContentRevisionSummary {
+  revision: number
+  path: string
+  message: string | null
+  publishedAt: string
+}
+
+export interface ContentRevision extends ContentRevisionSummary {
+  frontmatter: string
+  body: string
+}
+
+export interface DeploymentResult {
+  requested: boolean
+  error?: string
 }
 
 export interface ContentPage extends ContentPageSummary {
@@ -19,10 +37,12 @@ export interface ContentPage extends ContentPageSummary {
   publishedBody: string | null
 }
 
-class ContentApiError extends Error {
+export class ContentApiError extends Error {
   constructor(
     message: string,
     public status: number,
+    public code?: string,
+    public page?: ContentPage,
   ) {
     super(message)
   }
@@ -38,9 +58,18 @@ async function request<T>(path: string, init: RequestInit = {}) {
       ...(init.headers || {}),
     },
   })
-  const body = (await response.json().catch(() => null)) as { error?: string } | null
+  const body = (await response.json().catch(() => null)) as {
+    error?: string
+    code?: string
+    page?: ContentPage
+  } | null
   if (!response.ok)
-    throw new ContentApiError(body?.error || 'HTTP ' + response.status, response.status)
+    throw new ContentApiError(
+      body?.error || 'HTTP ' + response.status,
+      response.status,
+      body?.code,
+      body?.page,
+    )
   return body as T
 }
 
@@ -185,7 +214,7 @@ export function createContentPage(input: { path: string; frontmatter: string; bo
 
 export function saveContentDraft(
   id: string,
-  input: { path: string; frontmatter: string; body: string },
+  input: { path: string; frontmatter: string; body: string; expectedDraftVersion: number },
 ) {
   return request<{ page: ContentPage }>('/pages/' + encodeURIComponent(id), {
     method: 'PUT',
@@ -193,16 +222,39 @@ export function saveContentDraft(
   })
 }
 
-export function publishContentPage(id: string) {
-  return request<{ page: ContentPage; deployment: { requested: boolean; error?: string } }>(
+export function publishContentPage(id: string, expectedDraftVersion: number, message = '') {
+  return request<{ page: ContentPage; deployment: DeploymentResult }>(
     '/pages/' + encodeURIComponent(id) + '/publish',
-    { method: 'POST', body: '{}' },
+    { method: 'POST', body: JSON.stringify({ expectedDraftVersion, message }) },
   )
 }
 
-export function archiveContentPage(id: string) {
-  return request<{ page: ContentPage; deployment: { requested: boolean; error?: string } }>(
+export function archiveContentPage(id: string, expectedDraftVersion: number) {
+  return request<{ page: ContentPage; deployment: DeploymentResult }>(
     '/pages/' + encodeURIComponent(id) + '/archive',
-    { method: 'POST', body: '{}' },
+    { method: 'POST', body: JSON.stringify({ expectedDraftVersion }) },
   )
+}
+
+export function listContentRevisions(id: string) {
+  return request<{ revisions: ContentRevisionSummary[] }>(
+    '/pages/' + encodeURIComponent(id) + '/revisions',
+  )
+}
+
+export function getContentRevision(id: string, revision: number) {
+  return request<{ revision: ContentRevision }>(
+    '/pages/' + encodeURIComponent(id) + '/revisions/' + revision,
+  )
+}
+
+export function restoreContentRevision(id: string, revision: number, expectedDraftVersion: number) {
+  return request<{ page: ContentPage }>(
+    '/pages/' + encodeURIComponent(id) + '/revisions/' + revision + '/restore',
+    { method: 'POST', body: JSON.stringify({ expectedDraftVersion }) },
+  )
+}
+
+export function retryContentDeployment() {
+  return request<{ deployment: DeploymentResult }>('/deploy', { method: 'POST', body: '{}' })
 }

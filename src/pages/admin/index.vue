@@ -1,447 +1,368 @@
 <template>
   <main
-    class="mx-auto min-h-[70vh] w-[min(1500px,calc(100%-2rem))] pb-14 pt-3 text-[var(--text-1)] max-sm:w-[calc(100%-1.25rem)] max-sm:pt-3"
+    class="mx-auto min-h-[70vh] w-[min(1600px,calc(100%-2rem))] pb-14 pt-3 text-[var(--text-1)] max-sm:w-[calc(100%-1.25rem)]"
   >
-    <section
-      v-if="!loggedIn"
-      class="mx-auto mt-[10vh] w-[min(26rem,100%)] rounded-2xl border border-[var(--switcher-border)] bg-[var(--bg-alt)] p-7 shadow-[var(--switcher-shadow)]"
-    >
-      <p class="mb-2 text-xs font-800 tracking-[0.14em] text-[var(--info-1)]">CONTENT CMS</p>
-      <h1 class="m-0 text-2xl">{{ needsSetup ? '设置后台密码' : '后台登录' }}</h1>
+    <Transition name="cms-toast">
       <p
         v-if="notice"
-        class="my-4 rounded-lg px-3 py-2 text-sm"
-        :class="
-          noticeKind === 'success'
-            ? 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-300'
-            : 'bg-red-500/10 text-red-600 dark:text-red-400'
-        "
+        class="fixed left-1/2 top-20 z-80 m-0 max-w-[calc(100%-2rem)] -translate-x-1/2 rounded-xl px-4 py-3 text-sm shadow-lg"
+        :class="noticeKind === 'success' ? 'bg-emerald-700 text-white' : 'bg-red-700 text-white'"
       >
         {{ notice }}
       </p>
-      <form class="mt-6 grid gap-3" @submit.prevent="authenticate">
-        <input
-          v-model="password"
-          type="password"
-          placeholder="至少 6 位，可含数字、字母或符号"
-          class="cms-field"
-          minlength="6"
-          required
-        />
-        <button class="cms-primary-button" :disabled="busy">
-          {{ needsSetup ? '设置并进入后台' : '登录' }}
-        </button>
-      </form>
-    </section>
+    </Transition>
+
+    <AdminLogin v-if="!loggedIn" :needs-setup="needsSetup" :busy="busy" @submit="authenticate" />
+
     <template v-else>
       <header
         class="mb-4 flex items-center justify-between gap-4 max-sm:items-stretch max-sm:flex-col"
       >
         <div>
-          <p class="mb-1.5 text-xs font-800 tracking-[0.14em] text-[var(--info-1)]">CONTENT CMS</p>
+          <p class="mb-1 text-xs font-800 tracking-[0.14em] text-[var(--info-1)]">CONTENT CMS</p>
           <h1 class="m-0 text-3xl leading-tight max-sm:text-2xl">
-            {{ isSettingsPage ? '高级设置' : '页面内容管理' }}
+            {{ isSettingsPage ? '后台设置' : '内容工作台' }}
           </h1>
-          <p class="mb-0 mt-1.5 text-sm text-[var(--text-2)]">
-            {{
-              isSettingsPage
-                ? '管理内容部署和后台登录安全。'
-                : '编辑元数据、正文并实时检查最终页面效果。'
-            }}
+          <p class="mb-0 mt-1 text-sm text-[var(--text-2)]">
+            {{ isSettingsPage ? '管理部署与登录安全。' : '草稿自动保存，发布仍由你确认。' }}
           </p>
         </div>
         <div
-          class="flex flex-wrap gap-1.5 rounded-xl border border-[var(--switcher-border)] bg-[var(--bg-alt)] p-1.5 shadow-sm max-sm:w-full"
+          class="flex flex-wrap gap-1.5 rounded-xl border border-[var(--switcher-border)] bg-[var(--bg-alt)] p-1.5 shadow-sm"
         >
-          <button class="cms-button" @click="openAdminSection">
-            {{ isSettingsPage ? '返回编辑器' : '高级设置' }}
+          <button class="cms-button" type="button" @click="openSection">
+            {{ isSettingsPage ? '返回工作台' : '后台设置' }}
           </button>
-          <button class="cms-button" @click="logout">退出</button>
+          <button class="cms-button" type="button" @click="logout">退出</button>
         </div>
       </header>
-      <p
-        v-if="notice"
-        class="my-4 rounded-xl px-4 py-3 text-sm"
-        :class="
-          noticeKind === 'success'
-            ? 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-300'
-            : 'bg-red-500/10 text-red-600 dark:text-red-400'
-        "
-      >
-        {{ notice }}
-      </p>
-      <div v-if="isSettingsPage" class="grid gap-5">
+
+      <AdminSettings
+        v-if="isSettingsPage"
+        :deployment-hook="deployHook"
+        :managed-by-environment="passwordManagedByEnvironment"
+        :busy="busy"
+        @save-hook="saveSettings"
+        @change-password="changePassword"
+        @retry-deploy="retryDeploy"
+      />
+
+      <div v-else class="grid grid-cols-[17rem_minmax(0,1fr)] items-start gap-4 max-lg:grid-cols-1">
+        <ContentLibrary
+          :pages="editor.pages.value"
+          :selected-id="editor.draft.id"
+          @open="editor.open"
+          @new="editor.createNew"
+        />
+
         <section
-          class="rounded-2xl border border-[var(--switcher-border)] bg-[var(--bg-alt)] p-6 shadow-[var(--vp-shadow-1)] max-sm:p-4"
+          class="min-w-0 rounded-2xl border border-[var(--switcher-border)] bg-[var(--bg-soft)] shadow-[var(--vp-shadow-1)]"
         >
-          <h2 class="m-0 text-xl">部署设置</h2>
-          <p class="text-sm text-[var(--text-2)]">
-            粘贴 Cloudflare Pages 的 Production Deploy Hook URL。发布时只触发一次完整构建。
-          </p>
-          <div class="flex gap-2 max-sm:flex-col">
-            <input
-              v-model="deployHook"
-              class="cms-field flex-1"
-              type="url"
-              placeholder="https://api.cloudflare.com/..."
-            />
-            <button class="cms-button" @click="saveSettings">保存部署设置</button>
-          </div>
-        </section>
-        <section
-          class="rounded-2xl border border-[var(--switcher-border)] bg-[var(--bg-alt)] p-6 shadow-[var(--vp-shadow-1)] max-sm:p-4"
-        >
-          <h2 class="m-0 text-xl">安全设置</h2>
-          <p class="text-sm text-[var(--text-2)]">
-            新密码只在本机派生，服务器不会收到原始密码。修改后所有设备会退出登录。
-          </p>
-          <div v-if="passwordManagedByEnvironment" class="text-sm text-[var(--text-muted)]">
-            当前密码由 Cloudflare 加密变量管理，请在项目设置中更新。
-          </div>
-          <form v-else class="grid max-w-lg gap-2" @submit.prevent="changePassword">
-            <input
-              v-model="newPassword"
-              class="cms-field"
-              type="password"
-              minlength="6"
-              placeholder="新密码（至少 6 位）"
-              required
-            />
-            <input
-              v-model="newPasswordConfirmation"
-              class="cms-field"
-              type="password"
-              minlength="6"
-              placeholder="再次输入新密码"
-              required
-            />
-            <button class="cms-button w-fit" :disabled="busy">修改密码</button>
-          </form>
-        </section>
-      </div>
-      <div
-        v-else
-        class="grid grid-cols-[17rem_minmax(0,1fr)] items-start overflow-visible rounded-2xl border border-[var(--switcher-border)] bg-[var(--bg-soft)] shadow-[var(--vp-shadow-1)] max-lg:grid-cols-1"
-      >
-        <aside
-          class="sticky top-22 flex max-h-[calc(100vh-6.5rem)] flex-col overflow-hidden rounded-l-2xl border-r border-[var(--switcher-border)] bg-[var(--bg-soft)] p-2.5 max-lg:relative max-lg:top-auto max-lg:max-h-60 max-lg:rounded-t-2xl max-lg:rounded-bl-none max-lg:border-b max-lg:border-r-0"
-        >
-          <div class="shrink-0">
-            <button
-              class="cms-page-row"
-              :class="{ 'bg-[var(--info-soft)] text-[var(--info-1)]': !draft.id }"
-              @click="newPageMenuLocation = newPageMenuLocation === 'aside' ? '' : 'aside'"
-            >
-              ＋ 新页面
-            </button>
-            <div v-if="newPageMenuLocation === 'aside'" class="grid gap-1 px-1 py-1">
-              <button
-                v-for="type in pageTypes"
-                :key="type.value"
-                class="cms-page-row"
-                type="button"
-                @click="newPage(type.value)"
-              >
-                <span>{{ type.label }}</span>
-                <small class="text-[var(--text-muted)]">{{ type.hint }}</small>
-              </button>
-            </div>
-            <label class="sr-only" for="page-search">搜索页面</label>
-            <input
-              id="page-search"
-              v-model="pageSearch"
-              class="cms-field my-2 w-full text-sm"
-              type="search"
-              placeholder="搜索页面路径"
-            />
-          </div>
-          <div class="min-h-0 flex-1 overflow-y-auto overscroll-contain pr-1">
-            <details
-              v-for="group in groupedPages"
-              :key="group.type.value"
-              class="group/category my-1"
-              :open="group.type.value !== 'document' && Boolean(group.pages.length)"
-            >
-              <summary
-                class="cms-category-summary flex cursor-pointer list-none items-center gap-2 rounded-lg px-3 py-2 font-700 hover:bg-[var(--bg-alt)]"
-              >
-                <span
-                  class="w-4 shrink-0 text-center transition-transform group-open/category:rotate-90"
-                >
-                  ›
+          <header
+            class="sticky top-18 z-20 flex items-center justify-between gap-3 rounded-t-2xl border-b border-[var(--switcher-border)] bg-[color-mix(in_srgb,var(--bg-alt)_94%,transparent)] px-5 py-3 backdrop-blur max-sm:items-start max-sm:flex-col max-sm:px-3"
+          >
+            <div class="min-w-0">
+              <div class="flex flex-wrap items-center gap-2">
+                <h2 class="m-0 truncate text-xl">
+                  {{ editor.draft.metadata.title || (editor.draft.id ? '未命名页面' : '新页面') }}
+                </h2>
+                <span class="rounded-full px-2 py-1 text-xs font-700" :class="saveStateClass">
+                  {{ saveStateLabel }}
                 </span>
-                <span>{{ group.type.label }}</span>
-                <small class="ml-auto text-[var(--text-muted)]">{{ group.pages.length }}</small>
-              </summary>
-              <div class="grid gap-0.5 pl-3">
-                <button
-                  v-for="page in group.pages"
-                  :key="page.id"
-                  class="cms-page-row"
-                  :class="{ 'bg-[var(--info-soft)] text-[var(--info-1)]': page.id === draft.id }"
-                  @click="openPage(page.id)"
-                >
-                  <span class="truncate">{{ pageDisplayTitle(page) }}</span>
-                  <small class="shrink-0" :class="stateClass(page.state)">
-                    {{ label(page.state) }}
-                  </small>
-                </button>
-                <p
-                  v-if="!group.pages.length"
-                  class="m-0 px-3 py-2 text-xs text-[var(--text-muted)]"
-                >
-                  暂无内容
-                </p>
               </div>
-            </details>
-            <p
-              v-if="pageSearch && !filteredPages.length"
-              class="px-3 py-2 text-sm text-[var(--text-muted)]"
-            >
-              未找到匹配页面
-            </p>
-          </div>
-        </aside>
-        <section class="grid min-w-0 gap-5 p-6 max-sm:p-3">
-          <div class="flex items-center justify-between gap-3 max-sm:items-start max-sm:flex-col">
-            <div>
-              <h2 class="m-0 text-xl">{{ draft.id ? '编辑页面' : '新建页面' }}</h2>
-              <p class="mb-0 mt-1 text-xs text-[var(--text-muted)]">
-                {{ draft.id ? draft.path : '选择类型后填写页面标识' }}
+              <p class="mb-0 mt-1 truncate font-mono text-xs text-[var(--text-muted)]">
+                {{ editor.draft.path ? `/${editor.draft.path}` : '尚未填写路径' }}
               </p>
             </div>
             <div class="flex flex-wrap gap-2">
-              <button class="cms-button" :disabled="busy || !canSave" @click="save">
-                保存草稿
+              <button
+                class="cms-button"
+                type="button"
+                :disabled="busy || editor.saveState.value === 'saving'"
+                @click="editor.saveNow"
+              >
+                立即保存
+              </button>
+              <button
+                class="cms-button"
+                type="button"
+                :disabled="!editor.draft.id"
+                @click="editor.duplicate"
+              >
+                复制
+              </button>
+              <button
+                class="cms-button"
+                type="button"
+                :disabled="!editor.draft.id"
+                @click="historyOpen = true"
+              >
+                历史
               </button>
               <button
                 class="cms-primary-button bg-gradient-to-br from-emerald-700 to-emerald-500"
-                :disabled="busy || !canSave"
-                @click="publish"
+                type="button"
+                :disabled="busy || !editor.draft.id || editor.saveState.value === 'conflict'"
+                @click="preparePublish"
               >
-                发布并完整构建
+                发布
               </button>
               <button
-                v-if="draft.id && draft.state !== 'archived'"
+                v-if="editor.draft.id && editor.draft.state !== 'archived'"
                 class="cms-danger-button"
+                type="button"
                 :disabled="busy"
                 @click="archive"
               >
                 下线
               </button>
             </div>
-          </div>
-          <div class="grid gap-2">
-            <span class="cms-label">页面类型</span>
-            <div class="grid grid-cols-3 gap-2 max-sm:grid-cols-1">
-              <button
-                v-for="type in pageTypes"
-                :key="type.value"
-                class="cms-button justify-start text-left"
-                :class="
-                  pageKind === type.value
-                    ? 'border-[var(--info-1)] bg-[var(--info-soft)] text-[var(--info-1)]'
-                    : ''
-                "
-                type="button"
-                @click="selectPageType(type.value)"
-              >
-                <span>{{ type.label }}</span>
-                <small class="ml-auto text-[var(--text-muted)]">{{ type.hint }}</small>
-              </button>
-            </div>
-          </div>
-          <label class="cms-label">
-            {{ pageKind === 'document' ? '页面路径' : '页面标识' }}
-            <input v-model="pageSlug" class="cms-field font-mono" :placeholder="pathPlaceholder" />
-            <small v-if="pagePrefix" class="text-[var(--text-muted)]">
-              将创建为 /{{ pagePrefix }}{{ pageSlug || '页面标识' }}
-            </small>
-          </label>
-          <MetadataForm v-model="draft.metadata" :page-kind="pageKind" />
+          </header>
+
           <div
-            class="grid grid-cols-[minmax(0,1fr)_minmax(20rem,0.9fr)] gap-5 xl:grid-cols-2 max-xl:grid-cols-1"
+            v-if="editor.saveState.value === 'conflict'"
+            class="m-4 flex flex-wrap items-center gap-3 rounded-xl bg-red-500/10 p-4 text-sm text-red-700 dark:text-red-300"
           >
-            <div class="grid content-start gap-2 self-start">
-              <h3 class="m-0 text-lg">Markdown 正文</h3>
-              <MarkdownEditor v-model="draft.body" />
-            </div>
-            <MarkdownPreview :body="draft.body" :metadata="draft.metadata" />
+            <strong>检测到其他窗口保存了新版本。</strong>
+            <span>请选择保留服务器版本，或用当前内容覆盖。</span>
+            <button class="cms-button ml-auto" type="button" @click="editor.useServerVersion">
+              使用服务器版本
+            </button>
+            <button class="cms-danger-button" type="button" @click="editor.overwriteServerVersion">
+              覆盖服务器版本
+            </button>
+          </div>
+          <div
+            v-else-if="editor.saveState.value === 'error'"
+            class="m-4 flex items-center gap-3 rounded-xl bg-red-500/10 p-4 text-sm text-red-700 dark:text-red-300"
+          >
+            <span>{{ editor.saveError.value }}</span>
+            <button class="cms-button ml-auto" @click="editor.saveNow">重试保存</button>
+          </div>
+
+          <nav
+            class="mx-3 mt-3 hidden grid-cols-3 gap-1 rounded-xl bg-[var(--bg-alt)] p-1 max-lg:grid"
+          >
+            <button
+              v-for="tab in tabs"
+              :key="tab.value"
+              class="cms-button border-0"
+              :class="{ 'bg-[var(--info-soft)] text-[var(--info-1)]': activeTab === tab.value }"
+              @click="activeTab = tab.value"
+            >
+              {{ tab.label }}
+            </button>
+          </nav>
+
+          <div class="grid gap-5 p-5 max-sm:p-3">
+            <section :class="{ 'max-lg:hidden': activeTab !== 'metadata' }" class="grid gap-4">
+              <div class="grid gap-2">
+                <span class="cms-label">页面类型</span>
+                <div class="grid grid-cols-3 gap-2 max-sm:grid-cols-1">
+                  <button
+                    v-for="type in PAGE_TYPES"
+                    :key="type.value"
+                    class="cms-button justify-start"
+                    :class="
+                      editor.pageKind.value === type.value
+                        ? 'border-[var(--info-1)] bg-[var(--info-soft)] text-[var(--info-1)]'
+                        : ''
+                    "
+                    @click="editor.selectPageType(type.value)"
+                  >
+                    <Icon :icon="type.icon" />
+                    <span>{{ type.label }}</span>
+                    <small class="ml-auto text-[var(--text-muted)]">{{ type.hint }}</small>
+                  </button>
+                </div>
+              </div>
+              <label class="cms-label">
+                {{ editor.pageKind.value === 'document' ? '页面路径' : '页面标识' }}
+                <input
+                  v-model="pageSlug"
+                  class="cms-field font-mono"
+                  :placeholder="
+                    editor.pageKind.value === 'document'
+                      ? '例如 guides/getting-started'
+                      : '例如 evergrowth'
+                  "
+                />
+                <small class="text-[var(--text-muted)]">
+                  最终地址：/{{ editor.draft.path || '尚未填写' }}
+                </small>
+              </label>
+              <MetadataForm v-model="editor.draft.metadata" :page-kind="editor.pageKind.value" />
+            </section>
+
+            <section
+              :class="{ 'max-lg:hidden': activeTab !== 'content' }"
+              class="grid content-start gap-2"
+            >
+              <div class="flex items-center justify-between">
+                <h3 class="m-0 text-lg">Markdown 正文</h3>
+                <small class="text-[var(--text-muted)]">{{ editor.draft.body.length }} 字符</small>
+              </div>
+              <MarkdownEditor v-model="editor.draft.body" />
+            </section>
+
+            <section :class="{ 'max-lg:hidden': activeTab !== 'preview' }">
+              <MarkdownPreview
+                :body="editor.draft.body"
+                :metadata="editor.draft.metadata"
+                :page-kind="editor.pageKind.value"
+              />
+            </section>
+
+            <section
+              v-if="editor.issues.value.length"
+              class="rounded-xl border border-[var(--switcher-border)] bg-[var(--bg-alt)] p-4"
+            >
+              <h3 class="m-0 text-base">内容检查</h3>
+              <ul class="mb-0 mt-2 grid gap-1 pl-5 text-sm">
+                <li
+                  v-for="issue in editor.issues.value"
+                  :key="issue.field + issue.message"
+                  :class="
+                    issue.level === 'error'
+                      ? 'text-red-700 dark:text-red-300'
+                      : 'text-amber-800 dark:text-amber-200'
+                  "
+                >
+                  {{ issue.message }}
+                </li>
+              </ul>
+            </section>
           </div>
         </section>
       </div>
     </template>
+
+    <PublishDialog
+      :open="publishOpen"
+      :busy="busy"
+      :errors="editor.errors.value"
+      :warnings="editor.warnings.value"
+      @close="publishOpen = false"
+      @confirm="publish"
+    />
+    <RevisionPanel
+      :open="historyOpen"
+      :page-id="editor.draft.id"
+      :current-frontmatter="currentFrontmatter"
+      :current-body="editor.draft.body"
+      @close="historyOpen = false"
+      @restore="restoreRevision"
+    />
   </main>
 </template>
-<style scoped>
-.cms-category-summary::marker {
-  display: none;
-}
-</style>
+
 <script setup lang="ts">
-import { computed, onMounted, reactive, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
+import { Icon } from '@iconify/vue'
 import { useRoute, useRouter } from 'vue-router'
 import {
   archiveContentPage,
   changeContentAdminPassword,
-  createContentPage,
   getContentAuthStatus,
-  getContentPage,
   getContentSettings,
-  listContentPages,
   loginContentAdmin,
   logoutContentAdmin,
   publishContentPage,
-  saveContentDraft,
+  restoreContentRevision,
+  retryContentDeployment,
   saveContentSettings,
   setupContentAdmin,
-  type ContentPage,
-  type ContentPageSummary,
 } from '@/api/contentAdmin'
+import AdminLogin from './AdminLogin.vue'
+import AdminSettings from './AdminSettings.vue'
+import ContentLibrary from './ContentLibrary.vue'
 import MarkdownEditor from './MarkdownEditor.vue'
 import MarkdownPreview from './MarkdownPreview.vue'
 import MetadataForm from './MetadataForm.vue'
-import { emptyMetadata, parseMetadata, stringifyMetadata } from './types'
-type PageKind = 'document' | 'modpack' | 'map'
+import PublishDialog from './PublishDialog.vue'
+import RevisionPanel from './RevisionPanel.vue'
+import { PAGE_TYPES } from './contentConfig'
+import { stringifyMetadata } from './types'
+import { useContentEditor } from './useContentEditor'
 
-const route = useRoute()
-const router = useRouter()
-const isSettingsPage = computed(() => route.name === 'content-admin-settings')
-
-const pageTypes: { value: PageKind; label: string; hint: string; prefix: string }[] = [
-  { value: 'document', label: '文档', hint: '普通页面', prefix: '' },
-  { value: 'modpack', label: '整合包', hint: '/modpacks/', prefix: 'modpacks/' },
-  { value: 'map', label: '地图', hint: '/map/', prefix: 'map/' },
-]
+const route = useRoute(),
+  router = useRouter()
 const loggedIn = ref(false),
   needsSetup = ref(false),
   passwordManagedByEnvironment = ref(false),
-  password = ref(''),
-  newPassword = ref(''),
-  newPasswordConfirmation = ref(''),
-  busy = ref(false),
+  busy = ref(false)
+const deployHook = ref(''),
   notice = ref(''),
-  noticeKind = ref<'success' | 'error'>('success'),
-  pages = ref<ContentPageSummary[]>([]),
-  pageSearch = ref(''),
-  deployHook = ref(''),
-  newPageMenuLocation = ref<'header' | 'aside' | ''>(''),
-  pageKind = ref<PageKind>('document')
-const draft = reactive({
-  id: '',
-  path: '',
-  metadata: emptyMetadata(),
-  body: '',
-  state: '' as ContentPage['state'] | '',
-})
-const canSave = computed(() => Boolean(draft.path.trim() && draft.body.trim()))
-const selectedPageType = computed(() => pageTypes.find((type) => type.value === pageKind.value)!)
-const pagePrefix = computed(() => selectedPageType.value.prefix)
-const pageSlug = computed({
-  get: () =>
-    pagePrefix.value && draft.path.startsWith(pagePrefix.value)
-      ? draft.path.slice(pagePrefix.value.length)
-      : draft.path,
-  set: (value: string) => {
-    draft.path = `${pagePrefix.value}${value.replace(/^\/+/, '')}`
-  },
-})
-const pathPlaceholder = computed(() =>
-  pageKind.value === 'document' ? '例如 guides/getting-started' : '例如 evergrowth',
-)
-const filteredPages = computed(() => {
-  const keyword = pageSearch.value.trim().toLocaleLowerCase()
-  if (!keyword) return pages.value
-  return pages.value.filter(
-    (page) =>
-      page.path.toLocaleLowerCase().includes(keyword) ||
-      pageDisplayTitle(page).toLocaleLowerCase().includes(keyword),
-  )
-})
-const groupedPages = computed(() =>
-  pageTypes.map((type) => ({
-    type,
-    pages: filteredPages.value.filter((page) => pageType(page.path).value === type.value),
-  })),
-)
+  noticeKind = ref<'success' | 'error'>('success')
+const publishOpen = ref(false),
+  historyOpen = ref(false),
+  activeTab = ref<'metadata' | 'content' | 'preview'>('metadata')
+const tabs = [
+  { value: 'metadata' as const, label: '基本信息' },
+  { value: 'content' as const, label: '正文' },
+  { value: 'preview' as const, label: '预览' },
+]
+let noticeTimer: ReturnType<typeof setTimeout> | undefined
+const isSettingsPage = computed(() => route.name === 'content-admin-settings')
 const show = (message: string, kind: 'success' | 'error' = 'success') => {
   notice.value = message
   noticeKind.value = kind
+  if (noticeTimer) clearTimeout(noticeTimer)
+  noticeTimer = setTimeout(() => {
+    notice.value = ''
+  }, 6000)
 }
-const label = (state: string) =>
-  (({ draft: '草稿', published: '已发布', archived: '已下线' }) as Record<string, string>)[state] ||
-  state
-const stateClass = (state: string) =>
-  ({
-    draft: 'text-amber-700 dark:text-amber-300',
-    published: 'text-emerald-700 dark:text-emerald-300',
-    archived: 'text-[var(--text-muted)]',
-  })[state] || 'text-[var(--text-muted)]'
-function apply(page: ContentPage) {
-  draft.id = page.id
-  draft.path = page.path
-  draft.metadata = parseMetadata(page.draftFrontmatter)
-  draft.body = page.draftBody
-  draft.state = page.state
-  pageKind.value = pageType(page.path).value
+const editor = useContentEditor(show)
+const selectedType = computed(() =>
+  PAGE_TYPES.find((type) => type.value === editor.pageKind.value)!,
+)
+const currentFrontmatter = computed(() => stringifyMetadata(editor.draft.metadata))
+const pageSlug = computed({
+  get: () =>
+    selectedType.value.prefix && editor.draft.path.startsWith(selectedType.value.prefix)
+      ? editor.draft.path.slice(selectedType.value.prefix.length)
+      : editor.draft.path,
+  set: (value: string) => {
+    editor.draft.path = selectedType.value.prefix + value.replace(/^\/+/, '')
+  },
+})
+const saveStateLabel = computed(
+  () =>
+    ({
+      idle: '等待填写',
+      dirty: '有修改',
+      saving: '保存中…',
+      saved: '已保存',
+      error: '保存失败',
+      conflict: '版本冲突',
+    })[editor.saveState.value],
+)
+const saveStateClass = computed(
+  () =>
+    ({
+      idle: 'bg-[var(--bg-alt)] text-[var(--text-muted)]',
+      dirty: 'bg-amber-500/10 text-amber-700 dark:text-amber-300',
+      saving: 'bg-blue-500/10 text-blue-700 dark:text-blue-300',
+      saved: 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-300',
+      error: 'bg-red-500/10 text-red-700 dark:text-red-300',
+      conflict: 'bg-red-500/10 text-red-700 dark:text-red-300',
+    })[editor.saveState.value],
+)
+
+async function loadAdmin() {
+  await Promise.all([editor.refresh(), loadSettings()])
+  if (editor.pages.value.length && !editor.draft.id) await editor.open(editor.pages.value[0].id)
+  else if (!editor.pages.value.length) await editor.createNew('document')
 }
-function pageType(path: string) {
-  return pageTypes.find((type) => type.prefix && path.startsWith(type.prefix)) || pageTypes[0]
-}
-function displayPagePath(path: string) {
-  const type = pageType(path)
-  return type.prefix && path.startsWith(type.prefix) ? path.slice(type.prefix.length) : path
-}
-function pageDisplayTitle(page: ContentPageSummary) {
-  const title = parseMetadata(page.draftFrontmatter || '').title
-  return title.replace(/\s*汉化下载\s*$/, '') || title || displayPagePath(page.path)
-}
-function selectPageType(type: PageKind) {
-  const previousPrefix = pagePrefix.value
-  const slug =
-    previousPrefix && draft.path.startsWith(previousPrefix)
-      ? draft.path.slice(previousPrefix.length)
-      : draft.path
-  pageKind.value = type
-  if (type !== 'document') draft.metadata.sidebar = false
-  draft.path = `${pageTypes.find((item) => item.value === type)!.prefix}${slug}`
-}
-function newPage(type: PageKind = 'document') {
-  draft.id = ''
-  draft.path = ''
-  draft.metadata = emptyMetadata()
-  draft.body = ''
-  draft.state = ''
-  pageKind.value = type
-  newPageMenuLocation.value = ''
-}
-function openAdminSection() {
-  newPageMenuLocation.value = ''
-  void router.push(isSettingsPage.value ? '/admin' : '/admin/settings')
-}
-async function refresh() {
-  pages.value = (await listContentPages()).pages
-}
-async function openPage(id: string) {
+async function authenticate(password: string) {
   busy.value = true
   try {
-    apply((await getContentPage(id)).page)
-  } catch (error) {
-    show(error instanceof Error ? error.message : '无法读取页面', 'error')
-  } finally {
-    busy.value = false
-  }
-}
-async function authenticate() {
-  busy.value = true
-  notice.value = ''
-  try {
-    if (needsSetup.value) await setupContentAdmin(password.value)
-    else await loginContentAdmin(password.value)
+    if (needsSetup.value) await setupContentAdmin(password)
+    else await loginContentAdmin(password)
     needsSetup.value = false
-    password.value = ''
     loggedIn.value = true
-    await Promise.all([refresh(), loadSettings()])
+    await loadAdmin()
+    show('已进入内容工作台。')
   } catch (error) {
     show(error instanceof Error ? error.message : '登录失败', 'error')
   } finally {
@@ -451,66 +372,63 @@ async function authenticate() {
 async function loadSettings() {
   deployHook.value = (await getContentSettings()).deploymentHookUrl
 }
-async function changePassword() {
-  if (newPassword.value !== newPasswordConfirmation.value) {
-    show('两次输入的新密码不一致。', 'error')
-    return
-  }
+async function saveSettings(value: string) {
   busy.value = true
   try {
-    await changeContentAdminPassword(newPassword.value)
-    newPassword.value = ''
-    newPasswordConfirmation.value = ''
+    deployHook.value = (await saveContentSettings(value)).deploymentHookUrl
+    show('部署设置已保存。')
+  } catch (error) {
+    show(error instanceof Error ? error.message : '保存失败', 'error')
+  } finally {
+    busy.value = false
+  }
+}
+async function changePassword(value: string) {
+  busy.value = true
+  try {
+    await changeContentAdminPassword(value)
     loggedIn.value = false
-    show('密码已修改，所有设备均已退出。请使用新密码重新登录。')
+    show('密码已修改，请重新登录。')
   } catch (error) {
     show(error instanceof Error ? error.message : '修改密码失败', 'error')
   } finally {
     busy.value = false
   }
 }
-async function saveSettings() {
+async function retryDeploy() {
   busy.value = true
   try {
-    await saveContentSettings(deployHook.value)
-    show('Deploy Hook 已保存。')
-  } catch (error) {
-    show(error instanceof Error ? error.message : '保存失败', 'error')
-  } finally {
-    busy.value = false
-  }
-}
-async function save() {
-  busy.value = true
-  try {
-    const input = {
-      path: draft.path,
-      frontmatter: stringifyMetadata(draft.metadata),
-      body: draft.body,
-    }
-    apply(
-      (draft.id ? await saveContentDraft(draft.id, input) : await createContentPage(input)).page,
+    const result = (await retryContentDeployment()).deployment
+    show(
+      result.requested
+        ? '已请求 Cloudflare 完整构建。'
+        : `构建未触发：${result.error || '未知错误'}`,
+      result.requested ? 'success' : 'error',
     )
-    await refresh()
-    show('草稿已保存，网站尚未更新。')
   } catch (error) {
-    show(error instanceof Error ? error.message : '保存失败', 'error')
+    show(error instanceof Error ? error.message : '构建请求失败', 'error')
   } finally {
     busy.value = false
   }
 }
-async function publish() {
-  await save()
-  if (!draft.id || noticeKind.value === 'error') return
+async function preparePublish() {
+  if (!(await editor.saveNow()) || !editor.draft.id) {
+    show('请先解决草稿保存问题。', 'error')
+    return
+  }
+  publishOpen.value = true
+}
+async function publish(message: string) {
   busy.value = true
   try {
-    const result = await publishContentPage(draft.id)
-    apply(result.page)
-    await refresh()
+    const result = await publishContentPage(editor.draft.id, editor.draft.draftVersion, message)
+    editor.apply(result.page)
+    await editor.refresh()
+    publishOpen.value = false
     show(
       result.deployment.requested
-        ? '已发布，Cloudflare 正在完整构建。'
-        : '内容已发布，但构建未触发：' + (result.deployment.error || '未知错误'),
+        ? '内容已发布，Cloudflare 正在构建。'
+        : `内容已发布，但构建未触发：${result.deployment.error || '未知错误'}`,
       result.deployment.requested ? 'success' : 'error',
     )
   } catch (error) {
@@ -520,16 +438,20 @@ async function publish() {
   }
 }
 async function archive() {
-  if (!draft.id || !window.confirm('确定下线这个页面吗？')) return
+  if (!window.confirm('确定下线这个页面吗？网站构建后将不再公开显示。')) return
+  if (!(await editor.saveNow())) {
+    show('请先解决草稿保存问题。', 'error')
+    return
+  }
   busy.value = true
   try {
-    const result = await archiveContentPage(draft.id)
-    apply(result.page)
-    await refresh()
+    const result = await archiveContentPage(editor.draft.id, editor.draft.draftVersion)
+    editor.apply(result.page)
+    await editor.refresh()
     show(
       result.deployment.requested
-        ? '已下线，Cloudflare 正在完整构建。'
-        : '页面已下线，但构建未触发。',
+        ? '页面已下线，Cloudflare 正在构建。'
+        : `页面已下线，但构建未触发：${result.deployment.error || '未知错误'}`,
       result.deployment.requested ? 'success' : 'error',
     )
   } catch (error) {
@@ -538,20 +460,50 @@ async function archive() {
     busy.value = false
   }
 }
+async function restoreRevision(revision: number) {
+  if (!window.confirm(`将版本 ${revision} 恢复为当前草稿吗？不会自动发布。`)) return
+  busy.value = true
+  try {
+    const result = await restoreContentRevision(
+      editor.draft.id,
+      revision,
+      editor.draft.draftVersion,
+    )
+    editor.apply(result.page)
+    await editor.refresh()
+    historyOpen.value = false
+    show(`版本 ${revision} 已恢复为草稿。`)
+  } catch (error) {
+    show(error instanceof Error ? error.message : '恢复失败', 'error')
+  } finally {
+    busy.value = false
+  }
+}
+async function openSection() {
+  if (!isSettingsPage.value && !(await editor.leaveCurrent())) return
+  await router.push(isSettingsPage.value ? '/admin' : '/admin/settings')
+}
 async function logout() {
+  if (!(await editor.leaveCurrent())) return
   await logoutContentAdmin().catch(() => {})
   loggedIn.value = false
-  password.value = ''
-  newPage()
+  await router.push('/admin')
+}
+const keydown = (event: KeyboardEvent) => {
+  if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 's') {
+    event.preventDefault()
+    void editor.saveNow()
+  }
 }
 onMounted(async () => {
+  document.addEventListener('keydown', keydown)
   try {
     const status = await getContentAuthStatus()
     needsSetup.value = status.needsSetup
     passwordManagedByEnvironment.value = status.managedByEnvironment
     if (!status.needsSetup) {
       try {
-        await Promise.all([refresh(), loadSettings()])
+        await loadAdmin()
         loggedIn.value = true
       } catch {}
     }
@@ -559,4 +511,33 @@ onMounted(async () => {
     show(error instanceof Error ? error.message : '无法连接内容服务', 'error')
   }
 })
+onBeforeUnmount(() => {
+  document.removeEventListener('keydown', keydown)
+  if (noticeTimer) clearTimeout(noticeTimer)
+})
 </script>
+
+<style scoped>
+.cms-toast-enter-active,
+.cms-toast-leave-active {
+  transition:
+    opacity 0.18s ease,
+    transform 0.18s ease;
+}
+.cms-toast-enter-from,
+.cms-toast-leave-to {
+  opacity: 0;
+  transform: translate(-50%, -0.5rem);
+}
+@media (min-width: 1025px) {
+  .cms-library + section > div.grid {
+    grid-template-columns: minmax(0, 1fr) minmax(24rem, 0.92fr);
+  }
+  .cms-library + section > div.grid > section:first-child {
+    grid-column: 1/-1;
+  }
+  .cms-library + section > div.grid > section:nth-child(4) {
+    grid-column: 1/-1;
+  }
+}
+</style>

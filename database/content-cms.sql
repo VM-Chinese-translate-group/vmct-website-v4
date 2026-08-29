@@ -38,6 +38,7 @@ CREATE TABLE IF NOT EXISTS content_pages (
   published_frontmatter TEXT,
   published_body TEXT,
   state TEXT NOT NULL DEFAULT 'draft' CHECK (state IN ('draft', 'published', 'archived')),
+  draft_version INTEGER NOT NULL DEFAULT 0,
   published_revision INTEGER,
   created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
   updated_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),

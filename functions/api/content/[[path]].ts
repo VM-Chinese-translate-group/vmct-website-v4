@@ -18,6 +18,8 @@ class ApiError extends Error {
   constructor(
     public status: number,
     message: string,
+    public code?: string,
+    public details?: Record<string, unknown>,
   ) {
     super(message)
   }
@@ -99,6 +101,7 @@ function documentFrom(input: any) {
     .replace(/\.md$/i, '')
   if (!path || path.includes('..') || !/^[\p{L}\p{N}._/-]+$/u.test(path))
     throw new ApiError(400, '页面路径无效')
+  if (/^(admin|api)(?:\/|$)/.test(path)) throw new ApiError(400, '该页面路径为系统保留路径')
   const frontmatter = String(input?.frontmatter || '')
     .replace(/\r\n/g, '\n')
     .trim()
@@ -140,6 +143,14 @@ async function saveSetting(db: any, key: string, value: string) {
     )
     .bind(key, value)
     .run()
+}
+
+async function ensureContentSchema(db: any) {
+  const columns = await db.prepare('PRAGMA table_info(content_pages)').all()
+  if (!(columns.results || []).some((column: any) => column.name === 'draft_version'))
+    await db
+      .prepare('ALTER TABLE content_pages ADD COLUMN draft_version INTEGER NOT NULL DEFAULT 0')
+      .run()
 }
 
 async function passwordConfig(context: any) {
@@ -392,7 +403,7 @@ async function deploy(context: any) {
 async function page(db: any, id: string) {
   const result = await db
     .prepare(
-      'SELECT id, path, draft_frontmatter AS draftFrontmatter, draft_body AS draftBody, published_frontmatter AS publishedFrontmatter, published_body AS publishedBody, state, published_revision AS publishedRevision, created_at AS createdAt, updated_at AS updatedAt, published_at AS publishedAt FROM content_pages WHERE id = ? LIMIT 1',
+      'SELECT id, path, draft_frontmatter AS draftFrontmatter, draft_body AS draftBody, published_frontmatter AS publishedFrontmatter, published_body AS publishedBody, state, draft_version AS draftVersion, published_revision AS publishedRevision, created_at AS createdAt, updated_at AS updatedAt, published_at AS publishedAt FROM content_pages WHERE id = ? LIMIT 1',
     )
     .bind(id)
     .first()
@@ -402,7 +413,7 @@ async function page(db: any, id: string) {
 
 async function listPages(context: any) {
   const result = await context.env.CONTENT_DB.prepare(
-    'SELECT id, path, draft_frontmatter AS draftFrontmatter, state, published_revision AS publishedRevision, created_at AS createdAt, updated_at AS updatedAt, published_at AS publishedAt FROM content_pages ORDER BY updated_at DESC, path ASC',
+    'SELECT id, path, draft_frontmatter AS draftFrontmatter, state, draft_version AS draftVersion, published_revision AS publishedRevision, created_at AS createdAt, updated_at AS updatedAt, published_at AS publishedAt FROM content_pages ORDER BY updated_at DESC, path ASC',
   ).all()
   return json({ pages: result.results || [] })
 }
@@ -427,15 +438,23 @@ async function createPage(context: any) {
 
 async function saveDraft(context: any, id: string) {
   requireSameOrigin(context.request)
-  const item = documentFrom(await readJson(context.request))
-  await page(context.env.CONTENT_DB, id)
+  const input = await readJson(context.request)
+  const item = documentFrom(input)
+  const expectedDraftVersion = Number(input?.expectedDraftVersion)
+  if (!Number.isSafeInteger(expectedDraftVersion) || expectedDraftVersion < 0)
+    throw new ApiError(400, '草稿版本无效')
   try {
-    await context.env.CONTENT_DB.prepare(
-      "UPDATE content_pages SET path = ?, draft_frontmatter = ?, draft_body = ?, updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now') WHERE id = ?",
+    const result = await context.env.CONTENT_DB.prepare(
+      "UPDATE content_pages SET path = ?, draft_frontmatter = ?, draft_body = ?, draft_version = draft_version + 1, updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now') WHERE id = ? AND draft_version = ?",
     )
-      .bind(item.path, item.frontmatter, item.body, id)
+      .bind(item.path, item.frontmatter, item.body, id, expectedDraftVersion)
       .run()
+    if (!result.meta?.changes) {
+      const current = await page(context.env.CONTENT_DB, id)
+      throw new ApiError(409, '草稿已在其他窗口中更新', 'EDIT_CONFLICT', { page: current })
+    }
   } catch (error: any) {
+    if (error instanceof ApiError) throw error
     if (String(error?.message || '').includes('UNIQUE constraint failed'))
       throw new ApiError(409, '该页面路径已存在')
     throw error
@@ -447,7 +466,20 @@ async function publish(context: any, id: string) {
   requireSameOrigin(context.request)
   const current = await page(context.env.CONTENT_DB, id)
   if (!current.draftBody?.trim()) throw new ApiError(400, '不能发布空的 Markdown 正文')
+  if (!/^title:\s*\S+/m.test(current.draftFrontmatter || ''))
+    throw new ApiError(400, '发布前必须填写页面标题')
+  const resourcePage = /^(modpacks|map)\//.test(current.path)
+  if (resourcePage && !/<DownloadLayout\b/.test(current.draftBody))
+    throw new ApiError(400, '资源页面必须使用 DownloadLayout')
+  if (resourcePage && !/<DownloadLinks\b/.test(current.draftBody))
+    throw new ApiError(400, '资源页面至少需要一个下载组件')
+  if (!resourcePage && !/<DocLayout\b/.test(current.draftBody))
+    throw new ApiError(400, '文档页面必须使用 DocLayout')
+  if (/example\.com\/replace-me/.test(current.draftBody))
+    throw new ApiError(400, '请替换模板中的示例下载地址')
   const input = await readJson(context.request).catch(() => ({}))
+  if (Number(input?.expectedDraftVersion) !== Number(current.draftVersion))
+    throw new ApiError(409, '草稿已在其他窗口中更新', 'EDIT_CONFLICT', { page: current })
   const revision = Number(current.publishedRevision || 0) + 1
   await context.env.CONTENT_DB.batch([
     context.env.CONTENT_DB.prepare(
@@ -470,13 +502,60 @@ async function publish(context: any, id: string) {
 
 async function archive(context: any, id: string) {
   requireSameOrigin(context.request)
-  await page(context.env.CONTENT_DB, id)
+  const input = await readJson(context.request).catch(() => ({}))
+  const current = await page(context.env.CONTENT_DB, id)
+  if (Number(input?.expectedDraftVersion) !== Number(current.draftVersion))
+    throw new ApiError(409, '草稿已在其他窗口中更新', 'EDIT_CONFLICT', { page: current })
   await context.env.CONTENT_DB.prepare(
     "UPDATE content_pages SET state = 'archived', updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now') WHERE id = ?",
   )
     .bind(id)
     .run()
   return json({ page: await page(context.env.CONTENT_DB, id), deployment: await deploy(context) })
+}
+
+async function listRevisions(context: any, id: string) {
+  await page(context.env.CONTENT_DB, id)
+  const result = await context.env.CONTENT_DB.prepare(
+    'SELECT revision, path, message, published_at AS publishedAt FROM content_revisions WHERE page_id = ? ORDER BY revision DESC',
+  )
+    .bind(id)
+    .all()
+  return json({ revisions: result.results || [] })
+}
+
+async function revision(context: any, id: string, revisionNumber: string) {
+  const result = await context.env.CONTENT_DB.prepare(
+    'SELECT revision, path, frontmatter, body, message, published_at AS publishedAt FROM content_revisions WHERE page_id = ? AND revision = ? LIMIT 1',
+  )
+    .bind(id, Number(revisionNumber))
+    .first()
+  if (!result) throw new ApiError(404, '历史版本不存在')
+  return result
+}
+
+async function restoreRevision(context: any, id: string, revisionNumber: string) {
+  requireSameOrigin(context.request)
+  const input = await readJson(context.request)
+  const expectedDraftVersion = Number(input?.expectedDraftVersion)
+  const historical = await revision(context, id, revisionNumber)
+  let result
+  try {
+    result = await context.env.CONTENT_DB.prepare(
+      "UPDATE content_pages SET path = ?, draft_frontmatter = ?, draft_body = ?, draft_version = draft_version + 1, updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now') WHERE id = ? AND draft_version = ?",
+    )
+      .bind(historical.path, historical.frontmatter, historical.body, id, expectedDraftVersion)
+      .run()
+  } catch (error: any) {
+    if (String(error?.message || '').includes('UNIQUE constraint failed'))
+      throw new ApiError(409, '历史版本的页面路径已被其他页面使用')
+    throw error
+  }
+  if (!result.meta?.changes) {
+    const current = await page(context.env.CONTENT_DB, id)
+    throw new ApiError(409, '草稿已在其他窗口中更新', 'EDIT_CONFLICT', { page: current })
+  }
+  return json({ page: await page(context.env.CONTENT_DB, id) })
 }
 
 async function exportContent(context: any) {
@@ -488,7 +567,7 @@ async function exportContent(context: any) {
 
 async function exportAllContent(context: any) {
   const result = await context.env.CONTENT_DB.prepare(
-    'SELECT id, path, draft_frontmatter AS draftFrontmatter, draft_body AS draftBody, published_frontmatter AS publishedFrontmatter, published_body AS publishedBody, state, published_revision AS publishedRevision, created_at AS createdAt, updated_at AS updatedAt, published_at AS publishedAt FROM content_pages ORDER BY path ASC',
+    'SELECT id, path, draft_frontmatter AS draftFrontmatter, draft_body AS draftBody, published_frontmatter AS publishedFrontmatter, published_body AS publishedBody, state, draft_version AS draftVersion, published_revision AS publishedRevision, created_at AS createdAt, updated_at AS updatedAt, published_at AS publishedAt FROM content_pages ORDER BY path ASC',
   ).all()
   return json({ pages: result.results || [] })
 }
@@ -509,7 +588,7 @@ async function importContent(context: any) {
     const revision = Number(existing?.revision || 0) + 1
     if (existing) {
       await context.env.CONTENT_DB.prepare(
-        'UPDATE content_pages SET draft_frontmatter = ?, draft_body = ?, published_frontmatter = ?, published_body = ?, state = ?, published_revision = ?, updated_at = ?, published_at = ? WHERE id = ?',
+        'UPDATE content_pages SET draft_frontmatter = ?, draft_body = ?, published_frontmatter = ?, published_body = ?, state = ?, draft_version = draft_version + 1, published_revision = ?, updated_at = ?, published_at = ? WHERE id = ?',
       )
         .bind(
           item.frontmatter,
@@ -563,6 +642,7 @@ async function importContent(context: any) {
 export const onRequest = async (context: any) => {
   try {
     const path = route(context)
+    await ensureContentSchema(context.env.CONTENT_DB)
     if (path === 'internal/export' && context.request.method === 'GET')
       return await exportContent(context)
     if (path === 'admin/auth/status' && context.request.method === 'GET')
@@ -582,6 +662,10 @@ export const onRequest = async (context: any) => {
       return await getSettings(context)
     if (path === 'admin/settings' && context.request.method === 'PUT')
       return await saveSettings(context)
+    if (path === 'admin/deploy' && context.request.method === 'POST') {
+      requireSameOrigin(context.request)
+      return json({ deployment: await deploy(context) })
+    }
     if (path === 'admin/export' && context.request.method === 'GET')
       return await exportAllContent(context)
     if (path === 'admin/pages' && context.request.method === 'GET') return await listPages(context)
@@ -589,16 +673,36 @@ export const onRequest = async (context: any) => {
       return await createPage(context)
     if (path === 'admin/import' && context.request.method === 'POST')
       return await importContent(context)
-    const [, , id, action] = (context.params?.path || []) as string[]
+    const rawSegments = context.params?.path
+    const [, , id, action, revisionNumber, revisionAction] = (
+      Array.isArray(rawSegments) ? rawSegments : rawSegments ? [rawSegments] : []
+    ) as string[]
     if (!id) throw new ApiError(404, '接口不存在')
     if (!action && context.request.method === 'GET')
       return json({ page: await page(context.env.CONTENT_DB, id) })
     if (!action && context.request.method === 'PUT') return await saveDraft(context, id)
     if (action === 'publish' && context.request.method === 'POST') return await publish(context, id)
     if (action === 'archive' && context.request.method === 'POST') return await archive(context, id)
+    if (action === 'revisions' && !revisionNumber && context.request.method === 'GET')
+      return await listRevisions(context, id)
+    if (
+      action === 'revisions' &&
+      revisionNumber &&
+      !revisionAction &&
+      context.request.method === 'GET'
+    )
+      return json({ revision: await revision(context, id, revisionNumber) })
+    if (
+      action === 'revisions' &&
+      revisionNumber &&
+      revisionAction === 'restore' &&
+      context.request.method === 'POST'
+    )
+      return await restoreRevision(context, id, revisionNumber)
     throw new ApiError(404, '接口不存在')
   } catch (error) {
-    if (error instanceof ApiError) return json({ error: error.message }, error.status)
+    if (error instanceof ApiError)
+      return json({ error: error.message, code: error.code, ...error.details }, error.status)
     console.error('content CMS error', error)
     return json({ error: '内容服务发生错误' }, 500)
   }

@@ -24,6 +24,10 @@ export default defineConfig({
       'flex cursor-pointer items-center gap-2 rounded-lg border border-[var(--switcher-border)] bg-[var(--bg-soft)] px-3 py-2 text-sm font-600 text-[var(--text-2)] [&_input]:accent-[var(--info-1)]',
     'cms-page-row':
       'flex w-full cursor-pointer items-center justify-between gap-2 overflow-hidden rounded-lg border-0 bg-transparent px-2.5 py-2.5 text-left text-sm text-[var(--text-1)] transition-colors hover:bg-[var(--switcher-item-hover)] [&_span]:overflow-hidden [&_span]:text-ellipsis [&_span]:whitespace-nowrap',
+    'cms-panel':
+      'grid gap-4 rounded-2xl border border-[var(--switcher-border)] bg-[var(--bg-alt)] p-6 shadow-[var(--vp-shadow-1)] max-sm:p-4',
+    'cms-library':
+      'sticky top-20 flex h-[calc(100vh-6rem)] min-h-0 flex-col overflow-hidden rounded-2xl border border-[var(--switcher-border)] bg-[var(--bg-soft)] shadow-[var(--vp-shadow-1)] max-lg:relative max-lg:top-auto max-lg:h-[28rem]',
     'vm-link-underline':
       "relative inline-block text-[var(--text-medium)] no-underline transition-colors duration-300 after:content-[''] after:absolute after:left-0 after:-bottom-0.5 after:h-0.5 after:w-0 after:[background:var(--footer-underline-gradient)] after:transition-width after:duration-300 hover:text-[var(--footer-link-hover)] hover:after:w-full",
     // Keep input borders explicitly solid: browser UA styles can otherwise fall back to inset.

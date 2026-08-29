@@ -21,7 +21,7 @@
       </label>
       <label class="cms-label">
         封面 / 图标 URL
-        <input v-model="model.icon" class="cms-field" type="url" />
+        <input v-model="model.icon" class="cms-field" placeholder="/imgs/... 或 https://..." />
       </label>
       <label class="cms-label">
         更新日期
@@ -32,7 +32,7 @@
           @click="openCalendar"
         />
       </label>
-      <label class="cms-label">
+      <label v-if="pageKind !== 'document'" class="cms-label">
         发布状态
         <SelectMenu
           :model-value="model.statusType"
@@ -43,7 +43,7 @@
           @update:model-value="model.statusType = $event"
         />
       </label>
-      <label class="cms-label">
+      <label v-if="pageKind !== 'document'" class="cms-label">
         加载器
         <SelectMenu
           :model-value="model.loader"
@@ -54,11 +54,11 @@
           @update:model-value="model.loader = $event"
         />
       </label>
-      <label class="cms-label">
+      <label v-if="pageKind !== 'document'" class="cms-label">
         Minecraft 版本
         <input v-model="model.minecraft" class="cms-field" placeholder="例如 1.21.1" />
       </label>
-      <label class="cms-label">
+      <label v-if="pageKind !== 'document'" class="cms-label">
         整合包版本
         <input v-model="model.pack" class="cms-field" placeholder="例如 2.3.1" />
       </label>
@@ -164,6 +164,7 @@
 import { computed } from 'vue'
 import SelectMenu from '@/components/SelectMenu.vue'
 import type { ContentLink, ContentMetadata } from './types'
+import { LINK_OPTIONS, LOADER_OPTIONS, STATUS_OPTIONS } from './contentConfig'
 const model = defineModel<ContentMetadata>({ required: true })
 defineProps<{ pageKind: 'document' | 'modpack' | 'map' }>()
 const calendarDate = computed({
@@ -176,29 +177,9 @@ const calendarDate = computed({
     model.value.updateDate = match ? `${match[1]}-${Number(match[2])}-${Number(match[3])}` : ''
   },
 })
-const statusOptions = [
-  { value: '', label: '未设置', icon: 'lucide:circle-dashed' },
-  { value: 'maintaining', label: '维护中', icon: 'lucide:circle-check' },
-  { value: 'translating', label: '翻译中', icon: 'lucide:languages' },
-  { value: 'stopped', label: '暂不跟进', icon: 'lucide:circle-pause' },
-]
-const loaderOptions = [
-  { value: '', label: '未设置', icon: 'lucide:circle-dashed' },
-  { value: 'vanilla', label: '原版', icon: '/imgs/svg/vanilla.svg' },
-  { value: 'forge', label: 'Forge', icon: '/imgs/svg/forge.svg' },
-  { value: 'neoforge', label: 'NeoForge', icon: '/imgs/svg/neoforge.svg' },
-  { value: 'fabric', label: 'Fabric', icon: '/imgs/svg/fabric.svg' },
-]
-const linkOptions = [
-  { value: 'curseforge', label: 'CurseForge' },
-  { value: 'modrinth', label: 'Modrinth' },
-  { value: 'github', label: 'GitHub' },
-  { value: 'bilibili', label: 'Bilibili' },
-  { value: 'planetminecraft', label: 'PlanetMinecraft' },
-  { value: 'paratranz', label: 'Paratranz' },
-  { value: 'i18n', label: 'i18n 下载（自动）' },
-]
-linkOptions.push({ value: '__custom__', label: '自定义平台' })
+const statusOptions = STATUS_OPTIONS
+const loaderOptions = LOADER_OPTIONS
+const linkOptions = LINK_OPTIONS
 function selectedLinkPlatform(id: string) {
   return linkOptions.some((option) => option.value === id) ? id : '__custom__'
 }

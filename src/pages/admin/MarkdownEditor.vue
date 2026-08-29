@@ -67,6 +67,21 @@ const tools = [
   { name: '链接', icon: 'lucide:link', before: '[', after: '](https://)', placeholder: '链接文字' },
   { name: '代码', icon: 'lucide:code-2', before: '`', after: '`', placeholder: '代码' },
   { name: '列表', icon: 'lucide:list', before: '- ', after: '', placeholder: '列表项' },
+  {
+    name: '有序列表',
+    icon: 'lucide:list-ordered',
+    before: '1. ',
+    after: '',
+    placeholder: '列表项',
+  },
+  { name: '引用', icon: 'lucide:quote', before: '> ', after: '', placeholder: '引用内容' },
+  {
+    name: '图片',
+    icon: 'lucide:image',
+    before: '![',
+    after: '](/imgs/example.webp)',
+    placeholder: '图片说明',
+  },
 ]
 function insert(before: string, after: string, placeholder: string) {
   const el = textarea.value
@@ -86,7 +101,7 @@ function insertDownload() {
   insert(
     '\n<DownloadLinks :methods="[\n  ',
     '\n]" />\n',
-    "{ id: 'curseforge', text: '下载地图和汉化', link: 'https://www.curseforge.com/minecraft/worlds/evergrowth/files/7111682' }",
+    "{ id: 'patch', text: '下载汉化', link: 'https://example.com/replace-me' }",
   )
 }
 </script>
