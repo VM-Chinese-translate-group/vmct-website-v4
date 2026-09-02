@@ -33,11 +33,13 @@ CREATE INDEX IF NOT EXISTS cms_auth_challenges_expires_idx
 CREATE TABLE IF NOT EXISTS content_pages (
   id TEXT PRIMARY KEY,
   path TEXT NOT NULL UNIQUE,
+  published_path TEXT,
   draft_frontmatter TEXT NOT NULL DEFAULT '',
   draft_body TEXT NOT NULL DEFAULT '',
   published_frontmatter TEXT,
   published_body TEXT,
   state TEXT NOT NULL DEFAULT 'draft' CHECK (state IN ('draft', 'published', 'archived')),
+  has_unpublished_changes INTEGER NOT NULL DEFAULT 1,
   draft_version INTEGER NOT NULL DEFAULT 0,
   published_revision INTEGER,
   created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),

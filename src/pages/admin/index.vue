@@ -24,7 +24,11 @@
             {{ isSettingsPage ? '后台设置' : '内容工作台' }}
           </h1>
           <p class="mb-0 mt-1 text-sm text-[var(--text-2)]">
-            {{ isSettingsPage ? '管理部署与登录安全。' : '草稿自动保存，发布仍由你确认。' }}
+            {{
+              isSettingsPage
+                ? '管理部署与登录安全。'
+                : '草稿自动保存，可在左侧选择多个更改后统一发布。'
+            }}
           </p>
         </div>
         <div
@@ -49,10 +53,14 @@
 
       <div v-else class="grid grid-cols-[17rem_minmax(0,1fr)] items-start gap-4 max-lg:grid-cols-1">
         <ContentLibrary
-          :pages="editor.pages.value"
+          :pages="libraryPages"
           :selected-id="editor.draft.id"
+          v-model:selected-changes="selectedChanges"
+          :busy="busy"
           @open="editor.open"
           @new="editor.createNew"
+          @publish-selected="prepareBatchPublish"
+          @discard="discardDraft"
         />
 
         <section
@@ -82,14 +90,6 @@
                 @click="editor.saveNow"
               >
                 立即保存
-              </button>
-              <button
-                class="cms-button"
-                type="button"
-                :disabled="!editor.draft.id"
-                @click="editor.duplicate"
-              >
-                复制
               </button>
               <button
                 class="cms-button"
@@ -240,8 +240,10 @@
     <PublishDialog
       :open="publishOpen"
       :busy="busy"
-      :errors="editor.errors.value"
-      :warnings="editor.warnings.value"
+      :errors="publishErrors"
+      :warnings="publishWarnings"
+      :page-count="publishMode === 'batch' ? selectedChanges.length : 1"
+      :batch="publishMode === 'batch'"
       @close="publishOpen = false"
       @confirm="publish"
     />
@@ -263,11 +265,13 @@ import { useRoute, useRouter } from 'vue-router'
 import {
   archiveContentPage,
   changeContentAdminPassword,
+  discardContentDraft,
   getContentAuthStatus,
   getContentSettings,
   loginContentAdmin,
   logoutContentAdmin,
   publishContentPage,
+  publishContentPages,
   restoreContentRevision,
   retryContentDeployment,
   saveContentSettings,
@@ -295,6 +299,8 @@ const deployHook = ref(''),
   notice = ref(''),
   noticeKind = ref<'success' | 'error'>('success')
 const publishOpen = ref(false),
+  publishMode = ref<'single' | 'batch'>('single'),
+  selectedChanges = ref<string[]>([]),
   historyOpen = ref(false),
   activeTab = ref<'metadata' | 'content' | 'preview'>('metadata')
 const tabs = [
@@ -317,6 +323,29 @@ const selectedType = computed(() =>
   PAGE_TYPES.find((type) => type.value === editor.pageKind.value)!,
 )
 const currentFrontmatter = computed(() => stringifyMetadata(editor.draft.metadata))
+const libraryPages = computed(() =>
+  editor.pages.value.map((page) =>
+    page.id === editor.draft.id &&
+    editor.draft.state === 'published' &&
+    ['dirty', 'saving', 'error', 'conflict'].includes(editor.saveState.value)
+      ? {
+          ...page,
+          draftFrontmatter: currentFrontmatter.value,
+          hasUnpublishedChanges: true,
+        }
+      : page,
+  ),
+)
+const publishErrors = computed(() =>
+  publishMode.value === 'single' || selectedChanges.value.includes(editor.draft.id)
+    ? editor.errors.value
+    : [],
+)
+const publishWarnings = computed(() =>
+  publishMode.value === 'single' || selectedChanges.value.includes(editor.draft.id)
+    ? editor.warnings.value
+    : [],
+)
 const pageSlug = computed({
   get: () =>
     selectedType.value.prefix && editor.draft.path.startsWith(selectedType.value.prefix)
@@ -416,19 +445,75 @@ async function preparePublish() {
     show('请先解决草稿保存问题。', 'error')
     return
   }
+  publishMode.value = 'single'
   publishOpen.value = true
+}
+async function prepareBatchPublish() {
+  if (!selectedChanges.value.length) return
+  if (selectedChanges.value.includes(editor.draft.id) && !(await editor.saveNow())) {
+    show('请先解决当前草稿的保存问题。', 'error')
+    return
+  }
+  await editor.refresh()
+  const available = new Set(
+    editor.pages.value
+      .filter((page) => Boolean(page.hasUnpublishedChanges) && page.state !== 'archived')
+      .map((page) => page.id),
+  )
+  selectedChanges.value = selectedChanges.value.filter((id) => available.has(id))
+  if (!selectedChanges.value.length) {
+    show('所选文件已经没有待发布的更改。', 'error')
+    return
+  }
+  publishMode.value = 'batch'
+  publishOpen.value = true
+}
+async function discardDraft(id: string) {
+  const selectedPage = editor.pages.value.find((item) => item.id === id)
+  if (!selectedPage) return
+  const name = selectedPage.path ? `/${selectedPage.path}` : '这个页面'
+  if (!window.confirm(`撤回 ${name} 的全部草稿修改，恢复到当前线上版本吗？此操作无法撤销。`)) return
+  busy.value = true
+  try {
+    if (editor.draft.id === id && editor.hasPendingChanges.value) await editor.saveNow()
+    await editor.refresh()
+    const latest = editor.pages.value.find((item) => item.id === id)
+    if (!latest) throw new Error('页面不存在')
+    const result = await discardContentDraft(id, latest.draftVersion)
+    if (editor.draft.id === id) editor.apply(result.page)
+    selectedChanges.value = selectedChanges.value.filter((selectedId) => selectedId !== id)
+    await editor.refresh()
+    show('草稿已撤回，内容已恢复到线上版本。')
+  } catch (error) {
+    show(error instanceof Error ? error.message : '撤回草稿失败', 'error')
+  } finally {
+    busy.value = false
+  }
 }
 async function publish(message: string) {
   busy.value = true
   try {
-    const result = await publishContentPage(editor.draft.id, editor.draft.draftVersion, message)
-    editor.apply(result.page)
+    const result =
+      publishMode.value === 'batch'
+        ? await publishContentPages(
+            selectedChanges.value.map((id) => {
+              const page = editor.pages.value.find((item) => item.id === id)!
+              return { id, expectedDraftVersion: page.draftVersion }
+            }),
+            message,
+          )
+        : await publishContentPage(editor.draft.id, editor.draft.draftVersion, message)
+    const publishedPages = 'pages' in result ? result.pages : [result.page]
+    const current = publishedPages.find((page) => page.id === editor.draft.id)
+    if (current) editor.apply(current)
     await editor.refresh()
+    const publishedIds = new Set(publishedPages.map((page) => page.id))
+    selectedChanges.value = selectedChanges.value.filter((id) => !publishedIds.has(id))
     publishOpen.value = false
     show(
       result.deployment.requested
-        ? '内容已发布，Cloudflare 正在构建。'
-        : `内容已发布，但构建未触发：${result.deployment.error || '未知错误'}`,
+        ? `${publishedPages.length} 个更改已发布，Cloudflare 正在构建。`
+        : `${publishedPages.length} 个更改已发布，但构建未触发：${result.deployment.error || '未知错误'}`,
       result.deployment.requested ? 'success' : 'error',
     )
   } catch (error) {

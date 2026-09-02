@@ -110,6 +110,16 @@ function documentFrom(input: any) {
   return { path, frontmatter, body }
 }
 
+async function assertPathAvailable(db: any, path: string, exceptId = '') {
+  const conflict = await db
+    .prepare(
+      "SELECT id FROM content_pages WHERE id != ? AND (path = ? OR (state = 'published' AND published_path = ?)) LIMIT 1",
+    )
+    .bind(exceptId, path, path)
+    .first()
+  if (conflict) throw new ApiError(409, '该页面路径已被其他草稿或已发布页面使用')
+}
+
 function cookie(request: Request) {
   const prefix = 'cms_content_session='
   return (request.headers.get('Cookie') || '')
@@ -151,6 +161,26 @@ async function ensureContentSchema(db: any) {
     await db
       .prepare('ALTER TABLE content_pages ADD COLUMN draft_version INTEGER NOT NULL DEFAULT 0')
       .run()
+  if (!(columns.results || []).some((column: any) => column.name === 'published_path')) {
+    await db.prepare('ALTER TABLE content_pages ADD COLUMN published_path TEXT').run()
+    await db
+      .prepare(
+        'UPDATE content_pages SET published_path = COALESCE((SELECT path FROM content_revisions WHERE page_id = content_pages.id ORDER BY revision DESC LIMIT 1), path) WHERE published_at IS NOT NULL',
+      )
+      .run()
+  }
+  if (!(columns.results || []).some((column: any) => column.name === 'has_unpublished_changes')) {
+    await db
+      .prepare(
+        'ALTER TABLE content_pages ADD COLUMN has_unpublished_changes INTEGER NOT NULL DEFAULT 0',
+      )
+      .run()
+    await db
+      .prepare(
+        "UPDATE content_pages SET has_unpublished_changes = CASE WHEN state = 'draft' OR (state IN ('published', 'archived') AND published_at IS NOT NULL AND (path IS NOT published_path OR draft_frontmatter IS NOT published_frontmatter OR draft_body IS NOT published_body)) THEN 1 ELSE 0 END",
+      )
+      .run()
+  }
 }
 
 async function passwordConfig(context: any) {
@@ -403,7 +433,7 @@ async function deploy(context: any) {
 async function page(db: any, id: string) {
   const result = await db
     .prepare(
-      'SELECT id, path, draft_frontmatter AS draftFrontmatter, draft_body AS draftBody, published_frontmatter AS publishedFrontmatter, published_body AS publishedBody, state, draft_version AS draftVersion, published_revision AS publishedRevision, created_at AS createdAt, updated_at AS updatedAt, published_at AS publishedAt FROM content_pages WHERE id = ? LIMIT 1',
+      'SELECT id, path, published_path AS publishedPath, draft_frontmatter AS draftFrontmatter, draft_body AS draftBody, published_frontmatter AS publishedFrontmatter, published_body AS publishedBody, state, draft_version AS draftVersion, published_revision AS publishedRevision, created_at AS createdAt, updated_at AS updatedAt, published_at AS publishedAt FROM content_pages WHERE id = ? LIMIT 1',
     )
     .bind(id)
     .first()
@@ -413,7 +443,7 @@ async function page(db: any, id: string) {
 
 async function listPages(context: any) {
   const result = await context.env.CONTENT_DB.prepare(
-    'SELECT id, path, draft_frontmatter AS draftFrontmatter, state, draft_version AS draftVersion, published_revision AS publishedRevision, created_at AS createdAt, updated_at AS updatedAt, published_at AS publishedAt FROM content_pages ORDER BY updated_at DESC, path ASC',
+    'SELECT id, path, published_path AS publishedPath, draft_frontmatter AS draftFrontmatter, state, has_unpublished_changes AS hasUnpublishedChanges, draft_version AS draftVersion, published_revision AS publishedRevision, created_at AS createdAt, updated_at AS updatedAt, published_at AS publishedAt FROM content_pages ORDER BY updated_at DESC, path ASC',
   ).all()
   return json({ pages: result.results || [] })
 }
@@ -422,9 +452,10 @@ async function createPage(context: any) {
   requireSameOrigin(context.request)
   const item = documentFrom(await readJson(context.request))
   const id = crypto.randomUUID()
+  await assertPathAvailable(context.env.CONTENT_DB, item.path)
   try {
     await context.env.CONTENT_DB.prepare(
-      'INSERT INTO content_pages (id, path, draft_frontmatter, draft_body) VALUES (?, ?, ?, ?)',
+      'INSERT INTO content_pages (id, path, draft_frontmatter, draft_body, has_unpublished_changes) VALUES (?, ?, ?, ?, 1)',
     )
       .bind(id, item.path, item.frontmatter, item.body)
       .run()
@@ -443,11 +474,21 @@ async function saveDraft(context: any, id: string) {
   const expectedDraftVersion = Number(input?.expectedDraftVersion)
   if (!Number.isSafeInteger(expectedDraftVersion) || expectedDraftVersion < 0)
     throw new ApiError(400, '草稿版本无效')
+  await assertPathAvailable(context.env.CONTENT_DB, item.path, id)
   try {
     const result = await context.env.CONTENT_DB.prepare(
-      "UPDATE content_pages SET path = ?, draft_frontmatter = ?, draft_body = ?, draft_version = draft_version + 1, updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now') WHERE id = ? AND draft_version = ?",
+      "UPDATE content_pages SET path = ?, draft_frontmatter = ?, draft_body = ?, has_unpublished_changes = CASE WHEN state = 'draft' OR ? IS NOT published_path OR ? IS NOT published_frontmatter OR ? IS NOT published_body THEN 1 ELSE 0 END, draft_version = draft_version + 1, updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now') WHERE id = ? AND draft_version = ?",
     )
-      .bind(item.path, item.frontmatter, item.body, id, expectedDraftVersion)
+      .bind(
+        item.path,
+        item.frontmatter,
+        item.body,
+        item.path,
+        item.frontmatter,
+        item.body,
+        id,
+        expectedDraftVersion,
+      )
       .run()
     if (!result.meta?.changes) {
       const current = await page(context.env.CONTENT_DB, id)
@@ -462,9 +503,35 @@ async function saveDraft(context: any, id: string) {
   return json({ page: await page(context.env.CONTENT_DB, id) })
 }
 
-async function publish(context: any, id: string) {
+async function discardDraft(context: any, id: string) {
   requireSameOrigin(context.request)
+  const input = await readJson(context.request)
   const current = await page(context.env.CONTENT_DB, id)
+  if (current.state !== 'published') throw new ApiError(400, '只有已上线页面可以撤回到线上版本')
+  if (!current.publishedAt || !current.publishedPath)
+    throw new ApiError(400, '尚未发布的页面没有可恢复的线上版本')
+  if (Number(input?.expectedDraftVersion) !== Number(current.draftVersion))
+    throw new ApiError(409, '草稿已在其他窗口中更新', 'EDIT_CONFLICT', { page: current })
+  try {
+    const result = await context.env.CONTENT_DB.prepare(
+      "UPDATE content_pages SET path = published_path, draft_frontmatter = published_frontmatter, draft_body = published_body, state = 'published', has_unpublished_changes = 0, draft_version = draft_version + 1, updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now') WHERE id = ? AND draft_version = ?",
+    )
+      .bind(id, current.draftVersion)
+      .run()
+    if (!result.meta?.changes) {
+      const latest = await page(context.env.CONTENT_DB, id)
+      throw new ApiError(409, '草稿已在其他窗口中更新', 'EDIT_CONFLICT', { page: latest })
+    }
+  } catch (error: any) {
+    if (error instanceof ApiError) throw error
+    if (String(error?.message || '').includes('UNIQUE constraint failed'))
+      throw new ApiError(409, '线上页面路径已被其他草稿占用，无法撤回')
+    throw error
+  }
+  return json({ page: await page(context.env.CONTENT_DB, id) })
+}
+
+function validatePublishable(current: any) {
   if (!current.draftBody?.trim()) throw new ApiError(400, '不能发布空的 Markdown 正文')
   if (!/^title:\s*\S+/m.test(current.draftFrontmatter || ''))
     throw new ApiError(400, '发布前必须填写页面标题')
@@ -477,27 +544,84 @@ async function publish(context: any, id: string) {
     throw new ApiError(400, '文档页面必须使用 DocLayout')
   if (/example\.com\/replace-me/.test(current.draftBody))
     throw new ApiError(400, '请替换模板中的示例下载地址')
+}
+
+function publishStatements(db: any, current: any, message: unknown) {
+  const revision = Number(current.publishedRevision || 0) + 1
+  return [
+    db
+      .prepare(
+        'INSERT INTO content_revisions (id, page_id, revision, path, frontmatter, body, message) VALUES (?, ?, ?, ?, ?, ?, ?)',
+      )
+      .bind(
+        crypto.randomUUID(),
+        current.id,
+        revision,
+        current.path,
+        current.draftFrontmatter,
+        current.draftBody,
+        typeof message === 'string' ? message.slice(0, 500) : null,
+      ),
+    db
+      .prepare(
+        "UPDATE content_pages SET published_path = path, published_frontmatter = draft_frontmatter, published_body = draft_body, state = 'published', has_unpublished_changes = 0, published_revision = ?, updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now'), published_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now') WHERE id = ?",
+      )
+      .bind(revision, current.id),
+  ]
+}
+
+async function publish(context: any, id: string) {
+  requireSameOrigin(context.request)
+  const current = await page(context.env.CONTENT_DB, id)
+  validatePublishable(current)
   const input = await readJson(context.request).catch(() => ({}))
   if (Number(input?.expectedDraftVersion) !== Number(current.draftVersion))
     throw new ApiError(409, '草稿已在其他窗口中更新', 'EDIT_CONFLICT', { page: current })
-  const revision = Number(current.publishedRevision || 0) + 1
-  await context.env.CONTENT_DB.batch([
-    context.env.CONTENT_DB.prepare(
-      'INSERT INTO content_revisions (id, page_id, revision, path, frontmatter, body, message) VALUES (?, ?, ?, ?, ?, ?, ?)',
-    ).bind(
-      crypto.randomUUID(),
-      id,
-      revision,
-      current.path,
-      current.draftFrontmatter,
-      current.draftBody,
-      typeof input?.message === 'string' ? input.message.slice(0, 500) : null,
-    ),
-    context.env.CONTENT_DB.prepare(
-      "UPDATE content_pages SET published_frontmatter = draft_frontmatter, published_body = draft_body, state = 'published', published_revision = ?, updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now'), published_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now') WHERE id = ?",
-    ).bind(revision, id),
-  ])
+  await context.env.CONTENT_DB.batch(
+    publishStatements(context.env.CONTENT_DB, current, input?.message),
+  )
   return json({ page: await page(context.env.CONTENT_DB, id), deployment: await deploy(context) })
+}
+
+async function publishBatch(context: any) {
+  requireSameOrigin(context.request)
+  const input = await readJson(context.request)
+  if (!Array.isArray(input?.pages) || !input.pages.length || input.pages.length > 50)
+    throw new ApiError(400, 'pages 必须是 1 到 50 项的数组')
+  const seen = new Set<string>()
+  const selected: any[] = []
+  for (const item of input.pages) {
+    const id = String(item?.id || '')
+    if (!id || seen.has(id)) throw new ApiError(400, '发布列表包含无效或重复页面')
+    seen.add(id)
+    const current = await page(context.env.CONTENT_DB, id)
+    try {
+      validatePublishable(current)
+    } catch (error) {
+      if (error instanceof ApiError)
+        throw new ApiError(
+          error.status,
+          `/${current.path}：${error.message}`,
+          error.code,
+          error.details,
+        )
+      throw error
+    }
+    if (Number(item?.expectedDraftVersion) !== Number(current.draftVersion))
+      throw new ApiError(409, `/${current.path} 的草稿已在其他窗口中更新`, 'EDIT_CONFLICT', {
+        page: current,
+      })
+    selected.push(current)
+  }
+  await context.env.CONTENT_DB.batch(
+    selected.flatMap((current) =>
+      publishStatements(context.env.CONTENT_DB, current, input?.message),
+    ),
+  )
+  return json({
+    pages: await Promise.all(selected.map((current) => page(context.env.CONTENT_DB, current.id))),
+    deployment: await deploy(context),
+  })
 }
 
 async function archive(context: any, id: string) {
@@ -542,7 +666,7 @@ async function restoreRevision(context: any, id: string, revisionNumber: string)
   let result
   try {
     result = await context.env.CONTENT_DB.prepare(
-      "UPDATE content_pages SET path = ?, draft_frontmatter = ?, draft_body = ?, draft_version = draft_version + 1, updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now') WHERE id = ? AND draft_version = ?",
+      "UPDATE content_pages SET path = ?, draft_frontmatter = ?, draft_body = ?, has_unpublished_changes = 1, draft_version = draft_version + 1, updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now') WHERE id = ? AND draft_version = ?",
     )
       .bind(historical.path, historical.frontmatter, historical.body, id, expectedDraftVersion)
       .run()
@@ -560,14 +684,14 @@ async function restoreRevision(context: any, id: string, revisionNumber: string)
 
 async function exportContent(context: any) {
   const result = await context.env.CONTENT_DB.prepare(
-    "SELECT path, published_frontmatter AS frontmatter, published_body AS body FROM content_pages WHERE state = 'published' AND published_at IS NOT NULL ORDER BY path ASC",
+    "SELECT COALESCE(published_path, path) AS path, published_frontmatter AS frontmatter, published_body AS body FROM content_pages WHERE state = 'published' AND published_at IS NOT NULL ORDER BY COALESCE(published_path, path) ASC",
   ).all()
   return json({ pages: result.results || [] })
 }
 
 async function exportAllContent(context: any) {
   const result = await context.env.CONTENT_DB.prepare(
-    'SELECT id, path, draft_frontmatter AS draftFrontmatter, draft_body AS draftBody, published_frontmatter AS publishedFrontmatter, published_body AS publishedBody, state, draft_version AS draftVersion, published_revision AS publishedRevision, created_at AS createdAt, updated_at AS updatedAt, published_at AS publishedAt FROM content_pages ORDER BY path ASC',
+    'SELECT id, path, published_path AS publishedPath, draft_frontmatter AS draftFrontmatter, draft_body AS draftBody, published_frontmatter AS publishedFrontmatter, published_body AS publishedBody, state, draft_version AS draftVersion, published_revision AS publishedRevision, created_at AS createdAt, updated_at AS updatedAt, published_at AS publishedAt FROM content_pages ORDER BY path ASC',
   ).all()
   return json({ pages: result.results || [] })
 }
@@ -588,11 +712,12 @@ async function importContent(context: any) {
     const revision = Number(existing?.revision || 0) + 1
     if (existing) {
       await context.env.CONTENT_DB.prepare(
-        'UPDATE content_pages SET draft_frontmatter = ?, draft_body = ?, published_frontmatter = ?, published_body = ?, state = ?, draft_version = draft_version + 1, published_revision = ?, updated_at = ?, published_at = ? WHERE id = ?',
+        'UPDATE content_pages SET draft_frontmatter = ?, draft_body = ?, published_path = ?, published_frontmatter = ?, published_body = ?, state = ?, has_unpublished_changes = 0, draft_version = draft_version + 1, published_revision = ?, updated_at = ?, published_at = ? WHERE id = ?',
       )
         .bind(
           item.frontmatter,
           item.body,
+          item.path,
           item.frontmatter,
           item.body,
           'published',
@@ -604,10 +729,11 @@ async function importContent(context: any) {
         .run()
     } else {
       await context.env.CONTENT_DB.prepare(
-        'INSERT INTO content_pages (id, path, draft_frontmatter, draft_body, published_frontmatter, published_body, state, published_revision, created_at, updated_at, published_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+        'INSERT INTO content_pages (id, path, published_path, draft_frontmatter, draft_body, published_frontmatter, published_body, state, has_unpublished_changes, published_revision, created_at, updated_at, published_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?, ?, ?)',
       )
         .bind(
           id,
+          item.path,
           item.path,
           item.frontmatter,
           item.body,
@@ -671,6 +797,8 @@ export const onRequest = async (context: any) => {
     if (path === 'admin/pages' && context.request.method === 'GET') return await listPages(context)
     if (path === 'admin/pages' && context.request.method === 'POST')
       return await createPage(context)
+    if (path === 'admin/pages/publish-batch' && context.request.method === 'POST')
+      return await publishBatch(context)
     if (path === 'admin/import' && context.request.method === 'POST')
       return await importContent(context)
     const rawSegments = context.params?.path
@@ -681,6 +809,8 @@ export const onRequest = async (context: any) => {
     if (!action && context.request.method === 'GET')
       return json({ page: await page(context.env.CONTENT_DB, id) })
     if (!action && context.request.method === 'PUT') return await saveDraft(context, id)
+    if (action === 'discard-draft' && context.request.method === 'POST')
+      return await discardDraft(context, id)
     if (action === 'publish' && context.request.method === 'POST') return await publish(context, id)
     if (action === 'archive' && context.request.method === 'POST') return await archive(context, id)
     if (action === 'revisions' && !revisionNumber && context.request.method === 'GET')

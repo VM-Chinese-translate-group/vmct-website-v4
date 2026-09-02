@@ -129,14 +129,6 @@ export function useContentEditor(report: (message: string, kind?: 'success' | 'e
   async function createNew(kind: PageKind) {
     if (await leaveCurrent()) setNewPage(kind)
   }
-  async function duplicate() {
-    if (!draft.id || !(await leaveCurrent())) return
-    const source = await getContentPage(draft.id)
-    setNewPage(pageKind.value, source.page)
-    draft.path = PAGE_TYPES.find((type) => type.value === pageKind.value)!.prefix
-    draft.metadata.title = `${draft.metadata.title}（副本）`
-  }
-
   function selectPageType(kind: PageKind) {
     const oldPrefix = PAGE_TYPES.find((type) => type.value === pageKind.value)!.prefix
     const slug =
@@ -242,7 +234,6 @@ export function useContentEditor(report: (message: string, kind?: 'success' | 'e
     refresh,
     open,
     createNew,
-    duplicate,
     selectPageType,
     saveNow,
     apply,

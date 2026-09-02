@@ -4,8 +4,10 @@ const PASSWORD_ITERATIONS = 100
 export interface ContentPageSummary {
   id: string
   path: string
+  publishedPath: string | null
   draftFrontmatter: string
   state: 'draft' | 'published' | 'archived'
+  hasUnpublishedChanges?: boolean | number
   draftVersion: number
   publishedRevision: number | null
   createdAt: string
@@ -222,11 +224,28 @@ export function saveContentDraft(
   })
 }
 
+export function discardContentDraft(id: string, expectedDraftVersion: number) {
+  return request<{ page: ContentPage }>('/pages/' + encodeURIComponent(id) + '/discard-draft', {
+    method: 'POST',
+    body: JSON.stringify({ expectedDraftVersion }),
+  })
+}
+
 export function publishContentPage(id: string, expectedDraftVersion: number, message = '') {
   return request<{ page: ContentPage; deployment: DeploymentResult }>(
     '/pages/' + encodeURIComponent(id) + '/publish',
     { method: 'POST', body: JSON.stringify({ expectedDraftVersion, message }) },
   )
+}
+
+export function publishContentPages(
+  pages: Array<{ id: string; expectedDraftVersion: number }>,
+  message = '',
+) {
+  return request<{ pages: ContentPage[]; deployment: DeploymentResult }>('/pages/publish-batch', {
+    method: 'POST',
+    body: JSON.stringify({ pages, message }),
+  })
 }
 
 export function archiveContentPage(id: string, expectedDraftVersion: number) {

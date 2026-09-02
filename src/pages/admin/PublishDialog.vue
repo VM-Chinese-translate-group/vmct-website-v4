@@ -7,8 +7,10 @@
     <section
       class="w-[min(34rem,100%)] rounded-2xl border border-[var(--switcher-border)] bg-[var(--bg-alt)] p-5 shadow-2xl"
     >
-      <h2 class="m-0 text-xl">发布前检查</h2>
-      <p class="text-sm text-[var(--text-2)]">确认后会发布当前草稿并请求 Cloudflare 完整构建。</p>
+      <h2 class="m-0 text-xl">{{ batch ? `发布 ${pageCount} 个更改` : '发布前检查' }}</h2>
+      <p class="text-sm text-[var(--text-2)]">
+        确认后会发布{{ batch ? '所选草稿' : '当前草稿' }}并请求 Cloudflare 完整构建。
+      </p>
       <div
         v-if="errors.length"
         class="my-3 rounded-xl bg-red-500/10 p-3 text-sm text-red-700 dark:text-red-300"
@@ -43,7 +45,7 @@
           :disabled="busy || errors.length > 0"
           @click="$emit('confirm', message)"
         >
-          {{ busy ? '发布中…' : '确认发布' }}
+          {{ busy ? '发布中…' : batch ? `确认发布 ${pageCount} 项` : '确认发布' }}
         </button>
       </div>
     </section>
@@ -52,12 +54,17 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue'
 import type { ValidationIssue } from './types'
-const props = defineProps<{
-  open: boolean
-  busy: boolean
-  errors: ValidationIssue[]
-  warnings: ValidationIssue[]
-}>()
+const props = withDefaults(
+  defineProps<{
+    open: boolean
+    busy: boolean
+    errors: ValidationIssue[]
+    warnings: ValidationIssue[]
+    pageCount?: number
+    batch?: boolean
+  }>(),
+  { pageCount: 1, batch: false },
+)
 defineEmits<{ close: []; confirm: [message: string] }>()
 const message = ref('')
 watch(
