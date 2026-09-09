@@ -47,6 +47,19 @@ const today = () => {
   return `${date.getFullYear()}-${date.getMonth() + 1}-${date.getDate()}`
 }
 
+const defaultResourceMetadata = () => ({
+  sidebar: false,
+  search: true,
+  updateDate: today(),
+  authors: ['xxx(作者)', 'VM汉化组(翻译)'],
+  links: [
+    { id: 'curseforge', text: '', link: '', icon: '', project: '' },
+    { id: 'github', text: '', link: '', icon: '', project: '' },
+    { id: 'paratranz', text: '', link: '', icon: '', project: '' },
+    { id: 'i18n', text: '', link: '', icon: '', project: '' },
+  ],
+})
+
 export function templateFor(kind: PageKind) {
   if (kind === 'document')
     return {
@@ -55,12 +68,12 @@ export function templateFor(kind: PageKind) {
     }
   if (kind === 'modpack')
     return {
-      metadata: { sidebar: false, search: true, updateDate: today() },
-      body: `<DownloadLayout :meta="frontmatter">\n\n::: warning 下载前请确认\n请确认 Minecraft、加载器与整合包版本。\n:::\n\n## 整合包简介\n\n在这里介绍玩法与汉化范围。\n\n<DownloadLinks :methods="[\n  { id: 'patch', text: '下载汉化补丁', link: 'https://example.com/replace-me' }\n]" />\n\n## 安装说明\n\n1. 下载对应版本的整合包和汉化补丁。\n2. 按说明安装补丁。\n\n<DocSupport />\n\n</DownloadLayout>`,
+      metadata: defaultResourceMetadata(),
+      body: `<DownloadLayout :meta="frontmatter">\n\n::: warning 下载前请确认\n请确认 Minecraft、加载器与整合包版本。\n:::\n\n## 整合包简介\n\n在这里介绍玩法与汉化范围。\n\n<DownloadLinks :methods="[\n  { id: 'quark-lanzou', text: '下载汉化', lanzouLink: '填写蓝奏云下载链接', quarkLink: '填写夸克网盘下载链接' },\n  { id: 'lazy', link: '填写蓝奏云下载链接' }\n]" />\n\n## 安装说明\n\n1. 下载对应版本的整合包和汉化补丁。\n2. 按说明安装补丁。\n\n<DocSupport />\n\n</DownloadLayout>`,
     }
   return {
-    metadata: { sidebar: false, search: true, updateDate: today() },
-    body: `<DownloadLayout :meta="frontmatter">\n\n## 地图信息\n\n在这里介绍地图玩法、人数与规则。\n\n::: warning 安装前确认\n请确认游戏版本，并将存档放入 saves 目录。\n:::\n\n<DownloadLinks :methods="[\n  { id: 'lanzou-quark-mapdl', text: '下载地图和汉化', link: 'https://example.com/replace-me' }\n]" />\n\n## 游玩方式\n\n1. 解压地图文件。\n2. 将存档文件夹放入 Minecraft 的 saves 目录。\n\n<DocSupport />\n\n</DownloadLayout>`,
+    metadata: defaultResourceMetadata(),
+    body: `<DownloadLayout :meta="frontmatter">\n\n## 地图信息\n\n在这里介绍地图玩法、人数与规则。\n\n::: warning 安装前确认\n请确认游戏版本，并将存档放入 saves 目录。\n:::\n\n<DownloadLinks :methods="[\n  { id: 'quark-lanzou', text: '下载汉化', lanzouLink: '填写蓝奏云下载链接', quarkLink: '填写夸克网盘下载链接' },\n  { id: 'lazy', link: '填写蓝奏云下载链接' }\n]" />\n\n## 游玩方式\n\n1. 解压地图文件。\n2. 将存档文件夹放入 Minecraft 的 saves 目录。\n\n<DocSupport />\n\n</DownloadLayout>`,
   }
 }
 
@@ -110,7 +123,8 @@ export function validateContent(
       error('body', '资源正文需要使用 DownloadLayout。')
     if (body.trim() && !/<DownloadLinks\b/.test(body))
       error('body', '资源页面至少需要一个下载组件。')
-    if (/example\.com\/replace-me/.test(body)) error('body', '请替换模板中的示例下载地址。')
+    if (/example\.com\/replace-me|填写(?:蓝奏云|夸克网盘)下载链接/.test(body))
+      error('body', '请替换模板中的示例下载地址。')
     if (!metadata.icon) warning('icon', '建议填写封面。')
     if (!metadata.description) warning('description', '建议填写简介。')
     if (!metadata.updateDate) warning('updateDate', '建议填写更新日期。')

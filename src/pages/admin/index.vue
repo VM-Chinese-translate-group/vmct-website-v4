@@ -191,7 +191,11 @@
                   最终地址：/{{ editor.draft.path || '尚未填写' }}
                 </small>
               </label>
-              <MetadataForm v-model="editor.draft.metadata" :page-kind="editor.pageKind.value" />
+              <MetadataForm
+                v-model="editor.draft.metadata"
+                :page-kind="editor.pageKind.value"
+                :isNew="!editor.draft.id"
+              />
             </section>
 
             <section

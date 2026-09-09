@@ -51,7 +51,7 @@
         <SelectMenu
           :model-value="model.statusType"
           :options="statusOptions"
-          aria-label="发布状态"
+          ariaLabel="发布状态"
           variant="flat"
           style="--select-width: 100%; --select-menu-min-width: 100%"
           @update:model-value="model.statusType = $event"
@@ -62,7 +62,7 @@
         <SelectMenu
           :model-value="model.loader"
           :options="loaderOptions"
-          aria-label="加载器"
+          ariaLabel="加载器"
           variant="flat"
           style="--select-width: 100%; --select-menu-min-width: 100%"
           @update:model-value="model.loader = $event"
@@ -95,7 +95,10 @@
         侧栏显示
       </label>
     </div>
-    <details class="group rounded-lg border border-[var(--switcher-border)] bg-[var(--bg-soft)]">
+    <details
+      ref="authorsLinksDetails"
+      class="group rounded-lg border border-[var(--switcher-border)] bg-[var(--bg-soft)]"
+    >
       <summary
         class="flex cursor-pointer list-none items-center gap-2 px-3 py-2 text-sm font-600 text-[var(--text-2)]"
       >
@@ -145,7 +148,7 @@
               <SelectMenu
                 :model-value="selectedLinkPlatform(link.id)"
                 :options="linkOptions"
-                aria-label="链接平台"
+                ariaLabel="链接平台"
                 variant="flat"
                 style="--select-width: 100%; --select-menu-min-width: 100%"
                 @update:model-value="updateLinkPlatform(link, $event)"
@@ -178,7 +181,7 @@
             <template v-else>
               <label class="cms-label">
                 显示文字
-                <input v-model="link.text" class="cms-field" placeholder="例如：介绍视频" />
+                <input v-model="link.text" class="cms-field" placeholder="一般不需添加" />
               </label>
               <label class="cms-label">
                 链接地址
@@ -195,13 +198,22 @@
   </section>
 </template>
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, nextTick, ref, watch } from 'vue'
 import { Icon } from '@iconify/vue'
 import SelectMenu from '@/components/SelectMenu.vue'
 import type { ContentLink, ContentMetadata } from './types'
 import { LINK_OPTIONS, LOADER_OPTIONS, STATUS_OPTIONS } from './contentConfig'
 const model = defineModel<ContentMetadata>({ required: true })
-defineProps<{ pageKind: 'document' | 'modpack' | 'map' }>()
+const props = defineProps<{ pageKind: 'document' | 'modpack' | 'map'; isNew?: boolean }>()
+const authorsLinksDetails = ref<HTMLDetailsElement | null>(null)
+
+watch(
+  () => props.isNew,
+  (isNew) => {
+    if (isNew) void nextTick(() => authorsLinksDetails.value?.setAttribute('open', ''))
+  },
+  { immediate: true },
+)
 const calendarDate = computed({
   get: () => {
     const match = model.value.updateDate.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/)

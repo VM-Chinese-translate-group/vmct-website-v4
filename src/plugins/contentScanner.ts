@@ -77,13 +77,16 @@ export function getFrontmatterValue(yamlRaw: string, key: string) {
 export function getFrontmatterText(yamlRaw: string, key: string) {
   const inlineValue = getFrontmatterValue(yamlRaw, key)
 
-  if (inlineValue && !['|', '>', '-'].includes(inlineValue)) {
+  // YAML serializers append a chomping indicator to multiline scalars (for
+  // example `|-` or `>+`). These markers describe trailing-newline handling;
+  // they are not the field value itself.
+  if (inlineValue && !/^(?:[|>][+-]?|-)$/.test(inlineValue)) {
     return inlineValue
   }
 
   const block = yamlRaw.match(
     new RegExp(
-      `(?:^|\\r?\\n)${key}:[ \\t]*(?:\\||>|-)?[ \\t]*(?:\\r?\\n)?([\\s\\S]*?)(?=\\r?\\n\\S+:|$)`,
+      `(?:^|\\r?\\n)${key}:[ \\t]*(?:[|>][+-]?|-)?[ \\t]*(?:\\r?\\n)?([\\s\\S]*?)(?=\\r?\\n\\S+:|$)`,
     ),
   )
   return block?.[1]?.replace(/\r?\n/g, ' ').trim() || ''
