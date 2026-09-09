@@ -3,11 +3,12 @@
     <button
       type="button"
       class="select-menu-trigger"
-      :class="
+      :class="[
+        { 'has-icons': hasOptionIcons },
         variant === 'flat'
           ? ['feedback-select-trigger', isOpen ? 'border-[var(--info-1)]!' : '']
-          : ''
-      "
+          : '',
+      ]"
       aria-haspopup="listbox"
       :aria-expanded="isOpen"
       :aria-label="ariaLabel"
@@ -27,7 +28,7 @@
         class="select-menu-icon"
         alt=""
       />
-      <span v-else class="select-menu-icon" aria-hidden="true"></span>
+      <span v-else-if="hasOptionIcons" class="select-menu-icon" aria-hidden="true"></span>
       <span class="select-menu-value">{{ selectedOption?.label }}</span>
       <Icon icon="lucide:chevron-down" class="select-menu-chevron" aria-hidden="true" />
     </button>
@@ -39,7 +40,10 @@
           :key="option.value"
           type="button"
           class="select-menu-option"
-          :class="{ selected: option.value === modelValue }"
+          :class="{
+            selected: option.value === modelValue,
+            'has-icons': hasOptionIcons,
+          }"
           role="option"
           :aria-selected="option.value === modelValue"
           @click="selectOption(option.value)"
@@ -52,7 +56,7 @@
             aria-hidden="true"
           />
           <img v-else-if="option.icon" :src="option.icon" class="select-menu-icon" alt="" />
-          <span v-else class="select-menu-icon" aria-hidden="true"></span>
+          <span v-else-if="hasOptionIcons" class="select-menu-icon" aria-hidden="true"></span>
           <span>{{ option.label }}</span>
           <Icon
             v-if="option.value === modelValue"
@@ -89,6 +93,7 @@ const emit = defineEmits<{
 
 const rootRef = ref<HTMLElement | null>(null)
 const isOpen = ref(false)
+const hasOptionIcons = computed(() => props.options.some((option) => Boolean(option.icon)))
 
 const selectedOption = computed(() =>
   props.options.find((option) => option.value === props.modelValue),
@@ -278,7 +283,7 @@ onUnmounted(() => document.removeEventListener('pointerdown', handleOutsidePoint
 
 .select-menu-option {
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr) 16px;
+  grid-template-columns: minmax(0, 1fr) 16px;
   align-items: center;
   box-sizing: border-box;
   width: 100%;
@@ -294,6 +299,17 @@ onUnmounted(() => document.removeEventListener('pointerdown', handleOutsidePoint
   background: transparent;
   border: 0;
   border-radius: 6px;
+}
+
+.select-menu-option.has-icons {
+  grid-template-columns: auto minmax(0, 1fr) 16px;
+}
+
+.select-menu-option > span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .select-menu-option:hover,
