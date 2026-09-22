@@ -48,7 +48,7 @@ const { locale } = useI18n()
 
 const communityLink = computed(() => {
   if (locale.value === 'zh-CN') {
-    return 'https://qm.qq.com/q/zfY3xUJ2YS'
+    return 'https://qm.qq.com/q/PL5IfMBRKg'
   }
   return 'https://discord.com/invite/SvJM5d9S98'
 })
