@@ -14,8 +14,10 @@ const source = await fs.readFile(sourcePath, 'utf8')
 const result = ts.transpileModule(source, {
   fileName: sourcePath,
   compilerOptions: {
-    target: ts.ScriptTarget.ES2022,
-    module: ts.ModuleKind.ESNext,
+    // Numeric enum values keep this script compatible with TypeScript 6/7,
+    // whose runtime package exports differ across distributions.
+    target: 9, // ScriptTarget.ES2022
+    module: 99, // ModuleKind.ESNext
     sourceMap: false,
   },
 })
