@@ -33,6 +33,8 @@ node --experimental-sqlite scripts/import-dictionary.mjs /path/to/d1backup.sql
 
 把 `server/nginx-www.vmct.top.conf` 挂载到现有 Nginx 容器的 `conf.d`，然后检查并重载 Nginx。该配置只处理 `www.vmct.top` 的 `/api/*` 和 `/search`，不会覆盖其他站点。
 
+配置默认使用 Docker bridge 宿主网关 `172.17.0.1:8787`。如果 ECS 的 Docker bridge 网关不同，先用 `ip route` 查看网关，再同步修改 Nginx 配置中的地址。
+
 ESA Pages 导入仓库后将生产分支设为 `cn-mainland`，构建配置使用仓库根目录的 `esa.jsonc`。ESA 回源规则把 `www.vmct.top/api/*` 和 `/search` 转发到 ECS；动态接口关闭缓存，静态文件使用 ESA Pages 的资源缓存。
 
 `ESA_DEPLOY_HOOK_URL` 可以填 ESA 的构建触发地址。后台发布内容时会调用它；如果为空，也可以在后台设置页面填写触发地址。
