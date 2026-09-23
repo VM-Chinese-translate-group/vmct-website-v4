@@ -13,6 +13,7 @@ if (!input) {
 
 const inputPath = path.resolve(input)
 const outputPath = path.resolve(output)
+const stagingPath = `${outputPath}.importing-${process.pid}`
 const totalBytes = fs.statSync(inputPath).size
 const batchLimitBytes = 4 * 1024 * 1024
 const batchLimitStatements = 5000
@@ -44,7 +45,10 @@ function showProgress(readBytes, statementCount, phase) {
 }
 
 fs.mkdirSync(path.dirname(outputPath), { recursive: true })
-const database = new DatabaseSync(outputPath)
+for (const suffix of ['', '-wal', '-shm']) {
+  fs.rmSync(stagingPath + suffix, { force: true })
+}
+const database = new DatabaseSync(stagingPath)
 database.exec('PRAGMA journal_mode = WAL; PRAGMA synchronous = NORMAL;')
 
 let readBytes = 0
@@ -130,6 +134,7 @@ function scan(text) {
   }
 }
 
+let completed = false
 try {
   console.log(`开始导入字典：${formatBytes(totalBytes)}，目标：${outputPath}`)
   const decoder = new StringDecoder('utf8')
@@ -147,7 +152,20 @@ try {
   flushBatch()
   showProgress(totalBytes, statementCount, '导入字典')
   process.stdout.write('\n')
-  console.log(`字典数据库已导入：${outputPath}（${elapsedSeconds().toFixed(1)} 秒）`)
+  // Consolidate the WAL before replacing the previous database file.
+  database.exec('PRAGMA wal_checkpoint(TRUNCATE); PRAGMA journal_mode = DELETE;')
+  completed = true
 } finally {
   database.close()
+  if (completed) {
+    for (const suffix of ['-wal', '-shm']) {
+      fs.rmSync(outputPath + suffix, { force: true })
+      const stagedSidecar = stagingPath + suffix
+      if (fs.existsSync(stagedSidecar)) fs.renameSync(stagedSidecar, outputPath + suffix)
+    }
+    fs.renameSync(stagingPath, outputPath)
+    console.log(`字典数据库已导入：${outputPath}（${elapsedSeconds().toFixed(1)} 秒）`)
+  } else {
+    console.error(`导入未完成，临时文件保留为：${stagingPath}`)
+  }
 }

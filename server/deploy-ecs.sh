@@ -93,6 +93,15 @@ fi
 
 ${SUDO} mkdir -p "${DATA_DIR}" /etc/vmct-website "${NGINX_CONF_DIR}"
 ${SUDO} chown -R vmct:vmct "$(dirname "${DATA_DIR}")"
+if [[ -n "${DICT_DB_FILE:-}" ]]; then
+  if [[ ! -f "${DICT_DB_FILE}" ]]; then
+    echo "找不到预构建字典数据库：${DICT_DB_FILE}" >&2
+    exit 1
+  fi
+  ${SUDO} install -m 0644 "${DICT_DB_FILE}" "${DATA_DIR}/dictionary.sqlite"
+  ${SUDO} chown vmct:vmct "${DATA_DIR}/dictionary.sqlite"
+  ${SUDO} rm -f "${DATA_DIR}/dictionary.sqlite-wal" "${DATA_DIR}/dictionary.sqlite-shm"
+fi
 if [[ ! -f "${ENV_FILE}" ]]; then
   ${SUDO} cp server/.env.example "${ENV_FILE}"
   ${SUDO} sed -i "s#^VMCT_DATA_DIR=.*#VMCT_DATA_DIR=${DATA_DIR}#; s#^DICT_DB_PATH=.*#DICT_DB_PATH=${DATA_DIR}/dictionary.sqlite#; s#^HOST=.*#HOST=0.0.0.0#" "${ENV_FILE}"
