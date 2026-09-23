@@ -5,12 +5,13 @@
   "scripts": {
     "build": "node scripts/sync-content.mjs && vite build && vite build --ssr src/entry-server.ts --outDir dist/server && node scripts/prerender.mjs",
     "dev": "node scripts/sync-content.mjs && vite",
-    "api:start": "node --experimental-sqlite --experimental-strip-types server/index.mjs",
-    "api:check": "node --experimental-sqlite --experimental-strip-types --check server/index.mjs",
+    "api:start": "node scripts/build-api.mjs && node --experimental-sqlite server/index.mjs",
+    "api:check": "node --experimental-sqlite --check server/index.mjs",
     "dictionary:import": "node --experimental-sqlite scripts/import-dictionary.mjs",
     "content:pull": "node scripts/sync-content.mjs",
     "content:migrate": "node scripts/migrate-legacy-content.mjs",
     "content:export": "node scripts/export-content.mjs",
+    "api:build": "node scripts/build-api.mjs",
     "format": "prettier --write src/",
     "type-check": "vue-tsc --build",
     "upgrade-deps": "taze patch -I"

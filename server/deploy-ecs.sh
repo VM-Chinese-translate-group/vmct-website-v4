@@ -90,6 +90,7 @@ else
   exit 1
 fi
 "${PNPM_CMD[@]}" install --frozen-lockfile
+node scripts/build-api.mjs
 
 ${SUDO} mkdir -p "${DATA_DIR}" /etc/vmct-website "${NGINX_CONF_DIR}"
 ${SUDO} chown -R vmct:vmct "$(dirname "${DATA_DIR}")"

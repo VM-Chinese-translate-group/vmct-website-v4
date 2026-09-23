@@ -21,7 +21,11 @@ const dictionaryDb = new SQLiteD1(
 const cacheStorage = createCacheStorage()
 globalThis.caches = cacheStorage
 
-const contentModule = await import(pathToFileURL(path.join(root, 'functions', 'api', 'content', '[[path]].ts')).href)
+const generatedContentModule = path.join(root, 'server', 'generated', 'content-api.mjs')
+const sourceContentModule = path.join(root, 'functions', 'api', 'content', '[[path]].ts')
+const contentModule = await import(
+  pathToFileURL(fs.existsSync(generatedContentModule) ? generatedContentModule : sourceContentModule).href,
+)
 const feedbackModule = await import(pathToFileURL(path.join(root, 'cf-code', 'vm-chinese-translation-feedback', 'index.js')).href)
 const aifadianModule = await import(pathToFileURL(path.join(root, 'cf-code', 'aifadian', 'worker.js')).href)
 const dictionaryModule = await import(pathToFileURL(path.join(root, 'cf-code', 'd1-tutorial', 'index.js')).href)

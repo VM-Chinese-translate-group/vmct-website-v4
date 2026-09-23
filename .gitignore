@@ -27,6 +27,7 @@ cf-code/d1backup.sql
 dictionary.sqlite
 dictionary.sqlite.importing-*
 server/api-test.*
+server/generated/
 .env
 
 # Local planning notes are useful during development but are not release files.
