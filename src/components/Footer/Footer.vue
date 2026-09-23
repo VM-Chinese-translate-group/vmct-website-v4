@@ -109,6 +109,7 @@
           {{ $t('footer.icpLicense') }}
         </a>
       </p>
+      <!--
       <p>
         <a
           href="http://www.beian.gov.cn/portal/registerSystemInfo?recordcode=41019702001135"
@@ -120,6 +121,7 @@
           {{ $t('footer.policeRecord') }}
         </a>
       </p>
+      -->
     </div>
   </footer>
 </template>
