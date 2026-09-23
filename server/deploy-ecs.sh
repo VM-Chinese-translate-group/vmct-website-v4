@@ -47,6 +47,16 @@ elif command -v npm >/dev/null 2>&1; then
   # A stale Corepack launcher can exist while its cached pnpm files are gone.
   # Use npm's isolated runner in that case; it does not depend on Corepack.
   PNPM_CMD=(npx --yes pnpm@12.5.1)
+elif command -v apt-get >/dev/null 2>&1; then
+  # Some Debian/Ubuntu Node packages ship Corepack without npm. Install npm so
+  # npx can fetch pnpm without using the broken Corepack cache.
+  ${SUDO} apt-get update
+  ${SUDO} apt-get install -y npm
+  if ! command -v npx >/dev/null 2>&1; then
+    echo 'npm 安装完成但找不到 npx，无法安装 pnpm。' >&2
+    exit 1
+  fi
+  PNPM_CMD=(npx --yes pnpm@12.5.1)
 elif command -v corepack >/dev/null 2>&1; then
   # Fallback for minimal Node installations that do not ship npm.
   ${SUDO} corepack enable
