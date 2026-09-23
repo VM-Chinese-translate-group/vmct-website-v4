@@ -2,7 +2,8 @@ import fs from 'node:fs/promises'
 import path from 'node:path'
 
 const OUTPUT_DIR = path.join(process.cwd(), 'src', 'generated-pages')
-const CONTENT_EXPORT_URL = 'https://vmct-cn.top/api/content/internal/export'
+const CONTENT_EXPORT_URL =
+  process.env.CONTENT_EXPORT_URL || 'https://www.vmct.top/api/content/internal/export'
 
 function normalizePath(value) {
   const pagePath = String(value || '')
@@ -39,6 +40,6 @@ try {
   console.log('content:pull generated ' + payload.pages.length + ' published page(s)')
 } catch (error) {
   // The first deployment happens before this project's API route exists. Keep
-  // repository Markdown as the fallback, then use D1 from later builds onward.
+  // repository Markdown as the fallback, then use ECS content from later builds onward.
   console.warn('content:pull skipped: ' + (error instanceof Error ? error.message : String(error)))
 }

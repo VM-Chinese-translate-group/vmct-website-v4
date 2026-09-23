@@ -8,7 +8,7 @@ import {
 import { getLocalizedResourceName } from '@/utils/resourceDisplay'
 import { convertInlineText } from '@/utils/zhconv'
 
-const SITE_URL = 'https://vmct-cn.top'
+const SITE_URL = 'https://www.vmct.top'
 const DEFAULT_IMAGE = '/imgs/og_image.png'
 
 type TranslateFn = (key: string, values?: Record<string, unknown>) => string

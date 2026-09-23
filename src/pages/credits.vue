@@ -100,7 +100,7 @@ import type { CreditPerson, DisplayCreditPerson } from '@/types/credit'
 
 const rawCategories = creditCategories
 
-const BILIBILI_AVATAR_API = 'https://vmct-cn.top/api/bilibili'
+const BILIBILI_AVATAR_API = '/api/bilibili'
 const BILIBILI_UID_BATCH_SIZE = 30
 
 const avatarMap = reactive<Record<string, string>>({})

@@ -151,7 +151,7 @@ import { ref, computed, onMounted } from 'vue'
 import { Icon } from '@iconify/vue'
 import Coins from '@/components/Coins.vue'
 
-const API = 'https://vmct-cn.top/api/afdian/'
+const API = '/api/afdian/'
 
 const sponsors = ref([])
 const totalCount = ref(0)

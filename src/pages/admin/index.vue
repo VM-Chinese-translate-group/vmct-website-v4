@@ -434,7 +434,7 @@ async function retryDeploy() {
     const result = (await retryContentDeployment()).deployment
     show(
       result.requested
-        ? '已请求 Cloudflare 完整构建。'
+        ? '已请求 ESA 构建。'
         : `构建未触发：${result.error || '未知错误'}`,
       result.requested ? 'success' : 'error',
     )
@@ -516,7 +516,7 @@ async function publish(message: string) {
     publishOpen.value = false
     show(
       result.deployment.requested
-        ? `${publishedPages.length} 个更改已发布，Cloudflare 正在构建。`
+        ? `${publishedPages.length} 个更改已发布，ESA 正在构建。`
         : `${publishedPages.length} 个更改已发布，但构建未触发：${result.deployment.error || '未知错误'}`,
       result.deployment.requested ? 'success' : 'error',
     )
@@ -539,7 +539,7 @@ async function archive() {
     await editor.refresh()
     show(
       result.deployment.requested
-        ? '页面已下线，Cloudflare 正在构建。'
+        ? '页面已下线，ESA 正在构建。'
         : `页面已下线，但构建未触发：${result.deployment.error || '未知错误'}`,
       result.deployment.requested ? 'success' : 'error',
     )

@@ -84,7 +84,7 @@ export function pageKindFromPath(path: string): PageKind {
 const validUrl = (value: string) => {
   if (!value) return true
   try {
-    const origin = typeof window === 'undefined' ? 'https://vmct-cn.top' : window.location.origin
+    const origin = typeof window === 'undefined' ? 'https://www.vmct.top' : window.location.origin
     const url = new URL(value, origin)
     return url.protocol === 'https:' || (url.origin === origin && value.startsWith('/'))
   } catch {

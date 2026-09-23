@@ -149,7 +149,7 @@ export default defineConfig({
     prerenderRoutesPlugin(),
 
     Sitemap({
-      hostname: 'https://vmct-cn.top',
+      hostname: 'https://www.vmct.top',
       dynamicRoutes: [...getMarkdownRoutes(), '/translation-feedback'],
     }),
 
@@ -158,14 +158,14 @@ export default defineConfig({
     }),
   ],
 
-  // Pages Functions do not run inside Vite. In development, keep the browser
-  // on localhost while proxying CMS requests to the deployed Pages Function.
+  // In development, keep the browser on localhost while proxying CMS requests
+  // to the ECS API service through the public origin.
   server: {
     proxy: {
       '/api/content': {
-        target: 'https://vmct-cn.top',
+        target: process.env.CONTENT_API_ORIGIN || 'https://www.vmct.top',
         changeOrigin: true,
-        headers: { Origin: 'https://vmct-cn.top' },
+        headers: { Origin: process.env.CONTENT_API_ORIGIN || 'https://www.vmct.top' },
       },
     },
   },

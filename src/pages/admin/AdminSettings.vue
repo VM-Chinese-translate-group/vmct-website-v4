@@ -3,16 +3,16 @@
     <section class="cms-panel">
       <h2 class="m-0 text-xl">部署设置</h2>
       <p class="text-sm text-[var(--text-2)]">
-        发布内容后通过 Cloudflare Pages Production Deploy Hook 生成网站。
+        发布内容后触发 ESA 构建并更新官网静态页面。
       </p>
       <label class="cms-label max-w-4xl">
-        Deploy Hook URL
+        ESA 构建触发地址
         <div class="flex gap-2 max-sm:flex-col">
           <input
             v-model="hook"
             class="cms-field flex-1"
             type="url"
-            placeholder="https://api.cloudflare.com/..."
+            placeholder="https://..."
           />
           <button
             class="cms-button"
@@ -34,7 +34,7 @@
         修改密码后所有设备会退出。原始密码只在浏览器中派生。
       </p>
       <p v-if="managedByEnvironment" class="text-sm text-[var(--text-muted)]">
-        当前密码由 Cloudflare 加密变量管理，请在项目设置中更新。
+        当前密码由 ECS 环境变量管理，请在服务器配置中更新。
       </p>
       <form v-else class="grid max-w-lg gap-2" @submit.prevent="submitPassword">
         <input

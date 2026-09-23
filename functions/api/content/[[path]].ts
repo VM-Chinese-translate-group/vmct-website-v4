@@ -2,6 +2,7 @@ interface Env {
   CONTENT_DB: any
   CMS_ADMIN_VERIFIER?: string
   CMS_ADMIN_SALT?: string
+  ESA_DEPLOY_HOOK_URL?: string
 }
 
 const JSON_HEADERS = {
@@ -15,13 +16,20 @@ const CHALLENGE_MAX_AGE_MS = 2 * 60 * 1000
 const SESSION_MAX_AGE_SECONDS = 60 * 60 * 24 * 14
 
 class ApiError extends Error {
+  status: number
+  code?: string
+  details?: Record<string, unknown>
+
   constructor(
-    public status: number,
+    status: number,
     message: string,
-    public code?: string,
-    public details?: Record<string, unknown>,
+    code?: string,
+    details?: Record<string, unknown>,
   ) {
     super(message)
+    this.status = status
+    this.code = code
+    this.details = details
   }
 }
 
@@ -402,7 +410,10 @@ async function logout(context: any) {
 
 async function getSettings(context: any) {
   return json({
-    deploymentHookUrl: (await setting(context.env.CONTENT_DB, 'deployment_hook_url')) || '',
+    deploymentHookUrl:
+      context.env.ESA_DEPLOY_HOOK_URL ||
+      (await setting(context.env.CONTENT_DB, 'deployment_hook_url')) ||
+      '',
   })
 }
 
@@ -415,8 +426,10 @@ async function saveSettings(context: any) {
 }
 
 async function deploy(context: any) {
-  const hook = await setting(context.env.CONTENT_DB, 'deployment_hook_url')
-  if (!hook) return { requested: false, error: '请先在后台设置 Pages Deploy Hook' }
+  const hook =
+    context.env.ESA_DEPLOY_HOOK_URL ||
+    (await setting(context.env.CONTENT_DB, 'deployment_hook_url'))
+  if (!hook) return { requested: false, error: '请先配置 ESA 构建触发地址' }
   try {
     const response = await fetch(hook, { method: 'POST' })
     return response.ok
@@ -425,7 +438,7 @@ async function deploy(context: any) {
   } catch (error) {
     return {
       requested: false,
-      error: error instanceof Error ? error.message : '无法调用 Deploy Hook',
+      error: error instanceof Error ? error.message : '无法调用 ESA 构建触发地址',
     }
   }
 }

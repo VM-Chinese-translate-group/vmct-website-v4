@@ -1,10 +1,13 @@
 {
-  "name": "vmct-cn.top",
+  "name": "vmct-website",
   "private": true,
   "type": "module",
   "scripts": {
     "build": "node scripts/sync-content.mjs && vite build && vite build --ssr src/entry-server.ts --outDir dist/server && node scripts/prerender.mjs",
     "dev": "node scripts/sync-content.mjs && vite",
+    "api:start": "node --experimental-sqlite --experimental-strip-types server/index.mjs",
+    "api:check": "node --experimental-sqlite --experimental-strip-types --check server/index.mjs",
+    "dictionary:import": "node --experimental-sqlite scripts/import-dictionary.mjs",
     "content:pull": "node scripts/sync-content.mjs",
     "content:migrate": "node scripts/migrate-legacy-content.mjs",
     "content:export": "node scripts/export-content.mjs",
@@ -52,5 +55,8 @@
     "vite-plugin-sitemap": "^0.8.2",
     "vue-tsc": "^3.3.11"
   },
-  "packageManager": "pnpm@12.5.1"
+  "packageManager": "pnpm@12.5.1",
+  "engines": {
+    "node": ">=22.6"
+  }
 }

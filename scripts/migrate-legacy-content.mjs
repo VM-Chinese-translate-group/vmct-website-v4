@@ -5,7 +5,7 @@ import { stdin, stdout } from 'node:process'
 import { loginContentAdmin } from './content-auth.mjs'
 
 const PAGES_DIR = path.join(process.cwd(), 'src', 'pages')
-const SITE_ORIGIN = 'https://vmct-cn.top'
+const SITE_ORIGIN = process.env.SITE_ORIGIN || 'https://www.vmct.top'
 
 function splitFrontmatter(content) {
   const match = content.match(/^---\r?\n([\s\S]*?)\r?\n---\r?\n?/)

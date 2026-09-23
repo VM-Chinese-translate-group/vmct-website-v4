@@ -4,7 +4,7 @@ import { createInterface } from 'node:readline/promises'
 import { stdin, stdout } from 'node:process'
 import { loginContentAdmin } from './content-auth.mjs'
 
-const SITE_ORIGIN = 'https://vmct-cn.top'
+const SITE_ORIGIN = process.env.SITE_ORIGIN || 'https://www.vmct.top'
 const outputArgument = process.argv.indexOf('--output')
 const OUTPUT_DIR = path.resolve(
   process.cwd(),
