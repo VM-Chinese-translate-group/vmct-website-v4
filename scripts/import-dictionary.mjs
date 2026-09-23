@@ -79,6 +79,78 @@ let statementStart = 0
 let state = 'normal'
 let quote = ''
 
+function triggerBodyIsOpen(sql) {
+  const tokens = []
+  let token = ''
+  let mode = 'normal'
+  let stringQuote = ''
+  const pushToken = () => {
+    if (token) tokens.push(token.toUpperCase())
+    token = ''
+  }
+
+  for (let index = 0; index < sql.length; index += 1) {
+    const current = sql[index]
+    const next = sql[index + 1]
+    if (mode === 'line-comment') {
+      if (current === '\n') mode = 'normal'
+      continue
+    }
+    if (mode === 'block-comment') {
+      if (current === '*' && next === '/') {
+        mode = 'normal'
+        index += 1
+      }
+      continue
+    }
+    if (mode === 'string') {
+      if (current === stringQuote) {
+        if (next === stringQuote) index += 1
+        else mode = 'normal'
+      }
+      continue
+    }
+    if (current === '-' && next === '-') {
+      pushToken()
+      mode = 'line-comment'
+      index += 1
+    } else if (current === '/' && next === '*') {
+      pushToken()
+      mode = 'block-comment'
+      index += 1
+    } else if (current === "'" || current === '"' || current === '`') {
+      pushToken()
+      mode = 'string'
+      stringQuote = current
+    } else if (/[A-Za-z_]/.test(current)) {
+      token += current
+    } else {
+      pushToken()
+    }
+  }
+  pushToken()
+
+  const isTrigger =
+    tokens[0] === 'CREATE' &&
+    (tokens[1] === 'TRIGGER' ||
+      ((tokens[1] === 'TEMP' || tokens[1] === 'TEMPORARY') && tokens[2] === 'TRIGGER'))
+  if (!isTrigger) return false
+
+  const beginIndex = tokens.indexOf('BEGIN')
+  if (beginIndex < 0) return false
+  let triggerDepth = 0
+  let caseDepth = 0
+  for (const tokenValue of tokens.slice(beginIndex)) {
+    if (tokenValue === 'CASE') caseDepth += 1
+    else if (tokenValue === 'BEGIN') triggerDepth += 1
+    else if (tokenValue === 'END') {
+      if (caseDepth > 0) caseDepth -= 1
+      else triggerDepth -= 1
+    }
+  }
+  return triggerDepth > 0
+}
+
 function scan(text) {
   buffer += text
   for (; scanPosition < buffer.length; scanPosition += 1) {
@@ -117,6 +189,11 @@ function scan(text) {
       state = 'quote'
       quote = ']'
     } else if (current === ';') {
+      // SQLite triggers contain a BEGIN ... END block with semicolons inside
+      // it. Keep those inner semicolons in one statement; splitting them
+      // causes later trigger statements to fail with misleading missing-table
+      // errors.
+      if (triggerBodyIsOpen(buffer.slice(statementStart, scanPosition + 1))) continue
       const statement = buffer.slice(statementStart, scanPosition + 1)
       batch.push(statement)
       batchBytes += Buffer.byteLength(statement)
