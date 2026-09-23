@@ -13,6 +13,8 @@ cd /opt/vmct-website
 pnpm install --frozen-lockfile
 ```
 
+首次部署可以直接运行 `server/deploy-ecs.sh`。脚本会拉取 `cn-mainland`、安装依赖、创建独立数据目录、安装 systemd 服务和 Nginx 配置。第一次运行会创建 `/etc/vmct-website/api.env` 并退出，填好环境变量后再次运行即可。
+
 复制 `server/.env.example` 到 `/etc/vmct-website/api.env`，填入随机的 `ID_HASH_SECRET`、后台密码 verifier，以及爱发电的 `AFDIAN_USER_ID` 和 `AFDIAN_TOKEN`。凭据只写入 ECS 环境文件，不写进仓库。
 
 启用服务：
