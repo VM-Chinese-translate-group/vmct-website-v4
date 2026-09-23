@@ -47,11 +47,39 @@ elif command -v npm >/dev/null 2>&1; then
   # A stale Corepack launcher can exist while its cached pnpm files are gone.
   # Use npm's isolated runner in that case; it does not depend on Corepack.
   PNPM_CMD=(npx --yes pnpm@12.5.1)
+elif command -v curl >/dev/null 2>&1; then
+  # Minimal ECS images may ship neither npm nor a package manager. Use the
+  # official standalone installer, pinned to the project's pnpm version.
+  PNPM_HOME="${PNPM_HOME:-${HOME}/.local/share/pnpm}"
+  export PNPM_HOME
+  mkdir -p "${PNPM_HOME}"
+  curl -fsSL https://get.pnpm.io/install.sh \
+    | env PNPM_HOME="${PNPM_HOME}" PNPM_VERSION=12.5.1 SHELL="${SHELL:-/bin/bash}" sh -
+  export PATH="${PNPM_HOME}:${PATH}"
+  if [[ ! -x "${PNPM_HOME}/pnpm" ]]; then
+    echo 'pnpm 官方安装器未生成可执行文件。' >&2
+    exit 1
+  fi
+  PNPM_CMD=("${PNPM_HOME}/pnpm")
 elif command -v apt-get >/dev/null 2>&1; then
   # Some Debian/Ubuntu Node packages ship Corepack without npm. Install npm so
   # npx can fetch pnpm without using the broken Corepack cache.
   ${SUDO} apt-get update
   ${SUDO} apt-get install -y npm
+  if ! command -v npx >/dev/null 2>&1; then
+    echo 'npm 安装完成但找不到 npx，无法安装 pnpm。' >&2
+    exit 1
+  fi
+  PNPM_CMD=(npx --yes pnpm@12.5.1)
+elif command -v dnf >/dev/null 2>&1 || command -v yum >/dev/null 2>&1 || command -v apk >/dev/null 2>&1; then
+  # Alibaba Linux and Alpine do not necessarily provide apt-get.
+  if command -v dnf >/dev/null 2>&1; then
+    ${SUDO} dnf install -y npm
+  elif command -v yum >/dev/null 2>&1; then
+    ${SUDO} yum install -y npm
+  else
+    ${SUDO} apk add --no-cache npm
+  fi
   if ! command -v npx >/dev/null 2>&1; then
     echo 'npm 安装完成但找不到 npx，无法安装 pnpm。' >&2
     exit 1
