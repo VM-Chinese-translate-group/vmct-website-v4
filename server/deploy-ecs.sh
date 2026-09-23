@@ -22,8 +22,9 @@ if ! command -v node >/dev/null 2>&1; then
 fi
 
 node_major="$(node -p 'process.versions.node.split(".")[0]')"
+node_minor="$(node -p 'process.versions.node.split(".")[1]')"
 node_version="$(node -p 'process.versions.node')"
-if (( node_major < 22 )); then
+if (( node_major < 22 || (node_major == 22 && node_minor < 6) )); then
   echo "Node.js ${node_version} 太旧，需要 22.6+。" >&2
   exit 1
 fi
