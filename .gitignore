@@ -24,6 +24,8 @@ node_modules/.cache/wrangler/
 .wrangler
 data/
 cf-code/d1backup.sql
+dictionary.sqlite
+dictionary.sqlite.importing-*
 server/api-test.*
 .env
 

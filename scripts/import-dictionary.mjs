@@ -56,6 +56,7 @@ let statementCount = 0
 let lastProgressAt = 0
 let batch = []
 let batchBytes = 0
+const deferredTriggers = []
 
 function flushBatch() {
   if (batch.length === 0) return
@@ -70,9 +71,9 @@ function flushBatch() {
   }
 }
 
-// Split the dump at semicolons while respecting SQL strings and comments. This
-// lets us execute small batches and report progress without loading the whole
-// 300+ MiB dump into memory or blocking on one giant database.exec() call.
+// Split the dump at semicolons while respecting SQL strings, comments, and
+// trigger bodies. This lets us execute small batches and report progress
+// without loading the whole 300+ MiB dump into memory.
 let buffer = ''
 let scanPosition = 0
 let statementStart = 0
@@ -195,8 +196,15 @@ function scan(text) {
       // errors.
       if (triggerBodyIsOpen(buffer.slice(statementStart, scanPosition + 1))) continue
       const statement = buffer.slice(statementStart, scanPosition + 1)
-      batch.push(statement)
-      batchBytes += Buffer.byteLength(statement)
+      // The D1 dump creates one INSTEAD OF trigger before creating the view it
+      // targets. SQLite rejects that order, so create all triggers after the
+      // regular schema and data have been imported.
+      if (/^\s*(?:CREATE\s+(?:TEMP(?:ORARY)?\s+)?TRIGGER)\b/i.test(statement)) {
+        deferredTriggers.push(statement)
+      } else {
+        batch.push(statement)
+        batchBytes += Buffer.byteLength(statement)
+      }
       statementStart = scanPosition + 1
       if (batchBytes >= batchLimitBytes || batch.length >= batchLimitStatements) flushBatch()
     }
@@ -227,6 +235,23 @@ try {
     batchBytes += Buffer.byteLength(trailing)
   }
   flushBatch()
+  const hasFts = database
+    .prepare("SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = 'dict_fts' LIMIT 1")
+    .get()
+  if (!hasFts) {
+    console.log('\n正在创建 dict_fts 全文索引（英文搜索需要）...')
+    database.exec(
+      "CREATE VIRTUAL TABLE dict_fts USING fts5(origin_name, trans_name, modid, key, version, curseforge, content='dict', content_rowid='ID')",
+    )
+    database.exec("INSERT INTO dict_fts(dict_fts) VALUES('rebuild')")
+    const ftsCount = database.prepare('SELECT count(*) AS count FROM dict_fts').get().count
+    console.log(`dict_fts 已创建：${Number(ftsCount).toLocaleString()} 条索引`)
+  }
+  if (deferredTriggers.length > 0) {
+    database.exec(deferredTriggers.join('\n'))
+    statementCount += deferredTriggers.length
+    console.log(`\n已延后创建 ${deferredTriggers.length} 个 trigger`)
+  }
   showProgress(totalBytes, statementCount, '导入字典')
   process.stdout.write('\n')
   // Consolidate the WAL before replacing the previous database file.
