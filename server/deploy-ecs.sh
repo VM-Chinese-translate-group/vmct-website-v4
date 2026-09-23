@@ -40,12 +40,15 @@ else
 fi
 
 cd "${APP_DIR}"
-if command -v corepack >/dev/null 2>&1; then
-  corepack enable
-  corepack prepare pnpm@12.5.1 --activate
-fi
 if ! command -v pnpm >/dev/null 2>&1; then
-  npm install --global pnpm@12.5.1
+  if command -v corepack >/dev/null 2>&1; then
+    # Corepack installs its pnpm launcher under /usr/bin on Debian/Ubuntu.
+    # The deploy user usually cannot create that symlink without sudo.
+    ${SUDO} corepack enable
+    corepack prepare pnpm@12.5.1 --activate
+  else
+    ${SUDO} npm install --global pnpm@12.5.1
+  fi
 fi
 pnpm install --frozen-lockfile
 
