@@ -373,6 +373,10 @@
   text-decoration: none !important;
 }
 
+.grid-layout > .card-item {
+  width: 100%;
+}
+
 .card-item:hover,
 .card-item:focus-visible {
   text-decoration: none !important;
@@ -381,7 +385,9 @@
 .card-box {
   display: flex;
   flex-direction: row;
+  box-sizing: border-box;
   width: 100%;
+  min-width: 0;
   min-height: 150px;
   padding: 20px;
   background-color: var(--bg-soft);

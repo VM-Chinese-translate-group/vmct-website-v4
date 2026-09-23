@@ -3,18 +3,22 @@ import type { RouteRecordRaw } from 'vue-router'
 
 import DefaultLayout from '@/layout/DefaultLayout.vue'
 import Home from '@/layout/HomeLayout.vue'
+import ContentAdmin from '@/pages/admin/index.vue'
 import { routeMeta } from 'virtual:route-meta'
 
-const mdComponents = import.meta.glob('../pages/**/*.md')
+const mdComponents = {
+  ...import.meta.glob('../pages/**/*.md'),
+  ...import.meta.glob('../generated-pages/**/*.md'),
+}
 
 function fileToRoutePath(file: string) {
-  let p = file.replace('../pages', '').replace(/\.md$/, '')
+  let p = file.replace(/^\.\.\/(?:pages|generated-pages)/, '').replace(/\.md$/, '')
   if (p.endsWith('/index')) p = p.replace(/\/index$/, '')
   if (p === '') return '/'
   return p.startsWith('/') ? p : `/${p}`
 }
 
-const mdRoutes: RouteRecordRaw[] = []
+const mdRouteMap = new Map<string, RouteRecordRaw>()
 
 Object.keys(mdComponents).forEach((file) => {
   const routePath = fileToRoutePath(file)
@@ -23,7 +27,7 @@ Object.keys(mdComponents).forEach((file) => {
 
   const isDocLayout = routePath.startsWith('/modpacks/fc5-wiki') || routePath.endsWith('/secret')
 
-  mdRoutes.push({
+  mdRouteMap.set(routePath, {
     path: routePath,
     name: routePath.replace(/^\//, '').replace(/\//g, '-') || `md-${Math.random()}`,
     component: mdComponents[file],
@@ -35,6 +39,8 @@ Object.keys(mdComponents).forEach((file) => {
   })
 })
 
+const mdRoutes = [...mdRouteMap.values()]
+
 const routes: RouteRecordRaw[] = [
   {
     path: '/',
@@ -43,6 +49,18 @@ const routes: RouteRecordRaw[] = [
       { path: '', name: 'Home', component: Home },
       { path: 'modpacks', name: 'modpacks-list', component: () => import('@/pages/modpacks.vue') },
       { path: 'map', name: 'map-list', component: () => import('@/pages/map.vue') },
+      {
+        path: 'admin',
+        name: 'content-admin',
+        component: ContentAdmin,
+        meta: { noindex: true },
+      },
+      {
+        path: 'admin/settings',
+        name: 'content-admin-settings',
+        component: ContentAdmin,
+        meta: { noindex: true },
+      },
       {
         path: 'translation-feedback',
         name: 'translation-feedback',

@@ -55,7 +55,7 @@ const { t } = useI18n()
 const coins = computed(() => ({
   bilibili: {
     name: 'bilibili',
-    address: 'https://space.bilibili.com/2085089798',
+    address: 'https://space.bilibili.com/3546956559288550',
   },
   afdian: {
     name: t('supportUs.afdText'),

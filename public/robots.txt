@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://vmct-cn.top/sitemap.xml
+Sitemap: https://www.vmct.top/sitemap.xml

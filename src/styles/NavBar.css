@@ -376,7 +376,7 @@
     width: 100%;
     height: calc(100vh - 64px);
     height: calc(100dvh - 64px);
-    background: var(--nav-menu-bg, #f7faf9);
+    background: var(--nav-bg, #f7faf9);
     backdrop-filter: none;
     -webkit-backdrop-filter: none;
     flex-direction: column;

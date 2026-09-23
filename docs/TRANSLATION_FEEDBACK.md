@@ -1,16 +1,16 @@
 # 汉化意见征集后台编辑指南
 
-本功能的编辑工作全部在 Cloudflare Dashboard 的 D1 SQL Editor 中完成。前端只负责公开展示、提交建议和点赞；编辑人员不需要调用接口、配置 Wrangler 或部署 Worker。
+本功能的编辑工作全部在 ECS SQLite 数据库 中完成。前端只负责公开展示、提交建议和点赞；编辑人员不需要调用接口、配置 Wrangler 或部署 Worker。
 
 ## 进入正确的数据库
 
-在 Cloudflare Dashboard 中依次打开：
+在 ECS 上使用 SQLite 工具打开：
 
 ```text
-Workers & Pages → D1 → vm-chinese-translation-feedback → SQL Editor
+/var/lib/vmct-website/data/translation-feedback.sqlite
 ```
 
-请确认当前数据库名称是 `vm-chinese-translation-feedback`。不要选择账号中的其他 D1 数据库。
+请确认使用的是 `/var/lib/vmct-website/data/translation-feedback.sqlite`，不要与其他项目共用数据库文件。
 
 每次编辑都遵循：
 
@@ -100,7 +100,7 @@ WHERE id = '项目 ID';
 
 提交新项目或补充来源时，Worker 会尝试自动获取 CurseForge 或 Modrinth 的项目封面。Modrinth 使用公开项目接口；CurseForge 需要维护者在 Worker Secret 中配置 `CURSEFORGE_API_KEY`。接口超时、限流、项目没有封面或没有配置密钥时，提交仍会成功，`cover_url` 为空属于正常情况，前端会显示 `/imgs/missing.png`。
 
-自动获取只会补全当前没有封面的项目，不会覆盖编辑人员已经设置的封面。自动获取失败时，可以继续在 D1 中手动填写封面。
+自动获取只会补全当前没有封面的项目，不会覆盖编辑人员已经设置的封面。自动获取失败时，可以继续在 SQLite 中手动填写封面。
 
 设置封面时，同时填写地址和来源平台：
 

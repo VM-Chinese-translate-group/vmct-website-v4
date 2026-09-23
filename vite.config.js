@@ -149,7 +149,7 @@ export default defineConfig({
     prerenderRoutesPlugin(),
 
     Sitemap({
-      hostname: 'https://vmct-cn.top',
+      hostname: 'https://www.vmct.top',
       dynamicRoutes: [...getMarkdownRoutes(), '/translation-feedback'],
     }),
 
@@ -157,6 +157,18 @@ export default defineConfig({
       threshold: 10240,
     }),
   ],
+
+  // In development, keep the browser on localhost while proxying CMS requests
+  // to the ECS API service through the public origin.
+  server: {
+    proxy: {
+      '/api/content': {
+        target: process.env.CONTENT_API_ORIGIN || 'https://www.vmct.top',
+        changeOrigin: true,
+        headers: { Origin: process.env.CONTENT_API_ORIGIN || 'https://www.vmct.top' },
+      },
+    },
+  },
 
   build: {
     rolldownOptions: {

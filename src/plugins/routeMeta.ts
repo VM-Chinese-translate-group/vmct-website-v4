@@ -37,7 +37,7 @@ export function routeMetaPlugin() {
     const meta: Record<string, RouteMetaEntry> = {}
 
     for (const page of getMarkdownPages()) {
-      meta[`../pages/${page.relativePath}`] = toRouteMeta(page)
+      meta[page.modulePath] = toRouteMeta(page)
     }
 
     return meta

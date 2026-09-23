@@ -6,6 +6,8 @@ node_modules
 .DS_Store
 dist
 dist-ssr
+src/generated-pages/
+content-export/
 worker/dist/
 worker/worker/dist/
 worker/.cover-dist/
@@ -20,6 +22,10 @@ node_modules/.cache/wrangler/
 
 *.tsbuildinfo
 .wrangler
+data/
+cf-code/d1backup.sql
+server/api-test.*
+.env
 
 # Local planning notes are useful during development but are not release files.
 task_plan.md
