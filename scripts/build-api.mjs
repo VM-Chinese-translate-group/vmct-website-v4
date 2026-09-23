@@ -1,6 +1,9 @@
 import fs from 'node:fs/promises'
+import { createRequire } from 'node:module'
 import path from 'node:path'
-import ts from 'typescript/lib/typescript.js'
+
+const require = createRequire(import.meta.url)
+const ts = require('typescript')
 
 const root = process.cwd()
 const sourcePath = path.join(root, 'functions', 'api', 'content', '[[path]].ts')
