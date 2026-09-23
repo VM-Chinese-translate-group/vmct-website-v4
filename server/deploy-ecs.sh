@@ -40,17 +40,23 @@ else
 fi
 
 cd "${APP_DIR}"
-if ! command -v pnpm >/dev/null 2>&1; then
-  if command -v corepack >/dev/null 2>&1; then
-    # Corepack installs its pnpm launcher under /usr/bin on Debian/Ubuntu.
-    # The deploy user usually cannot create that symlink without sudo.
-    ${SUDO} corepack enable
-    corepack prepare pnpm@12.5.1 --activate
-  else
-    ${SUDO} npm install --global pnpm@12.5.1
-  fi
+PNPM_CMD=()
+if command -v pnpm >/dev/null 2>&1 && pnpm --version >/dev/null 2>&1; then
+  PNPM_CMD=(pnpm)
+elif command -v npm >/dev/null 2>&1; then
+  # A stale Corepack launcher can exist while its cached pnpm files are gone.
+  # Use npm's isolated runner in that case; it does not depend on Corepack.
+  PNPM_CMD=(npx --yes pnpm@12.5.1)
+elif command -v corepack >/dev/null 2>&1; then
+  # Fallback for minimal Node installations that do not ship npm.
+  ${SUDO} corepack enable
+  corepack prepare pnpm@12.5.1 --activate
+  PNPM_CMD=(pnpm)
+else
+  echo '缺少 npm、pnpm 或 corepack，无法安装依赖。' >&2
+  exit 1
 fi
-pnpm install --frozen-lockfile
+"${PNPM_CMD[@]}" install --frozen-lockfile
 
 ${SUDO} mkdir -p "${DATA_DIR}" /etc/vmct-website "${NGINX_CONF_DIR}"
 ${SUDO} chown -R vmct:vmct "$(dirname "${DATA_DIR}")"
