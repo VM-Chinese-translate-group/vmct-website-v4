@@ -55,7 +55,7 @@ if [[ ! -f "${ENV_FILE}" ]]; then
   ${SUDO} cp server/.env.example "${ENV_FILE}"
   ${SUDO} sed -i "s#^VMCT_DATA_DIR=.*#VMCT_DATA_DIR=${DATA_DIR}#; s#^DICT_DB_PATH=.*#DICT_DB_PATH=${DATA_DIR}/dictionary.sqlite#; s#^HOST=.*#HOST=0.0.0.0#" "${ENV_FILE}"
   ${SUDO} chmod 600 "${ENV_FILE}"
-  echo "已创建 ${ENV_FILE}。请填入 ID_HASH_SECRET、CMS_ADMIN_* 和 AFDIAN_* 后再次运行此脚本。" >&2
+  echo "已创建 ${ENV_FILE}。请至少填入 ID_HASH_SECRET；如需赞助者名单，再填入 AFDIAN_*，然后再次运行此脚本。" >&2
   exit 2
 fi
 
