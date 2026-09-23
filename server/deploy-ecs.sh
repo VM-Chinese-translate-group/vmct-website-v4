@@ -85,13 +85,8 @@ elif command -v dnf >/dev/null 2>&1 || command -v yum >/dev/null 2>&1 || command
     exit 1
   fi
   PNPM_CMD=(npx --yes pnpm@12.5.1)
-elif command -v corepack >/dev/null 2>&1; then
-  # Fallback for minimal Node installations that do not ship npm.
-  ${SUDO} corepack enable
-  corepack prepare pnpm@12.5.1 --activate
-  PNPM_CMD=(pnpm)
 else
-  echo '缺少 npm、pnpm 或 corepack，无法安装依赖。' >&2
+  echo '缺少可用的 pnpm、npm、curl 或系统包管理器，无法安装依赖。' >&2
   exit 1
 fi
 "${PNPM_CMD[@]}" install --frozen-lockfile
