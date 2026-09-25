@@ -121,10 +121,26 @@ if ! ${SUDO} grep -q '^SITE_REBUILD_HOOK_URL=' "${ENV_FILE}"; then
   ${SUDO} tee -a "${ENV_FILE}" >/dev/null <<'EOF'
 SITE_REBUILD_HOOK_URL=http://127.0.0.1:8787/internal/rebuild
 EOF
+else
+  # The single-server layout always rebuilds locally. Replace a hook left by
+  # an earlier ESA deployment so CMS publishing cannot call the old service.
+  ${SUDO} sed -i 's#^SITE_REBUILD_HOOK_URL=.*#SITE_REBUILD_HOOK_URL=http://127.0.0.1:8787/internal/rebuild#' "${ENV_FILE}"
 fi
 if ! ${SUDO} grep -q '^SITE_REBUILD_SECRET=' "${ENV_FILE}"; then
   rebuild_secret="$(od -An -N24 -tx1 /dev/urandom | tr -d ' \n')"
   ${SUDO} sh -c "printf 'SITE_REBUILD_SECRET=%s\\n' '${rebuild_secret}' >> '${ENV_FILE}'"
+fi
+if ! ${SUDO} grep -q '^NGINX_CONTAINER=' "${ENV_FILE}"; then
+  ${SUDO} sh -c "printf 'NGINX_CONTAINER=nginx\\n' >> '${ENV_FILE}'"
+fi
+if ! ${SUDO} grep -q '^NGINX_STATIC_ROOT=' "${ENV_FILE}"; then
+  ${SUDO} sh -c "printf 'NGINX_STATIC_ROOT=%s\\n' '${STATIC_ROOT}' >> '${ENV_FILE}'"
+fi
+
+if ! getent group docker >/dev/null 2>&1; then
+  echo '系统不存在 docker 用户组，无法让 API 通过现有 Nginx 容器自动发布站点。' >&2
+  echo '请先确认 Docker 已正确安装，再重新运行部署脚本。' >&2
+  exit 1
 fi
 
 if [[ -n "${DICT_BACKUP:-}" && ! -f "${DATA_DIR}/dictionary.sqlite" ]]; then

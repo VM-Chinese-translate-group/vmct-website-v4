@@ -26,7 +26,7 @@ bash /tmp/vmct-deploy.sh
 DICT_DB_FILE=/home/vmct/vmweb/dictionary.sqlite bash /tmp/vmct-deploy.sh
 ```
 
-首次运行创建 `/etc/vmct-website/api.env` 后会退出。填写至少一段随机的 `ID_HASH_SECRET`，然后再次运行脚本。
+首次运行创建 `/etc/vmct-website/api.env` 后会退出。填写至少一段随机的 `ID_HASH_SECRET`，然后再次运行脚本。脚本会让 API 服务使用 `docker` 用户组，以便内容发布后通过现有 Nginx 容器完成静态文件替换。
 
 ## Nginx 路由
 
@@ -38,7 +38,7 @@ Nginx 使用 `try_files` 回退到 `index.html`，所以 Vue 路由可以直接�
 
 ## DNS 和 HTTPS
 
-将 `www.vmct.top` 的 A 记录直接指向 ECS 公网 IP，删除 ESA 的域名绑定和路由。安全组放行 TCP 80/443。若 ECS 已有 `/etc/letsencrypt` 证书，可在现有 Nginx 中为 `www.vmct.top` 添加 443 SSL server；证书路径与其他站点保持一致。
+将 `www.vmct.top` 的 A 记录直接指向 ECS 公网 IP，删除 ESA 的域名绑定和路由。安全组放行 TCP 80/443。`*.vmct.top` 通配符证书可以直接用于 `www.vmct.top`；若证书不在默认路径，执行部署时传入 `TLS_CERT_FILE` 和 `TLS_KEY_FILE`。
 
 ## 内容发布
 
@@ -48,4 +48,12 @@ Nginx 使用 `try_files` 回退到 `index.html`，所以 Vue 路由可以直接�
 http://127.0.0.1:8787/internal/rebuild
 ```
 
-该接口使用 `SITE_REBUILD_SECRET` 保护，并在后台启动一次静态站点构建。构建完成后静态 Nginx 会直接读取更新后的 `dist/`。
+该接口使用 `SITE_REBUILD_SECRET` 保护，并在后台启动一次静态站点构建。构建完成后，API 会把新 `dist/` 原子复制到现有 Nginx 容器并重载 Nginx，因此 CMS 发布后不需要重新执行完整部署脚本。完整代码升级仍使用 `deploy-ecs.sh`。
+
+需要手动触发时，在 ECS 本机执行：
+
+```sh
+SECRET="$(sudo awk -F= '$1 == "SITE_REBUILD_SECRET" { print substr($0, index($0, "=") + 1) }' /etc/vmct-website/api.env)"
+curl -i -X POST http://127.0.0.1:8787/internal/rebuild \
+  -H "Authorization: Bearer ${SECRET}"
+```

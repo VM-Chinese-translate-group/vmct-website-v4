@@ -107,7 +107,9 @@ async function dispatch(request, nodeResponse) {
       const rebuild = child.spawn(process.execPath, ['scripts/rebuild-site.mjs'], {
         cwd: root,
         detached: true,
-        stdio: 'ignore',
+        // Keep the build output in the systemd journal so a failed
+        // container copy or Nginx reload can be diagnosed from ECS.
+        stdio: 'inherit',
         env: { ...process.env, CONTENT_EXPORT_URL: 'http://127.0.0.1:8787/api/content/internal/export' },
       })
       rebuild.unref()

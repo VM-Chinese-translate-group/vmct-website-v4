@@ -6,6 +6,7 @@ Wants=network-online.target
 [Service]
 Type=simple
 User=vmct
+SupplementaryGroups=docker
 WorkingDirectory=/opt/vmct-website
 EnvironmentFile=/etc/vmct-website/api.env
 ExecStart=/usr/bin/node --experimental-sqlite server/index.mjs
