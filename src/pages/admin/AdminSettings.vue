@@ -3,16 +3,16 @@
     <section class="cms-panel">
       <h2 class="m-0 text-xl">部署设置</h2>
       <p class="text-sm text-[var(--text-2)]">
-        发布内容后触发 ESA 构建并更新官网静态页面。
+        发布内容后触发 ECS 本机重建并更新官网静态页面。
       </p>
       <label class="cms-label max-w-4xl">
-        ESA 构建触发地址
+        站点重建地址
         <div class="flex gap-2 max-sm:flex-col">
           <input
             v-model="hook"
             class="cms-field flex-1"
             type="url"
-            placeholder="https://..."
+            placeholder="http://127.0.0.1:8787/internal/rebuild"
           />
           <button
             class="cms-button"

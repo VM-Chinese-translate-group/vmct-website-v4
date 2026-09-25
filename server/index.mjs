@@ -41,7 +41,8 @@ const env = {
   AFDIAN_USER_ID: process.env.AFDIAN_USER_ID,
   AFDIAN_TOKEN: process.env.AFDIAN_TOKEN,
   BILIBILI_WORKER_ORIGIN: process.env.BILIBILI_WORKER_ORIGIN || 'http://127.0.0.1:8787',
-  ESA_DEPLOY_HOOK_URL: process.env.ESA_DEPLOY_HOOK_URL,
+  SITE_REBUILD_HOOK_URL: process.env.SITE_REBUILD_HOOK_URL,
+  SITE_REBUILD_SECRET: process.env.SITE_REBUILD_SECRET,
 }
 
 function requestBody(request) {
@@ -91,6 +92,29 @@ async function dispatch(request, nodeResponse) {
   const webRequest = await toWebRequest(request, url)
   const pathname = new URL(url).pathname
   let response
+
+  if (pathname === '/internal/rebuild' && request.method === 'POST') {
+    const secret = env.SITE_REBUILD_SECRET
+    const authorization = webRequest.headers.get('authorization') || ''
+    if (!secret || authorization !== `Bearer ${secret}`) {
+      response = new Response('Unauthorized', { status: 401 })
+    } else {
+      response = new Response(JSON.stringify({ requested: true }), {
+        status: 202,
+        headers: { 'Content-Type': 'application/json' },
+      })
+      const child = await import('node:child_process')
+      const rebuild = child.spawn(process.execPath, ['scripts/rebuild-site.mjs'], {
+        cwd: root,
+        detached: true,
+        stdio: 'ignore',
+        env: { ...process.env, CONTENT_EXPORT_URL: 'http://127.0.0.1:8787/api/content/internal/export' },
+      })
+      rebuild.unref()
+    }
+    await sendResponse(response, nodeResponse)
+    return
+  }
 
   if (pathname.startsWith('/api/content/')) {
     response = await contentModule.onRequest(contextFor(request, webRequest, pathname.slice('/api/content/'.length)))

@@ -53,7 +53,7 @@ if (cookie) {
   } else {
     console.log('已导入 ' + result.imported + ' 个页面。')
     console.log(
-      result.deployment?.requested ? '已触发完整构建。' : '请在后台设置 Deploy Hook 后重试发布。',
+      result.deployment?.requested ? '已触发完整站点重建。' : '请先配置站点重建地址后重试发布。',
     )
   }
 }

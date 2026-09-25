@@ -5,6 +5,10 @@ APP_DIR="${APP_DIR:-/opt/vmct-website}"
 DATA_DIR="${VMCT_DATA_DIR:-/var/lib/vmct-website/data}"
 ENV_FILE="/etc/vmct-website/api.env"
 NGINX_CONF_DIR="/home/vmct/nginx/conf.d"
+STATIC_CONTAINER="${VMCT_STATIC_CONTAINER:-vmct-website-static}"
+STATIC_PORT="${VMCT_STATIC_PORT:-8081}"
+TLS_CERT_FILE="${TLS_CERT_FILE:-/etc/letsencrypt/live/vmct.top/fullchain.pem}"
+TLS_KEY_FILE="${TLS_KEY_FILE:-/etc/letsencrypt/live/vmct.top/privkey.pem}"
 
 if [[ "${EUID}" -eq 0 ]]; then
   SUDO=""
@@ -105,10 +109,22 @@ if [[ -n "${DICT_DB_FILE:-}" ]]; then
 fi
 if [[ ! -f "${ENV_FILE}" ]]; then
   ${SUDO} cp server/.env.example "${ENV_FILE}"
-  ${SUDO} sed -i "s#^VMCT_DATA_DIR=.*#VMCT_DATA_DIR=${DATA_DIR}#; s#^DICT_DB_PATH=.*#DICT_DB_PATH=${DATA_DIR}/dictionary.sqlite#; s#^HOST=.*#HOST=0.0.0.0#" "${ENV_FILE}"
+  rebuild_secret="$(od -An -N24 -tx1 /dev/urandom | tr -d ' \n')"
+  ${SUDO} sed -i "s#^VMCT_DATA_DIR=.*#VMCT_DATA_DIR=${DATA_DIR}#; s#^DICT_DB_PATH=.*#DICT_DB_PATH=${DATA_DIR}/dictionary.sqlite#; s#^HOST=.*#HOST=0.0.0.0#; s#^SITE_REBUILD_HOOK_URL=.*#SITE_REBUILD_HOOK_URL=http://127.0.0.1:8787/internal/rebuild#; s#^SITE_REBUILD_SECRET=.*#SITE_REBUILD_SECRET=${rebuild_secret}#" "${ENV_FILE}"
   ${SUDO} chmod 600 "${ENV_FILE}"
   echo "已创建 ${ENV_FILE}。请至少填入 ID_HASH_SECRET；如需赞助者名单，再填入 AFDIAN_*，然后再次运行此脚本。" >&2
   exit 2
+fi
+
+# Upgrade an environment file created by an earlier ESA-based deployment.
+if ! ${SUDO} grep -q '^SITE_REBUILD_HOOK_URL=' "${ENV_FILE}"; then
+  ${SUDO} tee -a "${ENV_FILE}" >/dev/null <<'EOF'
+SITE_REBUILD_HOOK_URL=http://127.0.0.1:8787/internal/rebuild
+EOF
+fi
+if ! ${SUDO} grep -q '^SITE_REBUILD_SECRET=' "${ENV_FILE}"; then
+  rebuild_secret="$(od -An -N24 -tx1 /dev/urandom | tr -d ' \n')"
+  ${SUDO} sh -c "printf 'SITE_REBUILD_SECRET=%s\\n' '${rebuild_secret}' >> '${ENV_FILE}'"
 fi
 
 if [[ -n "${DICT_BACKUP:-}" && ! -f "${DATA_DIR}/dictionary.sqlite" ]]; then
@@ -117,18 +133,60 @@ fi
 
 ${SUDO} install -m 0644 server/vmct-website-api.service /etc/systemd/system/vmct-website-api.service
 ${SUDO} install -m 0644 server/nginx-www.vmct.top.conf "${NGINX_CONF_DIR}/www.vmct.top.conf"
+if [[ -f "${TLS_CERT_FILE}" && -f "${TLS_KEY_FILE}" ]]; then
+  tls_tmp="$(mktemp)"
+  awk -v cert="${TLS_CERT_FILE}" -v key="${TLS_KEY_FILE}" '
+    NR == 1 { print; next }
+    NR == 2 { print "    listen 443 ssl;"; print "    ssl_certificate " cert ";"; print "    ssl_certificate_key " key ";"; next }
+    { gsub(/listen 80;/, "listen 443 ssl;"); gsub(/listen \[::\]:80;/, "listen [::]:443 ssl;"); print }
+  ' server/nginx-www.vmct.top.conf >"${tls_tmp}"
+  ${SUDO} install -m 0644 "${tls_tmp}" "${NGINX_CONF_DIR}/www.vmct.top.ssl.conf"
+  rm -f "${tls_tmp}"
+else
+  ${SUDO} rm -f "${NGINX_CONF_DIR}/www.vmct.top.ssl.conf"
+  echo "未找到 www.vmct.top 的 TLS 证书，暂不配置 443；可通过 TLS_CERT_FILE/TLS_KEY_FILE 指定证书路径。" >&2
+fi
 ${SUDO} systemctl daemon-reload
-${SUDO} systemctl enable --now vmct-website-api
+${SUDO} systemctl enable vmct-website-api
+${SUDO} systemctl restart vmct-website-api
 ${SUDO} systemctl --no-pager --full status vmct-website-api
 
-curl --fail --silent --show-error http://127.0.0.1:8787/api/content/admin/auth/status
-echo
+api_ready=0
+for attempt in $(seq 1 30); do
+  if curl --fail --silent --show-error http://127.0.0.1:8787/api/content/admin/auth/status >/tmp/vmct-api-status.json; then
+    api_ready=1
+    break
+  fi
+  sleep 1
+done
+if [[ "${api_ready}" -ne 1 ]]; then
+  echo 'ECS API 启动失败，最近日志如下：' >&2
+  ${SUDO} journalctl -u vmct-website-api -n 80 --no-pager >&2
+  exit 1
+fi
+
+# Build the static frontend against the local CMS export endpoint. The output
+# is mounted into a dedicated Nginx container, so the existing VMPM container
+# and its files remain untouched.
+CONTENT_EXPORT_URL=http://127.0.0.1:8787/api/content/internal/export \
+  NODE_OPTIONS="${NODE_OPTIONS:---max-old-space-size=1536}" \
+  "${PNPM_CMD[@]}" run build
 
 if command -v docker >/dev/null 2>&1 && ${SUDO} docker ps --format '{{.Names}}' | grep -qx nginx; then
+  ${SUDO} docker rm -f "${STATIC_CONTAINER}" >/dev/null 2>&1 || true
+  ${SUDO} docker run -d --name "${STATIC_CONTAINER}" --restart unless-stopped \
+    -p "127.0.0.1:${STATIC_PORT}:80" \
+    -v "${APP_DIR}/dist:/usr/share/nginx/html:ro" \
+    -v "${APP_DIR}/server/nginx-static.conf:/etc/nginx/conf.d/default.conf:ro" \
+    nginx:alpine >/dev/null
   ${SUDO} docker exec nginx nginx -t
   ${SUDO} docker exec nginx nginx -s reload
   curl --fail --silent --show-error -H 'Host: www.vmct.top' http://127.0.0.1/api/content/admin/auth/status
+  curl --fail --silent --show-error -H 'Host: www.vmct.top' http://127.0.0.1/ >/dev/null
   echo
+else
+  echo '未检测到运行中的 nginx Docker 容器，无法完成单服务器静态站点部署。' >&2
+  exit 1
 fi
 
-echo 'ECS API 与 www.vmct.top Nginx 回源部署完成。ESA Pages 请使用 cn-mainland 分支构建。'
+echo "单 ECS 部署完成：Node API、静态前端和 Nginx 已启动。请将 www.vmct.top DNS 指向 ECS 公网 IP。"

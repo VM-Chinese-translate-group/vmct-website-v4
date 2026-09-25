@@ -9,7 +9,7 @@
     >
       <h2 class="m-0 text-xl">{{ batch ? `发布 ${pageCount} 个更改` : '发布前检查' }}</h2>
       <p class="text-sm text-[var(--text-2)]">
-        确认后会发布{{ batch ? '所选草稿' : '当前草稿' }}并请求 ESA 构建。
+        确认后会发布{{ batch ? '所选草稿' : '当前草稿' }}并请求站点重建。
       </p>
       <div
         v-if="errors.length"

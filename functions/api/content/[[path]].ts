@@ -2,7 +2,8 @@ interface Env {
   CONTENT_DB: any
   CMS_ADMIN_VERIFIER?: string
   CMS_ADMIN_SALT?: string
-  ESA_DEPLOY_HOOK_URL?: string
+  SITE_REBUILD_HOOK_URL?: string
+  SITE_REBUILD_SECRET?: string
 }
 
 const JSON_HEADERS = {
@@ -411,7 +412,7 @@ async function logout(context: any) {
 async function getSettings(context: any) {
   return json({
     deploymentHookUrl:
-      context.env.ESA_DEPLOY_HOOK_URL ||
+      context.env.SITE_REBUILD_HOOK_URL ||
       (await setting(context.env.CONTENT_DB, 'deployment_hook_url')) ||
       '',
   })
@@ -420,25 +421,28 @@ async function getSettings(context: any) {
 async function saveSettings(context: any) {
   requireSameOrigin(context.request)
   const hook = String((await readJson(context.request))?.deploymentHookUrl || '').trim()
-  if (hook && !/^https:\/\//.test(hook)) throw new ApiError(400, 'Deploy Hook 必须是 HTTPS 地址')
+  if (hook && !/^https:\/\/|^http:\/\/(?:127\.0\.0\.1|localhost)(?::\d+)?(?:\/|$)/.test(hook))
+    throw new ApiError(400, '站点重建地址必须是 HTTPS 地址，或本机 HTTP 地址')
   await saveSetting(context.env.CONTENT_DB, 'deployment_hook_url', hook)
   return json({ deploymentHookUrl: hook })
 }
 
 async function deploy(context: any) {
   const hook =
-    context.env.ESA_DEPLOY_HOOK_URL ||
+    context.env.SITE_REBUILD_HOOK_URL ||
     (await setting(context.env.CONTENT_DB, 'deployment_hook_url'))
-  if (!hook) return { requested: false, error: '请先配置 ESA 构建触发地址' }
+  if (!hook) return { requested: false, error: '请先配置站点重建地址' }
   try {
-    const response = await fetch(hook, { method: 'POST' })
+    const headers: Record<string, string> = {}
+    if (context.env.SITE_REBUILD_SECRET) headers.Authorization = `Bearer ${context.env.SITE_REBUILD_SECRET}`
+    const response = await fetch(hook, { method: 'POST', headers })
     return response.ok
       ? { requested: true }
-      : { requested: false, error: 'Deploy Hook 返回 HTTP ' + response.status }
+      : { requested: false, error: '站点重建地址返回 HTTP ' + response.status }
   } catch (error) {
     return {
       requested: false,
-      error: error instanceof Error ? error.message : '无法调用 ESA 构建触发地址',
+      error: error instanceof Error ? error.message : '无法调用站点重建地址',
     }
   }
 }

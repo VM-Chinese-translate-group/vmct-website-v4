@@ -21,6 +21,10 @@ try {
   if (!response.ok) throw new Error('content endpoint returned HTTP ' + response.status)
   const payload = await response.json()
   if (!Array.isArray(payload.pages)) throw new Error('content response did not contain pages')
+  // A fresh ECS database has no CMS pages yet. Keep the repository Markdown
+  // fallback until content is imported, otherwise a successful empty export
+  // would erase every built-in page.
+  if (payload.pages.length === 0) throw new Error('content endpoint returned no published pages')
 
   await fs.rm(OUTPUT_DIR, { recursive: true, force: true })
   await fs.mkdir(OUTPUT_DIR, { recursive: true })
