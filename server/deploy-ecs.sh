@@ -152,7 +152,7 @@ while IFS= read -r legacy_conf; do
   [[ "${legacy_conf}" == "${NGINX_CONF_DIR}/www.vmct.top.conf" ]] || ${SUDO} rm -f "${legacy_conf}"
 done < <(${SUDO} find "${NGINX_CONF_DIR}" -maxdepth 1 -type f -name '*www.vmct.top*' -print)
 ${SUDO} install -m 0644 server/nginx-www.vmct.top.conf "${NGINX_CONF_DIR}/www.vmct.top.conf"
-if [[ -f "${TLS_CERT_FILE}" && -f "${TLS_KEY_FILE}" ]]; then
+if ${SUDO} test -f "${TLS_CERT_FILE}" && ${SUDO} test -f "${TLS_KEY_FILE}"; then
   tls_tmp="$(mktemp)"
   awk -v cert="${TLS_CERT_FILE}" -v key="${TLS_KEY_FILE}" '
     NR == 1 { print; next }
