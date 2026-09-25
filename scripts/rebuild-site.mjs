@@ -7,6 +7,7 @@ const node = process.execPath
 const nginxContainer = process.env.NGINX_CONTAINER || 'nginx'
 const nginxStaticRoot = process.env.NGINX_STATIC_ROOT || '/home/vmct/vmct-website-dist'
 const nginxStaticStage = `${nginxStaticRoot}.new`
+const nginxStaticPrevious = `${nginxStaticRoot}.previous`
 const lockPath = path.join(root, '.rebuild-site.lock')
 const commands = [
   ['scripts/sync-content.mjs'],
@@ -76,13 +77,19 @@ async function deployToNginx() {
   if (!containers.includes(nginxContainer))
     throw new Error(`找不到运行中的 Nginx 容器：${nginxContainer}`)
 
-  // Copy into a staging directory and swap it in one rename inside the
-  // existing container. This keeps the previous site available until the
-  // new build is complete.
-  await runExternal(['docker', 'exec', nginxContainer, 'rm', '-rf', nginxStaticStage, nginxStaticRoot])
+  // Copy into a staging directory first. Only after the copy succeeds do we
+  // replace the directory served by the existing container.
+  await runExternal(['docker', 'exec', nginxContainer, 'rm', '-rf', nginxStaticStage, nginxStaticPrevious])
   await runExternal(['docker', 'exec', nginxContainer, 'mkdir', '-p', nginxStaticStage])
   await runExternal(['docker', 'cp', `${root}/dist/.`, `${nginxContainer}:${nginxStaticStage}/`])
-  await runExternal(['docker', 'exec', nginxContainer, 'mv', nginxStaticStage, nginxStaticRoot])
+  await runExternal([
+    'docker',
+    'exec',
+    nginxContainer,
+    'sh',
+    '-c',
+    `if [ -e '${nginxStaticRoot}' ]; then mv '${nginxStaticRoot}' '${nginxStaticPrevious}'; fi && mv '${nginxStaticStage}' '${nginxStaticRoot}' && rm -rf '${nginxStaticPrevious}'`,
+  ])
   await runExternal(['docker', 'exec', nginxContainer, 'nginx', '-t'])
   await runExternal(['docker', 'exec', nginxContainer, 'nginx', '-s', 'reload'])
 }

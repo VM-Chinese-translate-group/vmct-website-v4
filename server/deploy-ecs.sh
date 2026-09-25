@@ -192,10 +192,12 @@ CONTENT_EXPORT_URL=http://127.0.0.1:8787/api/content/internal/export \
   "${PNPM_CMD[@]}" run build
 
 if command -v docker >/dev/null 2>&1 && ${SUDO} docker ps --format '{{.Names}}' | grep -qx nginx; then
-  ${SUDO} docker exec nginx rm -rf "${STATIC_STAGE}" "${STATIC_ROOT}"
+  ${SUDO} docker exec nginx rm -rf "${STATIC_STAGE}"
   ${SUDO} docker exec nginx mkdir -p "${STATIC_STAGE}"
   ${SUDO} docker cp "${APP_DIR}/dist/." "nginx:${STATIC_STAGE}/"
-  ${SUDO} docker exec nginx mv "${STATIC_STAGE}" "${STATIC_ROOT}"
+  previous_static_root="${STATIC_ROOT}.previous"
+  ${SUDO} docker exec nginx rm -rf "${previous_static_root}"
+  ${SUDO} docker exec nginx sh -c "if [ -e '${STATIC_ROOT}' ]; then mv '${STATIC_ROOT}' '${previous_static_root}'; fi && mv '${STATIC_STAGE}' '${STATIC_ROOT}' && rm -rf '${previous_static_root}'"
   ${SUDO} docker exec nginx nginx -t
   ${SUDO} docker exec nginx nginx -s reload
   curl --fail --silent --show-error -H 'Host: www.vmct.top' http://127.0.0.1/api/content/admin/auth/status
