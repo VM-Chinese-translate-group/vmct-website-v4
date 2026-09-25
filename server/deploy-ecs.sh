@@ -5,8 +5,8 @@ APP_DIR="${APP_DIR:-/opt/vmct-website}"
 DATA_DIR="${VMCT_DATA_DIR:-/var/lib/vmct-website/data}"
 ENV_FILE="/etc/vmct-website/api.env"
 NGINX_CONF_DIR="/home/vmct/nginx/conf.d"
-STATIC_CONTAINER="${VMCT_STATIC_CONTAINER:-vmct-website-static}"
-STATIC_PORT="${VMCT_STATIC_PORT:-8081}"
+STATIC_ROOT="/home/vmct/vmct-website-dist"
+STATIC_STAGE="${STATIC_ROOT}.new"
 TLS_CERT_FILE="${TLS_CERT_FILE:-/etc/letsencrypt/live/vmct.top/fullchain.pem}"
 TLS_KEY_FILE="${TLS_KEY_FILE:-/etc/letsencrypt/live/vmct.top/privkey.pem}"
 
@@ -166,19 +166,17 @@ if [[ "${api_ready}" -ne 1 ]]; then
 fi
 
 # Build the static frontend against the local CMS export endpoint. The output
-# is mounted into a dedicated Nginx container, so the existing VMPM container
-# and its files remain untouched.
+# is copied into the existing Nginx container; the VMPM host directory and
+# container mount remain untouched.
 CONTENT_EXPORT_URL=http://127.0.0.1:8787/api/content/internal/export \
   NODE_OPTIONS="${NODE_OPTIONS:---max-old-space-size=1536}" \
   "${PNPM_CMD[@]}" run build
 
 if command -v docker >/dev/null 2>&1 && ${SUDO} docker ps --format '{{.Names}}' | grep -qx nginx; then
-  ${SUDO} docker rm -f "${STATIC_CONTAINER}" >/dev/null 2>&1 || true
-  ${SUDO} docker run -d --name "${STATIC_CONTAINER}" --restart unless-stopped \
-    -p "127.0.0.1:${STATIC_PORT}:80" \
-    -v "${APP_DIR}/dist:/usr/share/nginx/html:ro" \
-    -v "${APP_DIR}/server/nginx-static.conf:/etc/nginx/conf.d/default.conf:ro" \
-    nginx:alpine >/dev/null
+  ${SUDO} docker exec nginx rm -rf "${STATIC_STAGE}" "${STATIC_ROOT}"
+  ${SUDO} docker exec nginx mkdir -p "${STATIC_STAGE}"
+  ${SUDO} docker cp "${APP_DIR}/dist/." "nginx:${STATIC_STAGE}/"
+  ${SUDO} docker exec nginx mv "${STATIC_STAGE}" "${STATIC_ROOT}"
   ${SUDO} docker exec nginx nginx -t
   ${SUDO} docker exec nginx nginx -s reload
   curl --fail --silent --show-error -H 'Host: www.vmct.top' http://127.0.0.1/api/content/admin/auth/status

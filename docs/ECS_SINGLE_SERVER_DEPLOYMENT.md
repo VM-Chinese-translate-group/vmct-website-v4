@@ -1,6 +1,6 @@
 # 单 ECS 部署
 
-官网、CMS API、字典搜索和反馈接口全部运行在 ECS 上。现有 Docker Nginx 负责 `www.vmct.top`，一个独立的静态 Nginx 容器托管 `dist/`，Node 服务监听 `8787` 提供动态接口。ESA 不参与访问链路。
+官网、CMS API、字典搜索和反馈接口全部运行在 ECS 上。现有 Docker Nginx 负责 `www.vmct.top`，并直接托管构建后的 `dist/`，Node 服务监听 `8787` 提供动态接口。ESA 不参与访问链路。
 
 ## 部署
 
@@ -17,8 +17,8 @@ bash /tmp/vmct-deploy.sh
 1. 拉取 `cn-mainland` 并安装依赖。
 2. 启动 ECS API 服务和独立 SQLite 数据库。
 3. 构建前端静态文件到 `/opt/vmct-website/dist`。
-4. 启动 `vmct-website-static` 容器（宿主机 `127.0.0.1:8081`）。
-5. 更新现有 Nginx 的 `www.vmct.top` 配置。
+4. 将 `dist/` 原子复制到现有 Nginx 容器的 `/home/vmct/vmct-website-dist`。
+5. 更新并重载现有 Nginx 的 `www.vmct.top` 配置。
 
 预构建字典数据库可以直接复制，跳过 ECS 上的 SQL 导入：
 
@@ -32,9 +32,9 @@ DICT_DB_FILE=/home/vmct/vmweb/dictionary.sqlite bash /tmp/vmct-deploy.sh
 
 - `/api/*` → `172.17.0.1:8787`。
 - `/search` → `172.17.0.1:8787`。
-- 其他请求 → `172.17.0.1:8081` 的静态 Nginx。
+- 其他请求 → 现有 Nginx 容器内的 `/home/vmct/vmct-website-dist`。
 
-Nginx 静态容器使用 `try_files` 回退到 `index.html`，所以 Vue 路由可以直接访问。脚本不会修改 VMPM 的文件或数据库。
+Nginx 使用 `try_files` 回退到 `index.html`，所以 Vue 路由可以直接访问。脚本不会修改 VMPM 的文件或数据库；静态文件保存在现有 Nginx 容器的独立目录中。
 
 ## DNS 和 HTTPS
 
