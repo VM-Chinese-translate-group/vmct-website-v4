@@ -7,5 +7,6 @@ ConditionPathIsDirectory=/opt/vmct-website/.git
 [Service]
 Type=oneshot
 User=root
+EnvironmentFile=-/etc/vmct-website/update.env
 ExecStart=/usr/local/sbin/vmct-website-update
 TimeoutStartSec=30min

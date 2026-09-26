@@ -10,7 +10,18 @@ if [[ ! -d "${APP_DIR}/.git" ]]; then
 fi
 
 git_cmd=(git -c "safe.directory=${APP_DIR}" -C "${APP_DIR}")
-"${git_cmd[@]}" fetch --quiet origin "${BRANCH}"
+fetch_ok=0
+for attempt in 1 2 3; do
+  if "${git_cmd[@]}" -c http.version=HTTP/1.1 fetch --quiet origin "${BRANCH}"; then
+    fetch_ok=1
+    break
+  fi
+  [[ "${attempt}" -eq 3 ]] || sleep 5
+done
+if [[ "${fetch_ok}" -ne 1 ]]; then
+  echo "无法从 origin 获取 ${BRANCH}，等待下一轮定时检查。" >&2
+  exit 1
+fi
 local_revision="$("${git_cmd[@]}" rev-parse "${BRANCH}")"
 remote_revision="$("${git_cmd[@]}" rev-parse "origin/${BRANCH}")"
 

@@ -69,6 +69,16 @@ sudo systemctl list-timers vmct-website-update.timer
 sudo systemctl start vmct-website-update.service
 ```
 
+如果 ECS 访问 GitHub 需要本机代理，可创建 `/etc/vmct-website/update.env`，例如：
+
+```sh
+sudo install -m 600 /dev/null /etc/vmct-website/update.env
+sudo sh -c 'printf "HTTPS_PROXY=http://127.0.0.1:7890\\nHTTP_PROXY=http://127.0.0.1:7890\\n" > /etc/vmct-website/update.env'
+sudo systemctl restart vmct-website-update.timer
+```
+
+代理文件由更新服务读取，不会写入仓库。
+
 需要手动触发时，在 ECS 本机执行：
 
 ```sh

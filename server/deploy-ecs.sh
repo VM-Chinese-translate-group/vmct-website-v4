@@ -58,13 +58,14 @@ else
 fi
 
 cd "${APP_DIR}"
+PNPM_VERSION="${PNPM_VERSION:-$(node -p "(require('./package.json').packageManager || 'pnpm@12.5.1').replace(/^pnpm@/, '')")}"
 PNPM_CMD=()
 if command -v pnpm >/dev/null 2>&1 && pnpm --version >/dev/null 2>&1; then
   PNPM_CMD=(pnpm)
 elif command -v npm >/dev/null 2>&1; then
   # A stale Corepack launcher can exist while its cached pnpm files are gone.
   # Use npm's isolated runner in that case; it does not depend on Corepack.
-  PNPM_CMD=(npx --yes pnpm@12.5.1)
+  PNPM_CMD=(npx --yes "pnpm@${PNPM_VERSION}")
 elif command -v curl >/dev/null 2>&1; then
   # Minimal ECS images may ship neither npm nor a package manager. Use the
   # official standalone installer, pinned to the project's pnpm version.
@@ -72,13 +73,17 @@ elif command -v curl >/dev/null 2>&1; then
   export PNPM_HOME
   mkdir -p "${PNPM_HOME}"
   curl -fsSL https://get.pnpm.io/install.sh \
-    | env PNPM_HOME="${PNPM_HOME}" PNPM_VERSION=12.5.1 SHELL="${SHELL:-/bin/bash}" sh -
-  export PATH="${PNPM_HOME}:${PATH}"
-  if [[ ! -x "${PNPM_HOME}/pnpm" ]]; then
+    | env PNPM_HOME="${PNPM_HOME}" PNPM_VERSION="${PNPM_VERSION}" SHELL="${SHELL:-/bin/bash}" sh -
+  export PATH="${PNPM_HOME}/bin:${PNPM_HOME}:${PATH}"
+  PNPM_BIN="${PNPM_HOME}/bin/pnpm"
+  if [[ ! -x "${PNPM_BIN}" && -x "${PNPM_HOME}/pnpm" ]]; then
+    PNPM_BIN="${PNPM_HOME}/pnpm"
+  fi
+  if [[ ! -x "${PNPM_BIN}" ]]; then
     echo 'pnpm 官方安装器未生成可执行文件。' >&2
     exit 1
   fi
-  PNPM_CMD=("${PNPM_HOME}/pnpm")
+  PNPM_CMD=("${PNPM_BIN}")
 elif command -v apt-get >/dev/null 2>&1; then
   # Some Debian/Ubuntu Node packages ship Corepack without npm. Install npm so
   # npx can fetch pnpm without using the broken Corepack cache.
@@ -88,7 +93,7 @@ elif command -v apt-get >/dev/null 2>&1; then
     echo 'npm 安装完成但找不到 npx，无法安装 pnpm。' >&2
     exit 1
   fi
-  PNPM_CMD=(npx --yes pnpm@12.5.1)
+  PNPM_CMD=(npx --yes "pnpm@${PNPM_VERSION}")
 elif command -v dnf >/dev/null 2>&1 || command -v yum >/dev/null 2>&1 || command -v apk >/dev/null 2>&1; then
   # Alibaba Linux and Alpine do not necessarily provide apt-get.
   if command -v dnf >/dev/null 2>&1; then
@@ -102,7 +107,7 @@ elif command -v dnf >/dev/null 2>&1 || command -v yum >/dev/null 2>&1 || command
     echo 'npm 安装完成但找不到 npx，无法安装 pnpm。' >&2
     exit 1
   fi
-  PNPM_CMD=(npx --yes pnpm@12.5.1)
+  PNPM_CMD=(npx --yes "pnpm@${PNPM_VERSION}")
 else
   echo '缺少可用的 pnpm、npm、curl 或系统包管理器，无法安装依赖。' >&2
   exit 1
