@@ -30,4 +30,6 @@ if [[ "${local_revision}" == "${remote_revision}" ]]; then
 fi
 
 echo "检测到 ${BRANCH} 更新：${local_revision} -> ${remote_revision}"
+"${git_cmd[@]}" checkout "${BRANCH}"
+"${git_cmd[@]}" reset --hard "origin/${BRANCH}"
 exec bash "${APP_DIR}/server/deploy-ecs.sh"
