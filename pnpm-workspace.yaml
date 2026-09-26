@@ -1,3 +1,5 @@
+allowBuilds:
+  pnpm: false
 minimumReleaseAgeExclude:
   - '@shikijs/core@4.1.0'
   - '@shikijs/engine-javascript@4.1.0'
