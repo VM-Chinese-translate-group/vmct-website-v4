@@ -11,7 +11,7 @@
       <p class="tip-title">TIP</p>
       <p>
         未成年人请勿大额赞助。如有其他疑问可联系
-        <a href="mailto:admin@vmct-cn.top">admin@vmct-cn.top</a>
+        <a :href="`mailto:${siteConfig.contactEmail}`">{{ siteConfig.contactEmail }}</a>
         ，并备注相关问题。
       </p>
     </div>
@@ -147,11 +147,12 @@
 </template>
 
 <script setup>
+import { siteConfig } from '@/config/site'
 import { ref, computed, onMounted } from 'vue'
 import { Icon } from '@iconify/vue'
 import Coins from '@/components/Coins.vue'
 
-const API = 'https://vmct-cn.top/api/afdian/'
+const API = `${import.meta.env.DEV ? '' : siteConfig.apiBaseUrl}/api/afdian/`
 
 const sponsors = ref([])
 const totalCount = ref(0)

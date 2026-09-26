@@ -93,6 +93,7 @@
 </template>
 
 <script setup lang="ts">
+import { siteConfig } from '@/config/site'
 import { computed, onMounted, reactive } from 'vue'
 
 import { creditCategories } from '@/data/credits'
@@ -100,7 +101,7 @@ import type { CreditPerson, DisplayCreditPerson } from '@/types/credit'
 
 const rawCategories = creditCategories
 
-const BILIBILI_AVATAR_API = 'https://vmct-cn.top/api/bilibili'
+const BILIBILI_AVATAR_API = `${import.meta.env.DEV ? '' : siteConfig.apiBaseUrl}/api/bilibili`
 const BILIBILI_UID_BATCH_SIZE = 30
 
 const avatarMap = reactive<Record<string, string>>({})
@@ -172,7 +173,7 @@ async function loadBilibiliAvatarBatch(uids: string[]) {
   if (!uids.length) return
 
   try {
-    const apiUrl = new URL(BILIBILI_AVATAR_API)
+    const apiUrl = new URL(BILIBILI_AVATAR_API, window.location.origin)
 
     // 保留你说的拼 uid/uids：批量用 uids=1,2,3
     apiUrl.searchParams.set('uids', uids.join(','))

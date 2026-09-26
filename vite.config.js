@@ -1,4 +1,5 @@
 import { defineConfig } from 'vite'
+import { loadSiteConfig } from './config/load-site.mjs'
 import path from 'node:path'
 
 import vue from '@vitejs/plugin-vue'
@@ -32,154 +33,167 @@ const repoPath =
     ? `${gitEnv.owner}/${gitEnv.name}`
     : 'VM-Chinese-translate-group/vmct-website-v4'
 
-export default defineConfig({
-  define: {
-    'import.meta.env.VITE_GIT_COMMIT': JSON.stringify(getGitCommitHash()),
-    'import.meta.env.VITE_GIT_BRANCH': JSON.stringify(getGitBranch()),
-    'import.meta.env.VITE_GIT_REPO': JSON.stringify(repoPath),
-    'import.meta.env.VITE_GIT_DATE': JSON.stringify(getGitCommitDate()),
-  },
-
-  resolve: {
-    alias: {
-      '@': path.resolve(import.meta.dirname, 'src'),
+export default defineConfig(({ mode, isSsrBuild }) => {
+  const siteConfig = loadSiteConfig(mode)
+  return {
+    define: {
+      __SITE_CONFIG__: JSON.stringify(siteConfig),
+      'import.meta.env.VITE_GIT_COMMIT': JSON.stringify(getGitCommitHash()),
+      'import.meta.env.VITE_GIT_BRANCH': JSON.stringify(getGitBranch()),
+      'import.meta.env.VITE_GIT_REPO': JSON.stringify(repoPath),
+      'import.meta.env.VITE_GIT_DATE': JSON.stringify(getGitCommitDate()),
     },
-  },
 
-  plugins: [
-    UnoCSS(),
+    resolve: {
+      alias: {
+        '@': path.resolve(import.meta.dirname, 'src'),
+      },
+    },
 
-    Markdown({
-      async markdownItSetup(md) {
-        const defaultImageRenderer =
-          md.renderer.rules.image ||
-          ((tokens, idx, options, env, self) => self.renderToken(tokens, idx, options))
+    plugins: [
+      UnoCSS(),
 
-        // 链接优化
-        md.renderer.rules.link_open = (tokens, idx, options, env, self) => {
-          const token = tokens[idx]
-          const aIndex = token.attrIndex('href')
+      Markdown({
+        async markdownItSetup(md) {
+          const defaultImageRenderer =
+            md.renderer.rules.image ||
+            ((tokens, idx, options, env, self) => self.renderToken(tokens, idx, options))
 
-          if (aIndex >= 0 && token.attrs) {
-            const href = token.attrs[aIndex]?.[1]
+          // 链接优化
+          md.renderer.rules.link_open = (tokens, idx, options, env, self) => {
+            const token = tokens[idx]
+            const aIndex = token.attrIndex('href')
 
-            if (href && /^https?:\/\//.test(href)) {
-              token.attrSet('target', '_blank')
-              token.attrSet('rel', 'noopener')
+            if (aIndex >= 0 && token.attrs) {
+              const href = token.attrs[aIndex]?.[1]
+
+              if (href && /^https?:\/\//.test(href)) {
+                token.attrSet('target', '_blank')
+                token.attrSet('rel', 'noopener')
+              }
             }
+
+            return self.renderToken(tokens, idx, options)
           }
 
-          return self.renderToken(tokens, idx, options)
-        }
+          md.renderer.rules.image = (tokens, idx, options, env, self) => {
+            tokens[idx].attrSet('data-md-image-preview', 'true')
+            const image = defaultImageRenderer(tokens, idx, options, env, self)
+            return `<span class="image-loading-frame markdown-image-loading-frame">${image}</span>`
+          }
 
-        md.renderer.rules.image = (tokens, idx, options, env, self) => {
-          tokens[idx].attrSet('data-md-image-preview', 'true')
-          const image = defaultImageRenderer(tokens, idx, options, env, self)
-          return `<span class="image-loading-frame markdown-image-loading-frame">${image}</span>`
-        }
-
-        md.use(anchor, {
-          permalink: anchor.permalink.ariaHidden({
-            placement: 'before',
-            symbol: '#',
-            class: 'header-anchor',
-          }),
-        })
-
-        md.use(toc, {
-          includeLevel: [2, 3],
-          containerClass: 'markdown-toc',
-        })
-
-        md.use(
-          await Shiki({
-            themes: {
-              light: 'github-light',
-              dark: 'github-dark',
-            },
-            defaultColor: false,
-            langs: ['json', 'toml'],
-          }),
-        )
-
-        md.use(Card)
-        md.use(imgSize)
-
-        const types = ['tip', 'warning', 'info', 'details']
-
-        types.forEach((type) => {
-          md.use(container, {
-            name: type,
-
-            openRenderer: (tokens, index) => {
-              const info = tokens[index].info
-              const title =
-                info.length > type.length ? info.slice(type.length + 1) : type.toUpperCase()
-
-              if (type === 'details') {
-                return `<details class="custom-block details"><summary>${md.utils.escapeHtml(title)}</summary>\n`
-              }
-
-              return `<div class="custom-block ${type}"><p class="custom-block-title">${md.utils.escapeHtml(title)}</p>\n`
-            },
-
-            closeRenderer: () => (type === 'details' ? '</details>\n' : '</div>\n'),
+          md.use(anchor, {
+            permalink: anchor.permalink.ariaHidden({
+              placement: 'before',
+              symbol: '#',
+              class: 'header-anchor',
+            }),
           })
-        })
-      },
-    }),
 
-    vue({
-      include: [/\.vue$/, /\.md$/],
-    }),
+          md.use(toc, {
+            includeLevel: [2, 3],
+            containerClass: 'markdown-toc',
+          })
 
-    Components({
-      dirs: ['src/components', 'src/layout'],
-      extensions: ['vue', 'md'],
-      include: [/\.vue$/, /\.md$/],
-      dts: false,
-    }),
+          md.use(
+            await Shiki({
+              themes: {
+                light: 'github-light',
+                dark: 'github-dark',
+              },
+              defaultColor: false,
+              langs: ['json', 'toml'],
+            }),
+          )
 
-    resourcesPlugin(),
+          md.use(Card)
+          md.use(imgSize)
 
-    routeMetaPlugin(),
+          const types = ['tip', 'warning', 'info', 'details']
 
-    searchIndexPlugin(),
+          types.forEach((type) => {
+            md.use(container, {
+              name: type,
 
-    prerenderRoutesPlugin(),
+              openRenderer: (tokens, index) => {
+                const info = tokens[index].info
+                const title =
+                  info.length > type.length ? info.slice(type.length + 1) : type.toUpperCase()
 
-    Sitemap({
-      hostname: 'https://vmct-cn.top',
-      dynamicRoutes: [...getMarkdownRoutes(), '/translation-feedback'],
-    }),
+                if (type === 'details') {
+                  return `<details class="custom-block details"><summary>${md.utils.escapeHtml(title)}</summary>\n`
+                }
 
-    compression({
-      threshold: 10240,
-    }),
-  ],
+                return `<div class="custom-block ${type}"><p class="custom-block-title">${md.utils.escapeHtml(title)}</p>\n`
+              },
 
-  // Pages Functions do not run inside Vite. In development, keep the browser
-  // on localhost while proxying CMS requests to the deployed Pages Function.
-  server: {
-    proxy: {
-      '/api/content': {
-        target: 'https://vmct-cn.top',
-        changeOrigin: true,
-        headers: { Origin: 'https://vmct-cn.top' },
-      },
-    },
-  },
+              closeRenderer: () => (type === 'details' ? '</details>\n' : '</div>\n'),
+            })
+          })
+        },
+      }),
 
-  build: {
-    rolldownOptions: {
-      output: {
-        manualChunks(id) {
-          if (id.includes('/node_modules/vue/')) return 'vue'
-          if (id.includes('markdown-it')) return 'markdown'
-          if (id.includes('@shikijs')) return 'shiki'
-          if (id.includes('opencc')) return 'opencc'
+      vue({
+        include: [/\.vue$/, /\.md$/],
+      }),
+
+      Components({
+        dirs: ['src/components', 'src/layout'],
+        extensions: ['vue', 'md'],
+        include: [/\.vue$/, /\.md$/],
+        dts: false,
+      }),
+
+      resourcesPlugin(),
+
+      routeMetaPlugin(),
+
+      searchIndexPlugin(),
+
+      prerenderRoutesPlugin(),
+
+      !isSsrBuild &&
+        Sitemap({
+          hostname: siteConfig.siteUrl,
+          generateRobotsTxt: true,
+          dynamicRoutes: [...getMarkdownRoutes(), '/translation-feedback'],
+        }),
+
+      compression({
+        threshold: 10240,
+      }),
+    ],
+
+    // Pages Functions do not run inside Vite. In development, keep the browser
+    // on localhost while proxying API requests to the deployed services.
+    server: {
+      proxy: {
+        '/api/content': {
+          target: siteConfig.contentOrigin,
+          changeOrigin: true,
+          headers: { Origin: siteConfig.contentOrigin },
+          cookieDomainRewrite: '',
+        },
+        '/api': {
+          target: siteConfig.apiBaseUrl,
+          changeOrigin: true,
+          headers: { Origin: siteConfig.apiBaseUrl },
+          cookieDomainRewrite: '',
         },
       },
     },
-  },
+
+    build: {
+      rolldownOptions: {
+        output: {
+          manualChunks(id) {
+            if (id.includes('/node_modules/vue/')) return 'vue'
+            if (id.includes('markdown-it')) return 'markdown'
+            if (id.includes('@shikijs')) return 'shiki'
+            if (id.includes('opencc')) return 'opencc'
+          },
+        },
+      },
+    },
+  }
 })

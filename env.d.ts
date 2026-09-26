@@ -1,5 +1,15 @@
 declare module 'markdown-it-table-of-contents'
 
+declare const __SITE_CONFIG__: {
+  readonly siteUrl: string
+  readonly apiBaseUrl: string
+  readonly contentOrigin: string
+  readonly docsUrl: string
+  readonly dictUrl: string
+  readonly contactEmail: string
+  readonly enableBeian: boolean
+}
+
 interface ImportMetaEnv {
   readonly VITE_FEEDBACK_API_BASE?: string
 }

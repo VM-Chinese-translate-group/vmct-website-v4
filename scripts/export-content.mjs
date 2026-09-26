@@ -1,10 +1,11 @@
 import fs from 'node:fs/promises'
+import { loadSiteConfig } from '../config/load-site.mjs'
 import path from 'node:path'
 import { createInterface } from 'node:readline/promises'
 import { stdin, stdout } from 'node:process'
 import { loginContentAdmin } from './content-auth.mjs'
 
-const SITE_ORIGIN = 'https://vmct-cn.top'
+const SITE_ORIGIN = loadSiteConfig().contentOrigin
 const outputArgument = process.argv.indexOf('--output')
 const OUTPUT_DIR = path.resolve(
   process.cwd(),

@@ -1,3 +1,4 @@
+import { siteConfig } from '@/config/site'
 export interface NavItem {
   key: string
   labelKey: string
@@ -13,6 +14,6 @@ export const navItems: NavItem[] = [
   {
     key: 'install-guide',
     labelKey: 'navbar.installGuide',
-    to: 'https://docs.vmct-cn.top/tutorial/modpack/translation.html',
+    to: `${siteConfig.docsUrl}/tutorial/modpack/translation.html`,
   },
 ]

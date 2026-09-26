@@ -14,7 +14,7 @@
 
    保存后重新部署一次。
 
-3. 打开 `https://vmct-cn.top/admin`，首次设置一个至少 6 位、可包含数字、字母或符号的密码。登录后进入“高级设置”，粘贴在 Pages 项目 **Settings → Builds → Deploy Hooks** 创建的 Production Hook URL 并保存。
+3. 打开 `${VITE_SITE_URL}/admin`（将变量替换为实际站点地址），首次设置一个至少 6 位、可包含数字、字母或符号的密码。登录后进入“高级设置”，粘贴在 Pages 项目 **Settings → Builds → Deploy Hooks** 创建的 Production Hook URL 并保存。
 
 ## 修改后台密码
 

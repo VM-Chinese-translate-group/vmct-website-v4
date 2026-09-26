@@ -1,3 +1,4 @@
+import { siteConfig } from '@/config/site'
 import type { RouteLocationNormalizedLoaded } from 'vue-router'
 import {
   getAprilFoolsLogoPath,
@@ -8,7 +9,7 @@ import {
 import { getLocalizedResourceName } from '@/utils/resourceDisplay'
 import { convertInlineText } from '@/utils/zhconv'
 
-const SITE_URL = 'https://vmct-cn.top'
+const SITE_URL = siteConfig.siteUrl
 const DEFAULT_IMAGE = '/imgs/og_image.png'
 
 type TranslateFn = (key: string, values?: Record<string, unknown>) => string

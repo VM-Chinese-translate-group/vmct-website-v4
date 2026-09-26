@@ -76,12 +76,12 @@
               <a href="/map" class="vm-link-underline mb-2">{{ $t('footer.maps') }}</a>
             </li>
             <li>
-              <a href="https://dict.vmct-cn.top/" class="vm-link-underline mb-2">
+              <a :href="`${siteConfig.dictUrl}/`" class="vm-link-underline mb-2">
                 {{ $t('footer.dict') }}
               </a>
             </li>
             <li>
-              <a href="https://docs.vmct-cn.top/vmtu/" class="vm-link-underline mb-2">
+              <a :href="`${siteConfig.docsUrl}/vmtu/`" class="vm-link-underline mb-2">
                 {{ $t('footer.vmtu') }}
               </a>
             </li>
@@ -96,10 +96,26 @@
     <div class="text-center text-[0.85rem] text-[var(--text-medium)]">
       <p>{{ $t('footer.disclaimer') }}</p>
     </div>
+    <div
+      v-if="siteConfig.enableBeian && locale === 'zh-CN'"
+      class="mt-4 text-center text-[0.85rem] text-[var(--text-medium)]"
+    >
+      <p class="mb-1">
+        <a
+          href="https://beian.miit.gov.cn/"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="text-[var(--text-medium)] no-underline transition-colors duration-300 hover:text-[var(--footer-link-hover)]"
+        >
+          豫ICP备2024105509号-4
+        </a>
+      </p>
+    </div>
   </footer>
 </template>
 
 <script setup lang="ts">
+import { siteConfig } from '@/config/site'
 import { useI18n } from 'vue-i18n'
 import { getAprilFoolsLogoPath } from '@/utils/aprilFools'
 
@@ -109,5 +125,5 @@ const repoPath = import.meta.env.VITE_GIT_REPO
 const commitDate = import.meta.env.VITE_GIT_DATE
 const siteLogo = getAprilFoolsLogoPath('long')
 
-useI18n()
+const { locale } = useI18n()
 </script>

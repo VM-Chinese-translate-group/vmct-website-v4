@@ -1,10 +1,10 @@
 {
-  "name": "vmct-cn.top",
+  "name": "vmct-website-v4",
   "private": true,
-  "type": "module",
+  "type": "module", 
   "scripts": {
     "build": "node scripts/sync-content.mjs && vite build && vite build --ssr src/entry-server.ts --outDir dist/server && node scripts/prerender.mjs",
-    "dev": "node scripts/sync-content.mjs && vite",
+    "dev": "node scripts/sync-content.mjs --mode development && vite",
     "content:pull": "node scripts/sync-content.mjs",
     "content:migrate": "node scripts/migrate-legacy-content.mjs",
     "content:export": "node scripts/export-content.mjs",

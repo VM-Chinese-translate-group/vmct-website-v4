@@ -1,8 +1,11 @@
 import fs from 'node:fs/promises'
+import { loadSiteConfig } from '../config/load-site.mjs'
 import path from 'node:path'
 
 const OUTPUT_DIR = path.join(process.cwd(), 'src', 'generated-pages')
-const CONTENT_EXPORT_URL = 'https://vmct-cn.top/api/content/internal/export'
+const modeIndex = process.argv.indexOf('--mode')
+const mode = modeIndex >= 0 ? process.argv[modeIndex + 1] : 'production'
+const CONTENT_EXPORT_URL = loadSiteConfig(mode).contentOrigin + '/api/content/internal/export'
 
 function normalizePath(value) {
   const pagePath = String(value || '')

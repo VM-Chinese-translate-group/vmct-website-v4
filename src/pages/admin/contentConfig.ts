@@ -1,3 +1,4 @@
+import { siteConfig } from '@/config/site'
 import type { ContentMetadata, PageKind, ValidationIssue } from './types'
 
 export const PAGE_TYPES: {
@@ -84,7 +85,7 @@ export function pageKindFromPath(path: string): PageKind {
 const validUrl = (value: string) => {
   if (!value) return true
   try {
-    const origin = typeof window === 'undefined' ? 'https://vmct-cn.top' : window.location.origin
+    const origin = typeof window === 'undefined' ? siteConfig.siteUrl : window.location.origin
     const url = new URL(value, origin)
     return url.protocol === 'https:' || (url.origin === origin && value.startsWith('/'))
   } catch {

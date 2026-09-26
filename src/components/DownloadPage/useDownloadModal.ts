@@ -1,3 +1,4 @@
+import { siteConfig } from '@/config/site'
 import type { Ref } from 'vue'
 import { downloadQuestions } from '@/data/downloadQuestions'
 import type { DownloadMethodItem } from './downloadMethods'
@@ -151,7 +152,7 @@ export function useDownloadModal(options: UseDownloadModalOptions) {
     `<a href="/agreement/" target="_blank" rel="noopener noreferrer" class="modal-link">${t('downloadModal.agreement')}</a>`
 
   const installGuideLink = () =>
-    `<a href="https://docs.vmct-cn.top/tutorial/modpack/translation.html" target="_blank" rel="noopener noreferrer" class="modal-link">${t('downloadModal.installGuide')}</a>`
+    `<a href="${siteConfig.docsUrl}/tutorial/modpack/translation.html" target="_blank" rel="noopener noreferrer" class="modal-link">${t('downloadModal.installGuide')}</a>`
 
   const installGuideNotice = (hasInstallGuide = true) =>
     hasInstallGuide

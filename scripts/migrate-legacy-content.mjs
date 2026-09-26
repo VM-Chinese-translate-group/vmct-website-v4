@@ -1,11 +1,12 @@
 import fs from 'node:fs/promises'
+import { loadSiteConfig } from '../config/load-site.mjs'
 import path from 'node:path'
 import { createInterface } from 'node:readline/promises'
 import { stdin, stdout } from 'node:process'
 import { loginContentAdmin } from './content-auth.mjs'
 
 const PAGES_DIR = path.join(process.cwd(), 'src', 'pages')
-const SITE_ORIGIN = 'https://vmct-cn.top'
+const SITE_ORIGIN = loadSiteConfig().contentOrigin
 
 function splitFrontmatter(content) {
   const match = content.match(/^---\r?\n([\s\S]*?)\r?\n---\r?\n?/)

@@ -54,7 +54,10 @@ export async function loginContentAdmin(origin, password) {
     body: JSON.stringify({ challengeId: challenge.id, proof }),
   })
   const result = await login.json().catch(() => null)
-  const cookie = login.headers.get('set-cookie')?.split(';')[0]
+  const cookie = login.headers
+    .getSetCookie()
+    .find((value) => value.startsWith('cms_content_session='))
+    ?.split(';')[0]
   if (!login.ok || !cookie) throw new Error(result?.error || '登录失败，请检查后台密码。')
   return cookie
 }
