@@ -7,19 +7,22 @@
       <small class="text-[var(--text-muted)] max-sm:hidden">用于标题区、资源列表和搜索结果</small>
     </div>
     <div class="grid grid-cols-4 gap-x-3 gap-y-2.5 max-xl:grid-cols-2 max-md:grid-cols-1">
-      <label class="cms-label col-span-2 max-md:col-span-1">
+      <label
+        class="cms-label max-md:col-span-1"
+        :class="pageKind === 'document' ? 'col-span-4 max-xl:col-span-2' : 'col-span-2'"
+      >
         标题
         <input v-model="model.title" class="cms-field" placeholder="XXX 汉化下载" />
       </label>
-      <label class="cms-label col-span-2 max-md:col-span-1">
+      <label v-if="pageKind !== 'document'" class="cms-label col-span-2 max-md:col-span-1">
         英文名
         <input v-model="model.originalName" class="cms-field" placeholder="填写整合包英文原名" />
       </label>
-      <label class="cms-label col-span-2 max-md:col-span-1">
+      <label v-if="pageKind !== 'document'" class="cms-label col-span-2 max-md:col-span-1">
         封面 / 图标 URL
         <input v-model="model.icon" class="cms-field" placeholder="/imgs/... 或 https://..." />
       </label>
-      <div class="cms-label">
+      <div v-if="pageKind !== 'document'" class="cms-label">
         <span>更新日期</span>
         <div class="flex gap-2">
           <label class="relative min-w-0 flex-1 cursor-pointer">
@@ -96,6 +99,7 @@
       </label>
     </div>
     <details
+      v-if="pageKind !== 'document'"
       ref="authorsLinksDetails"
       class="group rounded-lg border border-[var(--switcher-border)] bg-[var(--bg-soft)]"
     >
