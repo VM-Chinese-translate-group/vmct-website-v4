@@ -16,6 +16,20 @@ else
   SUDO="sudo"
 fi
 
+if [[ -z "${DEPLOY_LOCK_FILE:-}" && -d "${APP_DIR}" ]]; then
+  DEPLOY_LOCK_FILE="${APP_DIR}/.vmct-deploy.lock"
+elif [[ -z "${DEPLOY_LOCK_FILE:-}" ]]; then
+  # The first clone happens before APP_DIR exists, so use a temporary lock
+  # only for that initial bootstrap.
+  DEPLOY_LOCK_FILE="/tmp/vmct-website-deploy.lock"
+fi
+mkdir -p "$(dirname "${DEPLOY_LOCK_FILE}")"
+exec 9>"${DEPLOY_LOCK_FILE}"
+if ! flock -n 9; then
+  echo '已有 ECS 部署正在进行，跳过本次部署。'
+  exit 0
+fi
+
 if ! command -v git >/dev/null 2>&1; then
   echo '缺少 git，请先安装 git。' >&2
   exit 1
@@ -38,9 +52,9 @@ if [[ ! -d "${APP_DIR}/.git" ]]; then
   ${SUDO} git clone --branch cn-mainland --single-branch https://github.com/VM-Chinese-translate-group/vmct-website-v4.git "${APP_DIR}"
   ${SUDO} chown -R vmct:vmct "${APP_DIR}"
 else
-  git -C "${APP_DIR}" fetch origin cn-mainland
-  git -C "${APP_DIR}" checkout cn-mainland
-  git -C "${APP_DIR}" reset --hard origin/cn-mainland
+  git -c "safe.directory=${APP_DIR}" -C "${APP_DIR}" fetch origin cn-mainland
+  git -c "safe.directory=${APP_DIR}" -C "${APP_DIR}" checkout cn-mainland
+  git -c "safe.directory=${APP_DIR}" -C "${APP_DIR}" reset --hard origin/cn-mainland
 fi
 
 cd "${APP_DIR}"
@@ -148,6 +162,9 @@ if [[ -n "${DICT_BACKUP:-}" && ! -f "${DATA_DIR}/dictionary.sqlite" ]]; then
 fi
 
 ${SUDO} install -m 0644 server/vmct-website-api.service /etc/systemd/system/vmct-website-api.service
+${SUDO} install -m 0755 server/update-ecs.sh /usr/local/sbin/vmct-website-update
+${SUDO} install -m 0644 server/vmct-website-update.service /etc/systemd/system/vmct-website-update.service
+${SUDO} install -m 0644 server/vmct-website-update.timer /etc/systemd/system/vmct-website-update.timer
 while IFS= read -r legacy_conf; do
   [[ "${legacy_conf}" == "${NGINX_CONF_DIR}/www.vmct.top.conf" ]] || ${SUDO} rm -f "${legacy_conf}"
 done < <(${SUDO} find "${NGINX_CONF_DIR}" -maxdepth 1 -type f -name '*www.vmct.top*' -print)
@@ -184,6 +201,12 @@ if [[ "${api_ready}" -ne 1 ]]; then
   exit 1
 fi
 
+# Remove the old Cloudflare Pages deploy hook from the content database. The
+# API calls this local, secret-protected endpoint after CMS publishing.
+node --experimental-sqlite scripts/ensure-ecs-settings.mjs \
+  "${DATA_DIR}/content.sqlite" \
+  'http://127.0.0.1:8787/internal/rebuild'
+
 # Build the static frontend against the local CMS export endpoint. The output
 # is copied into the existing Nginx container; the VMPM host directory and
 # container mount remain untouched.
@@ -207,5 +230,8 @@ else
   echo '未检测到运行中的 nginx Docker 容器，无法完成单服务器静态站点部署。' >&2
   exit 1
 fi
+
+${SUDO} systemctl daemon-reload
+${SUDO} systemctl enable --now vmct-website-update.timer
 
 echo "单 ECS 部署完成：Node API、静态前端和 Nginx 已启动。请将 www.vmct.top DNS 指向 ECS 公网 IP。"

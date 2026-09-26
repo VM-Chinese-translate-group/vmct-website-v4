@@ -50,6 +50,25 @@ http://127.0.0.1:8787/internal/rebuild
 
 该接口使用 `SITE_REBUILD_SECRET` 保护，并在后台启动一次静态站点构建。构建完成后，API 会把新 `dist/` 原子复制到现有 Nginx 容器并重载 Nginx，因此 CMS 发布后不需要重新执行完整部署脚本。完整代码升级仍使用 `deploy-ecs.sh`。
 
+部署脚本会把内容数据库中的 `deployment_hook_url` 自动改为上述 ECS 地址，覆盖旧的 Cloudflare Pages deploy hook。该地址只在 ECS 本机调用，不需要暴露到公网。
+
+## 仓库自动更新
+
+部署脚本同时安装 `vmct-website-update.timer`。它每 5 分钟检查 GitHub 的 `cn-mainland` 分支；检测到新提交后才运行完整的 `server/deploy-ecs.sh`，完成拉取、依赖安装、API 重启、前端构建和 Nginx 原子切换。更新器使用文件锁，避免手动部署和定时部署并发执行。
+
+查看定时器状态：
+
+```sh
+sudo systemctl status vmct-website-update.timer
+sudo systemctl list-timers vmct-website-update.timer
+```
+
+手动触发一次检查：
+
+```sh
+sudo systemctl start vmct-website-update.service
+```
+
 需要手动触发时，在 ECS 本机执行：
 
 ```sh

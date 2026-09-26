@@ -1,0 +1,12 @@
+[Unit]
+Description=Poll VMCT website repository for updates
+
+[Timer]
+OnBootSec=5min
+OnUnitActiveSec=5min
+RandomizedDelaySec=60s
+Persistent=true
+Unit=vmct-website-update.service
+
+[Install]
+WantedBy=timers.target

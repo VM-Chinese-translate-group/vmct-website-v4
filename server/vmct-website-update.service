@@ -1,0 +1,11 @@
+[Unit]
+Description=Check and deploy VMCT website updates
+After=network-online.target
+Wants=network-online.target
+ConditionPathIsDirectory=/opt/vmct-website/.git
+
+[Service]
+Type=oneshot
+User=root
+ExecStart=/usr/local/sbin/vmct-website-update
+TimeoutStartSec=30min
