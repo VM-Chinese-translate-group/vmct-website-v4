@@ -37,7 +37,7 @@ function buildHeaders() {
     'Access-Control-Allow-Methods': 'GET, OPTIONS',
     'Access-Control-Allow-Headers': 'Content-Type',
     'X-Content-Type-Options': 'nosniff',
-    'Cache-Control': `public, max-age=${CACHE_TTL_SECONDS}`,
+    'Cache-Control': 'public, max-age=0',
   }
 }
 
