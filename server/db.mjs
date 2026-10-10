@@ -18,7 +18,7 @@ export class SQLiteD1 {
     this.database.exec('BEGIN')
     try {
       const results = []
-      for (const statement of statements) results.push(await statement.run())
+      for (const statement of statements) results.push(await statement.execute())
       this.database.exec('COMMIT')
       return results
     } catch (error) {
@@ -49,7 +49,13 @@ class SQLiteStatement {
   }
 
   async all() {
-    return { results: this.database.prepare(this.sql).all(...this.params) }
+    return { success: true, results: this.database.prepare(this.sql).all(...this.params) }
+  }
+
+  async execute() {
+    // SQLite's run() discards rows. Inspect the prepared statement so SELECT,
+    // WITH and RETURNING queries retain their results in a D1 batch.
+    return this.database.prepare(this.sql).columns().length > 0 ? this.all() : this.run()
   }
 
   async run() {
@@ -70,11 +76,30 @@ export function createCacheStorage() {
   return {
     default: {
       async match(request) {
-        const response = entries.get(keyFor(request))
-        return response ? response.clone() : undefined
+        const key = keyFor(request)
+        const entry = entries.get(key)
+        if (!entry) return undefined
+        if (entry.expiresAt <= Date.now()) {
+          entries.delete(key)
+          return undefined
+        }
+        return entry.response.clone()
       },
-      async put(request, response) {
-        entries.set(keyFor(request), response.clone())
+      async put(request, response, options = {}) {
+        const cacheControl = response.headers.get('Cache-Control') || ''
+        const maxAge = cacheControl.match(/(?:^|,)\s*s-maxage\s*=\s*(\d+)/i)
+          || cacheControl.match(/(?:^|,)\s*max-age\s*=\s*(\d+)/i)
+        const ttl = Number(options.expirationTtl ?? maxAge?.[1] ?? 0)
+        const now = Date.now()
+        for (const [key, entry] of entries) {
+          if (entry.expiresAt <= now) entries.delete(key)
+        }
+        const key = keyFor(request)
+        if (/(?:^|,)\s*(?:no-store|private)\b/i.test(cacheControl) || !Number.isFinite(ttl) || ttl <= 0) {
+          entries.delete(key)
+          return
+        }
+        entries.set(key, { response: response.clone(), expiresAt: now + ttl * 1000 })
       },
       async delete(request) {
         return entries.delete(keyFor(request))
