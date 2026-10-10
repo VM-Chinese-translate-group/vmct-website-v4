@@ -35,15 +35,15 @@ if ! command -v git >/dev/null 2>&1; then
   exit 1
 fi
 if ! command -v node >/dev/null 2>&1; then
-  echo '缺少 Node.js 22.6+。请先安装 Node.js，再重新运行此脚本。' >&2
+  echo '缺少 Node.js 22.16+。请先安装 Node.js，再重新运行此脚本。' >&2
   exit 1
 fi
 
 node_major="$(node -p 'process.versions.node.split(".")[0]')"
 node_minor="$(node -p 'process.versions.node.split(".")[1]')"
 node_version="$(node -p 'process.versions.node')"
-if (( node_major < 22 || (node_major == 22 && node_minor < 6) )); then
-  echo "Node.js ${node_version} 太旧，需要 22.6+。" >&2
+if (( node_major < 22 || (node_major == 22 && node_minor < 16) )); then
+  echo "Node.js ${node_version} 太旧，需要 22.16+。" >&2
   exit 1
 fi
 
@@ -170,6 +170,9 @@ ${SUDO} install -m 0644 server/vmct-website-api.service /etc/systemd/system/vmct
 ${SUDO} install -m 0755 server/update-ecs.sh /usr/local/sbin/vmct-website-update
 ${SUDO} install -m 0644 server/vmct-website-update.service /etc/systemd/system/vmct-website-update.service
 ${SUDO} install -m 0644 server/vmct-website-update.timer /etc/systemd/system/vmct-website-update.timer
+${SUDO} install -m 0755 server/update-dictionary.sh /usr/local/sbin/vmct-dictionary-update
+${SUDO} install -m 0644 server/vmct-dictionary-update.service /etc/systemd/system/vmct-dictionary-update.service
+${SUDO} install -m 0644 server/vmct-dictionary-update.timer /etc/systemd/system/vmct-dictionary-update.timer
 while IFS= read -r legacy_conf; do
   [[ "${legacy_conf}" == "${NGINX_CONF_DIR}/www.vmct.top.conf" ]] || ${SUDO} rm -f "${legacy_conf}"
 done < <(${SUDO} find "${NGINX_CONF_DIR}" -maxdepth 1 -type f -name '*www.vmct.top*' -print)
@@ -238,5 +241,6 @@ fi
 
 ${SUDO} systemctl daemon-reload
 ${SUDO} systemctl enable --now vmct-website-update.timer
+${SUDO} systemctl enable --now vmct-dictionary-update.timer
 
 echo "单 ECS 部署完成：Node API、静态前端和 Nginx 已启动。请将 www.vmct.top DNS 指向 ECS 公网 IP。"

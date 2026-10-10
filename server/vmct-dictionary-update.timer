@@ -1,0 +1,11 @@
+[Unit]
+Description=Update dictionary one hour after the upstream Friday workflow
+
+[Timer]
+OnCalendar=Fri *-*-* 11:00:00 UTC
+AccuracySec=1min
+Persistent=true
+Unit=vmct-dictionary-update.service
+
+[Install]
+WantedBy=timers.target

@@ -1,0 +1,17 @@
+[Unit]
+Description=Update VMCT dictionary from i18n-Dict-Extender releases
+Wants=network-online.target
+After=network-online.target
+ConditionPathExists=/opt/vmct-website/scripts/dictionary-update.mjs
+StartLimitIntervalSec=24h
+StartLimitBurst=24
+
+[Service]
+Type=oneshot
+User=root
+EnvironmentFile=-/etc/vmct-website/api.env
+EnvironmentFile=-/etc/vmct-website/update.env
+ExecStart=/usr/local/sbin/vmct-dictionary-update
+TimeoutStartSec=30min
+Restart=on-failure
+RestartSec=1h
