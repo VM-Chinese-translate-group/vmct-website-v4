@@ -73,7 +73,7 @@ sudo systemctl start vmct-website-update.service
 
 ```sh
 sudo install -m 600 /dev/null /etc/vmct-website/update.env
-sudo sh -c 'printf "HTTPS_PROXY=http://127.0.0.1:7890\\nHTTP_PROXY=http://127.0.0.1:7890\\n" > /etc/vmct-website/update.env'
+sudo sh -c 'printf "HTTPS_PROXY=http://127.0.0.1:7890\\nHTTP_PROXY=http://127.0.0.1:7890\\nNO_PROXY=127.0.0.1,localhost\\n" > /etc/vmct-website/update.env'
 sudo systemctl restart vmct-website-update.timer
 ```
 
@@ -84,6 +84,8 @@ sudo systemctl restart vmct-website-update.timer
 部署脚本安装 `vmct-dictionary-update.timer`，使用 [i18n-Dict-Extender Release](https://github.com/VM-Chinese-translate-group/i18n-Dict-Extender/releases) 中的 `Dict-Sqlite.db`。上游 [工作流](https://github.com/VM-Chinese-translate-group/i18n-Dict-Extender/blob/main/.github/workflows/update_and_release.yml) 每周五 UTC 10:00 运行；服务器定时器在一小时后，即每周五 UTC 11:00（北京时间 19:00）更新。服务器停机错过执行时间时，会在启动后补跑。如果上游尚未发布当周数据或更新失败，服务每小时重试。
 
 更新器校验下载大小、上游提供的 SHA-256、SQLite 完整性和数据库字段，补建 API 使用的 `dict_fts` 索引。下载和索引构建期间继续提供旧词典；只在切换文件时短暂停止 API。启动后检查不同 `v` 参数的搜索结果，失败时恢复旧数据库。成功后保留上一版 `dictionary.sqlite.previous`，将 Release 信息记录到数据目录的 `dictionary-release.json`。已安装的同一数据版本会跳过下载和重启。
+
+GitHub Release 下载支持断点续传，未完成的文件保存在数据目录的 `.dictionary-download/<assetId>.sqlite`，成功后删除。单次下载允许最多 3 小时，服务最多运行 4 小时，以适应 ECS 到 GitHub 的慢速连接。下载和建索引不占用网站部署锁；只在复制更新工具和切换数据库时持有锁。
 
 更新器读取 `/etc/vmct-website/api.env` 的 `VMCT_DATA_DIR`、`DICT_DB_PATH`，并复用 `/etc/vmct-website/update.env` 的代理配置。它与网站部署共用锁，避免同时重启 API。上游修改定时时，需同步修改 `server/vmct-dictionary-update.timer` 和 `scripts/dictionary-update.mjs` 的发布时间检查。
 

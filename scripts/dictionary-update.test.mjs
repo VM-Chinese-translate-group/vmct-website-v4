@@ -140,7 +140,16 @@ while [[ $# -gt 0 ]]; do
     *) shift ;;
   esac
 done
-if [[ "$url" == *api.github.com* ]]; then cp "$TEST_RELEASE" "$output"; else cp "$TEST_ASSET" "$output"; fi
+if [[ "$url" == *api.github.com* ]]; then
+  cp "$TEST_RELEASE" "$output"
+else
+  if [[ "\${TEST_DOWNLOAD_FAIL:-0}" == 1 ]]; then
+    head -c 512 "$TEST_ASSET" > "$output"
+    exit 28
+  fi
+  if [[ -f "$output" ]]; then echo resume >> "$TEST_LOG"; fi
+  cp "$TEST_ASSET" "$output"
+fi
 `, { mode: 0o755 })
   fs.writeFileSync(path.join(bin, 'systemctl'), '#!/usr/bin/env bash\necho "systemctl $*" >> "$TEST_LOG"\n', { mode: 0o755 })
   // Production chown is exercised during deployment; the isolated test needs no root privileges.
@@ -151,11 +160,11 @@ if [[ "$url" == *api.github.com* ]]; then cp "$TEST_RELEASE" "$output"; else cp 
     response.setHeader('Content-Type', 'application/json')
     response.end(JSON.stringify({ results: [{ origin_name: 'door' }], total: 55 }))
   })
-  const run = () => new Promise((resolve) => {
+  const run = (extra = {}) => new Promise((resolve) => {
     const child = spawn('bash', [path.join(project, 'server/update-dictionary.sh')], {
       env: { ...process.env, PATH: `${bin}:${process.env.PATH}`, APP_DIR: dir,
         VMCT_DATA_DIR: data, DICTIONARY_API_ORIGIN: origin, DICTIONARY_HEALTH_ATTEMPTS: '1',
-        TEST_RELEASE: releaseFile, TEST_ASSET: asset, TEST_LOG: logFile },
+        TEST_RELEASE: releaseFile, TEST_ASSET: asset, TEST_LOG: logFile, ...extra },
     })
     let output = ''
     child.stdout.on('data', (chunk) => { output += chunk })
@@ -167,11 +176,17 @@ if [[ "$url" == *api.github.com* ]]; then cp "$TEST_RELEASE" "$output"; else cp 
     const db = new DatabaseSync(file)
     try { return db.prepare('SELECT COUNT(*) AS total FROM dict').get().total } finally { db.close() }
   }
+  const interrupted = await run({ TEST_DOWNLOAD_FAIL: '1' })
+  assert.notEqual(interrupted.code, 0)
+  assert.equal(count(dbPath), 1)
+  assert.equal(fs.statSync(path.join(data, '.dictionary-download/123.sqlite')).size, 512)
+  assert.doesNotMatch(fs.readFileSync(logFile, 'utf8'), /systemctl/)
   const first = await run()
   assert.equal(first.code, 0, first.output)
   assert.equal(count(dbPath), 55)
   assert.equal(count(`${dbPath}.previous`), 1)
   const log = fs.readFileSync(logFile, 'utf8')
+  assert.match(log, /resume/)
   assert.match(log, /systemctl stop vmct-website-api.service/)
   assert.match(log, /systemctl start vmct-website-api.service/)
   fs.writeFileSync(logFile, '')
