@@ -3,6 +3,7 @@ import assert from 'node:assert/strict'
 import fs from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
+import http from 'node:http'
 import { publishStatic } from './publish-static.mjs'
 
 async function fixture(t) {
@@ -59,4 +60,23 @@ test('failed first deployment removes broken live link', async (t) => {
     throw new Error('unhealthy')
   } }), /unhealthy/)
   await assert.rejects(fs.lstat(target), { code: 'ENOENT' })
+})
+
+test('real HTTP health check selects the www virtual host and verifies release', async (t) => {
+  const { source, target } = await fixture(t)
+  const server = http.createServer(async (req, res) => {
+    if (req.headers.host !== 'www.vmct.top') { req.socket.destroy(); return }
+    const file = req.url.startsWith('/.vmct-release.json') ? '.vmct-release.json' : 'index.html'
+    res.end(await fs.readFile(path.join(target, file)))
+  })
+  await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve))
+  const saved = process.env.SITE_HEALTH_ORIGIN
+  process.env.SITE_HEALTH_ORIGIN = `http://127.0.0.1:${server.address().port}`
+  t.after(() => {
+    server.closeAllConnections(); server.close()
+    if (saved === undefined) delete process.env.SITE_HEALTH_ORIGIN
+    else process.env.SITE_HEALTH_ORIGIN = saved
+  })
+  await publishStatic({ source, target })
+  assert.equal(await fs.readFile(path.join(target, 'index.html'), 'utf8'), 'version-one')
 })

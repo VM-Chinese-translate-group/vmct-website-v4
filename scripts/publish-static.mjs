@@ -2,19 +2,37 @@ import fs from 'node:fs/promises'
 import path from 'node:path'
 import { randomUUID } from 'node:crypto'
 import { pathToFileURL } from 'node:url'
+import http from 'node:http'
+import https from 'node:https'
+
+function request(url) {
+  return new Promise((resolve, reject) => {
+    const transport = new URL(url).protocol === 'https:' ? https : http
+    const req = transport.get(url, {
+      headers: { Host: 'www.vmct.top', 'Cache-Control': 'no-cache' },
+      timeout: 10000,
+    }, (response) => {
+      let body = ''
+      response.setEncoding('utf8')
+      response.on('data', (chunk) => { body += chunk })
+      response.on('error', reject)
+      response.on('end', () => {
+        if (response.statusCode !== 200) reject(new Error(`健康检查返回 ${response.statusCode}`))
+        else resolve(body)
+      })
+    })
+    req.on('timeout', () => req.destroy(new Error('健康检查超时')))
+    req.on('error', reject)
+  })
+}
 
 async function checkRelease(id) {
   const origin = process.env.SITE_HEALTH_ORIGIN || 'http://127.0.0.1'
-  const headers = { Host: 'www.vmct.top', 'Cache-Control': 'no-cache' }
-  const marker = await fetch(`${origin}/.vmct-release.json?v=${id}`, {
-    headers, signal: AbortSignal.timeout(10000), redirect: 'error',
-  })
-  if (!marker.ok || (await marker.json()).id !== id)
+  const marker = await request(`${origin}/.vmct-release.json?v=${id}`)
+  if (JSON.parse(marker).id !== id)
     throw new Error('Nginx 未提供刚发布的版本；检查宿主机挂载和站点 root')
-  const home = await fetch(`${origin}/?release=${id}`, {
-    headers, signal: AbortSignal.timeout(10000), redirect: 'error',
-  })
-  if (!home.ok || !(await home.text()).trim()) throw new Error('站点首页健康检查失败')
+  const home = await request(`${origin}/?release=${id}`)
+  if (!home.trim()) throw new Error('站点首页健康检查失败')
 }
 
 // Caller holds .vmct-deploy.lock for the complete build and publication.
