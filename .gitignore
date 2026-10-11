@@ -34,3 +34,7 @@ server/generated/
 task_plan.md
 findings.md
 progress.md
+
+# Runtime locks shared by deployments and local CMS rebuilds.
+.vmct-deploy.lock
+.rebuild-site.lock

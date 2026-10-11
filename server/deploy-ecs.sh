@@ -5,8 +5,8 @@ APP_DIR="${APP_DIR:-/opt/vmct-website}"
 DATA_DIR="${VMCT_DATA_DIR:-/var/lib/vmct-website/data}"
 ENV_FILE="/etc/vmct-website/api.env"
 NGINX_CONF_DIR="/home/vmct/nginx/conf.d"
-STATIC_ROOT="/home/vmct/vmct-website-dist"
-STATIC_STAGE="${STATIC_ROOT}.new"
+STATIC_ROOT="/home/vmct/vmpm/dist/www.vmct.top"
+BRANCH="${DEPLOY_BRANCH:-cn-mainland}"
 TLS_CERT_FILE="${TLS_CERT_FILE:-/etc/letsencrypt/live/vmct.top/fullchain.pem}"
 TLS_KEY_FILE="${TLS_KEY_FILE:-/etc/letsencrypt/live/vmct.top/privkey.pem}"
 
@@ -15,6 +15,14 @@ if [[ "${EUID}" -eq 0 ]]; then
 else
   SUDO="sudo"
 fi
+
+run_as_vmct() {
+  if [[ "${EUID}" -eq 0 ]]; then
+    runuser -u vmct -- "$@"
+  else
+    "$@"
+  fi
+}
 
 if [[ -z "${DEPLOY_LOCK_FILE:-}" && -d "${APP_DIR}" ]]; then
   DEPLOY_LOCK_FILE="${APP_DIR}/.vmct-deploy.lock"
@@ -49,18 +57,25 @@ fi
 
 if [[ ! -d "${APP_DIR}/.git" ]]; then
   ${SUDO} mkdir -p "$(dirname "${APP_DIR}")"
-  ${SUDO} git clone --branch cn-mainland --single-branch https://github.com/VM-Chinese-translate-group/vmct-website-v4.git "${APP_DIR}"
+  ${SUDO} git clone --branch "${BRANCH}" --single-branch https://github.com/VM-Chinese-translate-group/vmct-website-v4.git "${APP_DIR}"
   ${SUDO} chown -R vmct:vmct "${APP_DIR}"
 else
-  git -c "safe.directory=${APP_DIR}" -C "${APP_DIR}" fetch origin cn-mainland
-  git -c "safe.directory=${APP_DIR}" -C "${APP_DIR}" checkout cn-mainland
-  git -c "safe.directory=${APP_DIR}" -C "${APP_DIR}" reset --hard origin/cn-mainland
+  if ! git -c "safe.directory=${APP_DIR}" -C "${APP_DIR}" diff --quiet HEAD -- server scripts; then
+    echo '部署脚本有未提交修改；请先将修改合入部署分支，防止自动更新覆盖。' >&2
+    exit 1
+  fi
+  git -c "safe.directory=${APP_DIR}" -C "${APP_DIR}" fetch origin "${BRANCH}"
+  git -c "safe.directory=${APP_DIR}" -C "${APP_DIR}" checkout "${BRANCH}"
+  git -c "safe.directory=${APP_DIR}" -C "${APP_DIR}" reset --hard "origin/${BRANCH}"
 fi
 
+${SUDO} chown -R vmct:vmct "${APP_DIR}"
 cd "${APP_DIR}"
 PNPM_VERSION="${PNPM_VERSION:-$(node -p "(require('./package.json').packageManager || 'pnpm@12.5.1').replace(/^pnpm@/, '')")}"
 PNPM_CMD=()
-if command -v pnpm >/dev/null 2>&1 && pnpm --version >/dev/null 2>&1; then
+if [[ -x /home/vmct/.local/share/pnpm/bin/pnpm ]]; then
+  PNPM_CMD=(/home/vmct/.local/share/pnpm/bin/pnpm)
+elif command -v pnpm >/dev/null 2>&1 && pnpm --version >/dev/null 2>&1; then
   PNPM_CMD=(pnpm)
 elif command -v npm >/dev/null 2>&1; then
   # A stale Corepack launcher can exist while its cached pnpm files are gone.
@@ -69,11 +84,11 @@ elif command -v npm >/dev/null 2>&1; then
 elif command -v curl >/dev/null 2>&1; then
   # Minimal ECS images may ship neither npm nor a package manager. Use the
   # official standalone installer, pinned to the project's pnpm version.
-  PNPM_HOME="${PNPM_HOME:-${HOME}/.local/share/pnpm}"
+  PNPM_HOME="${PNPM_HOME:-/home/vmct/.local/share/pnpm}"
   export PNPM_HOME
-  mkdir -p "${PNPM_HOME}"
+  run_as_vmct mkdir -p "${PNPM_HOME}"
   curl -fsSL https://get.pnpm.io/install.sh \
-    | env PNPM_HOME="${PNPM_HOME}" PNPM_VERSION="${PNPM_VERSION}" SHELL="${SHELL:-/bin/bash}" sh -
+    | run_as_vmct env PNPM_HOME="${PNPM_HOME}" PNPM_VERSION="${PNPM_VERSION}" SHELL="${SHELL:-/bin/bash}" sh -
   export PATH="${PNPM_HOME}/bin:${PNPM_HOME}:${PATH}"
   PNPM_BIN="${PNPM_HOME}/bin/pnpm"
   if [[ ! -x "${PNPM_BIN}" && -x "${PNPM_HOME}/pnpm" ]]; then
@@ -112,8 +127,8 @@ else
   echo '缺少可用的 pnpm、npm、curl 或系统包管理器，无法安装依赖。' >&2
   exit 1
 fi
-"${PNPM_CMD[@]}" install --frozen-lockfile
-node scripts/build-api.mjs
+run_as_vmct "${PNPM_CMD[@]}" install --frozen-lockfile
+run_as_vmct node scripts/build-api.mjs
 
 ${SUDO} mkdir -p "${DATA_DIR}" /etc/vmct-website "${NGINX_CONF_DIR}"
 ${SUDO} chown -R vmct:vmct "$(dirname "${DATA_DIR}")"
@@ -152,14 +167,10 @@ fi
 if ! ${SUDO} grep -q '^NGINX_CONTAINER=' "${ENV_FILE}"; then
   ${SUDO} sh -c "printf 'NGINX_CONTAINER=nginx\\n' >> '${ENV_FILE}'"
 fi
-if ! ${SUDO} grep -q '^NGINX_STATIC_ROOT=' "${ENV_FILE}"; then
+if ${SUDO} grep -q '^NGINX_STATIC_ROOT=' "${ENV_FILE}"; then
+  ${SUDO} sed -i "s#^NGINX_STATIC_ROOT=.*#NGINX_STATIC_ROOT=${STATIC_ROOT}#" "${ENV_FILE}"
+else
   ${SUDO} sh -c "printf 'NGINX_STATIC_ROOT=%s\\n' '${STATIC_ROOT}' >> '${ENV_FILE}'"
-fi
-
-if ! getent group docker >/dev/null 2>&1; then
-  echo '系统不存在 docker 用户组，无法让 API 通过现有 Nginx 容器自动发布站点。' >&2
-  echo '请先确认 Docker 已正确安装，再重新运行部署脚本。' >&2
-  exit 1
 fi
 
 if [[ -n "${DICT_BACKUP:-}" && ! -f "${DATA_DIR}/dictionary.sqlite" ]]; then
@@ -216,21 +227,18 @@ node --experimental-sqlite scripts/ensure-ecs-settings.mjs \
   'http://127.0.0.1:8787/internal/rebuild'
 
 # Build the static frontend against the local CMS export endpoint. The output
-# is copied into the existing Nginx container; the VMPM host directory and
-# container mount remain untouched.
+# is published to the host directory already mounted read-only by Nginx.
 CONTENT_EXPORT_URL=http://127.0.0.1:8787/api/content/internal/export \
-  NODE_OPTIONS="${NODE_OPTIONS:---max-old-space-size=1536}" \
-  "${PNPM_CMD[@]}" run build
+  NODE_OPTIONS="${NODE_OPTIONS:---max-old-space-size=768}" \
+  run_as_vmct "${PNPM_CMD[@]}" run build
 
 if command -v docker >/dev/null 2>&1 && ${SUDO} docker ps --format '{{.Names}}' | grep -qx nginx; then
-  ${SUDO} docker exec nginx rm -rf "${STATIC_STAGE}"
-  ${SUDO} docker exec nginx mkdir -p "${STATIC_STAGE}"
-  ${SUDO} docker cp "${APP_DIR}/dist/." "nginx:${STATIC_STAGE}/"
-  previous_static_root="${STATIC_ROOT}.previous"
-  ${SUDO} docker exec nginx rm -rf "${previous_static_root}"
-  ${SUDO} docker exec nginx sh -c "if [ -e '${STATIC_ROOT}' ]; then mv '${STATIC_ROOT}' '${previous_static_root}'; fi && mv '${STATIC_STAGE}' '${STATIC_ROOT}' && rm -rf '${previous_static_root}'"
+  # Both the CLI deployment and CMS rebuild use this publisher.
+  ${SUDO} mkdir -p "$(dirname "${STATIC_ROOT}")"
+  ${SUDO} chown vmct:vmct "$(dirname "${STATIC_ROOT}")"
   ${SUDO} docker exec nginx nginx -t
   ${SUDO} docker exec nginx nginx -s reload
+  run_as_vmct env NGINX_STATIC_ROOT="${STATIC_ROOT}" node scripts/publish-static.mjs "${APP_DIR}/dist"
   curl --fail --silent --show-error -H 'Host: www.vmct.top' http://127.0.0.1/api/content/admin/auth/status
   curl --fail --silent --show-error -H 'Host: www.vmct.top' http://127.0.0.1/ >/dev/null
   echo
@@ -240,6 +248,11 @@ else
 fi
 
 ${SUDO} systemctl daemon-reload
+# Record only a fully built and health-checked code deployment.
+${SUDO} mkdir -p /var/lib/vmct-website
+revision_tmp="$(${SUDO} mktemp /var/lib/vmct-website/.deployed-revision.XXXXXX)"
+git -c "safe.directory=${APP_DIR}" -C "${APP_DIR}" rev-parse HEAD | ${SUDO} tee "${revision_tmp}" >/dev/null
+${SUDO} mv -f "${revision_tmp}" /var/lib/vmct-website/deployed-revision
 ${SUDO} systemctl enable --now vmct-website-update.timer
 ${SUDO} systemctl enable --now vmct-dictionary-update.timer
 

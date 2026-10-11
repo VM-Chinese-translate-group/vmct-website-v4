@@ -22,7 +22,8 @@ if [[ "${fetch_ok}" -ne 1 ]]; then
   echo "无法从 origin 获取 ${BRANCH}，等待下一轮定时检查。" >&2
   exit 1
 fi
-local_revision="$("${git_cmd[@]}" rev-parse "${BRANCH}")"
+state_file="${DEPLOY_STATE_FILE:-/var/lib/vmct-website/deployed-revision}"
+local_revision="$(cat "${state_file}" 2>/dev/null || true)"
 remote_revision="$("${git_cmd[@]}" rev-parse "origin/${BRANCH}")"
 
 if [[ "${local_revision}" == "${remote_revision}" ]]; then
@@ -30,6 +31,11 @@ if [[ "${local_revision}" == "${remote_revision}" ]]; then
 fi
 
 echo "检测到 ${BRANCH} 更新：${local_revision} -> ${remote_revision}"
-"${git_cmd[@]}" checkout "${BRANCH}"
-"${git_cmd[@]}" reset --hard "origin/${BRANCH}"
+if ! "${git_cmd[@]}" diff --quiet HEAD -- server scripts; then
+  echo '部署脚本有未提交修改，请先合入部署分支。' >&2
+  exit 1
+fi
+# deploy-ecs.sh takes the shared lock before changing the worktree.
+# Do not reset here: a CMS rebuild may still be using the source directory.
+
 exec bash "${APP_DIR}/server/deploy-ecs.sh"
