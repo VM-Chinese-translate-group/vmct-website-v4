@@ -23,6 +23,16 @@ export function postgresSql(sql) {
       if (char === mode) { if (next === mode) { result += next; i++ } else mode = '' }
       continue
     }
+    // SQLite preserves unquoted result aliases; PostgreSQL folds them to lower
+    // case. Keep the D1 response keys used by CMS pages and login challenges.
+    if (i === 0 || !/[\w$]/.test(sql[i - 1])) {
+      const alias = sql.slice(i).match(/^AS\s+([a-zA-Z_]\w*)\b/i)
+      if (alias && /[a-z]/.test(alias[1]) && /[A-Z]/.test(alias[1])) {
+        result += alias[0].slice(0, -alias[1].length) + `"${alias[1]}"`
+        i += alias[0].length - 1
+        continue
+      }
+    }
     if (char === '-' && next === '-') mode = 'line'
     else if (char === '/' && next === '*') mode = 'block'
     else if (char === "'" || char === '"') mode = char
