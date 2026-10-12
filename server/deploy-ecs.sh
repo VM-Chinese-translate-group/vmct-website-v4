@@ -132,7 +132,14 @@ run_as_vmct node scripts/build-api.mjs
 
 ${SUDO} mkdir -p "${DATA_DIR}" /etc/vmct-website "${NGINX_CONF_DIR}"
 ${SUDO} chown -R vmct:vmct "$(dirname "${DATA_DIR}")"
-if [[ -n "${DICT_DB_FILE:-}" ]]; then
+# Read only the active backend from the API's private environment file.
+# A first-time bootstrap without that file retains the SQLite default.
+database_backend='sqlite'
+if [[ -f "${ENV_FILE}" ]]; then
+  database_backend="$(${SUDO} env -u VMCT_DATABASE_BACKEND -u VMCT_DATABASE_URL \
+    node --env-file="${ENV_FILE}" scripts/ensure-ecs-settings.mjs --print-backend)"
+fi
+if [[ "${database_backend}" == 'sqlite' && -n "${DICT_DB_FILE:-}" ]]; then
   if [[ ! -f "${DICT_DB_FILE}" ]]; then
     echo "找不到预构建字典数据库：${DICT_DB_FILE}" >&2
     exit 1
@@ -140,6 +147,8 @@ if [[ -n "${DICT_DB_FILE:-}" ]]; then
   ${SUDO} install -m 0644 "${DICT_DB_FILE}" "${DATA_DIR}/dictionary.sqlite"
   ${SUDO} chown vmct:vmct "${DATA_DIR}/dictionary.sqlite"
   ${SUDO} rm -f "${DATA_DIR}/dictionary.sqlite-wal" "${DATA_DIR}/dictionary.sqlite-shm"
+elif [[ "${database_backend}" == 'postgres' && -n "${DICT_DB_FILE:-}" ]]; then
+  echo 'PostgreSQL 模式跳过 DICT_DB_FILE；字典由 PostgreSQL 更新流程维护。'
 fi
 if [[ ! -f "${ENV_FILE}" ]]; then
   ${SUDO} cp server/.env.example "${ENV_FILE}"
@@ -173,8 +182,11 @@ else
   ${SUDO} sh -c "printf 'NGINX_STATIC_ROOT=%s\\n' '${STATIC_ROOT}' >> '${ENV_FILE}'"
 fi
 
-if [[ -n "${DICT_BACKUP:-}" && ! -f "${DATA_DIR}/dictionary.sqlite" ]]; then
+# Bootstrap a legacy dictionary only while SQLite is the active backend.
+if [[ "${database_backend}" == 'sqlite' && -n "${DICT_BACKUP:-}" && ! -f "${DATA_DIR}/dictionary.sqlite" ]]; then
   node --experimental-sqlite scripts/import-dictionary.mjs "${DICT_BACKUP}" "${DATA_DIR}/dictionary.sqlite"
+elif [[ "${database_backend}" == 'postgres' && -n "${DICT_BACKUP:-}" ]]; then
+  echo 'PostgreSQL 模式跳过 DICT_BACKUP；不修改保留的 SQLite 字典。'
 fi
 
 ${SUDO} install -m 0644 server/vmct-website-api.service /etc/systemd/system/vmct-website-api.service
@@ -220,9 +232,11 @@ if [[ "${api_ready}" -ne 1 ]]; then
   exit 1
 fi
 
-# Remove the old Cloudflare Pages deploy hook from the content database. The
-# API calls this local, secret-protected endpoint after CMS publishing.
-node --experimental-sqlite scripts/ensure-ecs-settings.mjs \
+# Update the active CMS backend, using the API's private database settings.
+# Load credentials inside Node rather than putting a URL in shell arguments.
+# Discard inherited DB overrides so deployment and the API select the same DB.
+${SUDO} env -u VMCT_DATABASE_BACKEND -u VMCT_DATABASE_URL \
+  node --env-file="${ENV_FILE}" --experimental-sqlite scripts/ensure-ecs-settings.mjs \
   "${DATA_DIR}/content.sqlite" \
   'http://127.0.0.1:8787/internal/rebuild'
 

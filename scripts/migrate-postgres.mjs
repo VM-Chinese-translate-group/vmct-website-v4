@@ -88,33 +88,130 @@ export async function importDatabase(client, file, schema, { replace = false, sn
   } finally { source.close() }
 }
 
+export function dictionarySchemas(schema = 'dictionary') {
+  if (!/^dictionary(?:_[a-z0-9_]+)?$/.test(schema) || schema.length > 50)
+    throw new Error('Invalid dictionary schema')
+  return { live: schema, next: `${schema}_next`, previous: `${schema}_previous`, failed: `${schema}_failed` }
+}
+
+async function schemaExists(client, schema) {
+  return (await client.query('SELECT EXISTS(SELECT 1 FROM pg_namespace WHERE nspname=$1) AS present', [schema])).rows[0].present
+}
+
+export async function dictionaryAvailable(client, schema = 'dictionary') {
+  if (!/^dictionary(?:_[a-z0-9_]+)?$/.test(schema) || schema.length > 63)
+    throw new Error('Invalid dictionary schema')
+  const table = (await client.query('SELECT to_regclass($1) AS present', [`${schema}.dict`])).rows[0].present
+  if (!table) return false
+  const columns = new Set((await client.query(
+    'SELECT column_name FROM information_schema.columns WHERE table_schema=$1 AND table_name=$2', [schema, 'dict'])).rows.map(row => row.column_name))
+  if (!['id', 'origin_name', 'trans_name', 'modid', 'key', 'version', 'curseforge',
+    'origin_name_search', 'trans_name_search'].every(name => columns.has(name))) return false
+  const indexes = new Set((await client.query(`SELECT index_class.relname AS name
+    FROM pg_index i JOIN pg_class index_class ON index_class.oid=i.indexrelid
+    JOIN pg_am access_method ON access_method.oid=index_class.relam
+    JOIN pg_class table_class ON table_class.oid=i.indrelid
+    JOIN pg_namespace n ON n.oid=table_class.relnamespace
+    WHERE n.nspname=$1 AND table_class.relname='dict' AND access_method.amname='gin'
+      AND i.indisvalid AND i.indisready`, [schema])).rows.map(row => row.name))
+  if (!['dict_origin_search_idx', 'dict_trans_search_idx', 'dict_origin_trigram_idx',
+    'dict_trans_trigram_idx'].every(name => indexes.has(name))) return false
+  return (await client.query(`SELECT EXISTS(SELECT 1 FROM ${quote(schema)}.dict) AS present`)).rows[0].present
+}
+
+// The candidate is committed separately so building indexes never blocks live
+// readers. A failed namespace swap leaves only this explicitly named candidate;
+// the next attempt safely replaces it while holding the migration lock.
+export async function replaceDictionary(client, file, { schema = 'dictionary', lockTimeoutMs = 10000 } = {}) {
+  const names = dictionarySchemas(schema)
+  if (!Number.isSafeInteger(lockTimeoutMs) || lockTimeoutMs <= 0) throw new Error('Invalid lock timeout')
+  let locked = false
+  try {
+    await client.query('BEGIN')
+    await client.query('SET LOCAL statement_timeout = 0')
+    // A session lock survives the candidate COMMIT and protects the gap before
+    // the namespace-swap transaction from concurrent migration CLI calls.
+    await client.query("SELECT pg_advisory_lock(hashtext('vmct-website-migration'))")
+    locked = true
+    await client.query('CREATE EXTENSION IF NOT EXISTS pg_trgm')
+    await client.query(`DROP SCHEMA IF EXISTS ${quote(names.next)} CASCADE`)
+    const report = await importDatabase(client, file, names.next)
+    if (!report[0]?.rows || !await dictionaryAvailable(client, names.next))
+      throw new Error('Replacement dictionary is empty or missing required search indexes')
+    await client.query('COMMIT')
+
+    await client.query('BEGIN')
+    await client.query(`SET LOCAL lock_timeout = ${lockTimeoutMs}`)
+    await client.query(`DROP SCHEMA IF EXISTS ${quote(names.previous)} CASCADE`)
+    const hadPrevious = await schemaExists(client, names.live)
+    if (hadPrevious) await client.query(`ALTER SCHEMA ${quote(names.live)} RENAME TO ${quote(names.previous)}`)
+    await client.query(`ALTER SCHEMA ${quote(names.next)} RENAME TO ${quote(names.live)}`)
+    await client.query('COMMIT')
+    return { report, hadPrevious }
+  } catch (error) {
+    await client.query('ROLLBACK')
+    throw error
+  } finally {
+    if (locked) await client.query("SELECT pg_advisory_unlock(hashtext('vmct-website-migration'))")
+  }
+}
+
+export async function rollbackDictionary(client, { schema = 'dictionary' } = {}) {
+  const names = dictionarySchemas(schema)
+  let locked = false
+  try {
+    await client.query('BEGIN')
+    await client.query('SET LOCAL statement_timeout = 0')
+    await client.query("SELECT pg_advisory_lock(hashtext('vmct-website-migration'))")
+    locked = true
+    await client.query('SET LOCAL lock_timeout = 10000')
+    if (!await dictionaryAvailable(client, names.previous))
+      throw new Error('No verified previous PostgreSQL dictionary is available; current data retained')
+    await client.query(`DROP SCHEMA IF EXISTS ${quote(names.failed)} CASCADE`)
+    if (await schemaExists(client, names.live))
+      await client.query(`ALTER SCHEMA ${quote(names.live)} RENAME TO ${quote(names.failed)}`)
+    await client.query(`ALTER SCHEMA ${quote(names.previous)} RENAME TO ${quote(names.live)}`)
+    await client.query('COMMIT')
+  } catch (error) {
+    await client.query('ROLLBACK')
+    throw error
+  } finally {
+    if (locked) await client.query("SELECT pg_advisory_unlock(hashtext('vmct-website-migration'))")
+  }
+}
+
 async function main() {
   const dictionaryFile = process.argv.includes('--dictionary') ? process.argv[process.argv.indexOf('--dictionary') + 1] : null
   const pool = createPostgresPool(process.env.VMCT_DATABASE_URL)
   const client = await pool.connect()
   const dataDir = process.env.VMCT_DATA_DIR || '/var/lib/vmct-website/data'
   try {
+    if (process.argv.includes('--dictionary-status')) {
+      const available = await dictionaryAvailable(client)
+      console.log(JSON.stringify({ available }))
+      if (!available) process.exitCode = 1
+      return
+    }
+    if (process.argv.includes('--dictionary-rollback')) {
+      await rollbackDictionary(client)
+      console.log('Previous PostgreSQL dictionary restored; failed candidate retained.')
+      return
+    }
+    if (dictionaryFile) {
+      await replaceDictionary(client, dictionaryFile)
+      console.log('PostgreSQL dictionary replacement committed; previous dictionary retained.')
+      return
+    }
     await client.query('BEGIN')
     await client.query('SET LOCAL statement_timeout = 0')
     await client.query("SELECT pg_advisory_xact_lock(hashtext('vmct-website-migration'))")
     await client.query('CREATE EXTENSION IF NOT EXISTS pg_trgm')
     const report = []
-    if (dictionaryFile) {
-      report.push(...await importDatabase(client, dictionaryFile, 'dictionary_next'))
-      await client.query('COMMIT')
-      await client.query('BEGIN')
-      await client.query("SELECT pg_advisory_xact_lock(hashtext('vmct-website-migration'))")
-      await client.query('SET LOCAL lock_timeout = 10000')
-      await client.query('DROP SCHEMA IF EXISTS dictionary_previous CASCADE')
-      await client.query('ALTER SCHEMA dictionary RENAME TO dictionary_previous')
-      await client.query('ALTER SCHEMA dictionary_next RENAME TO dictionary')
-    } else {
-      const snapshotDir = path.join(dataDir, '.backups', 'postgres-' + new Date().toISOString().replaceAll(':', '-'))
-      for (const [schema, name] of [['content', 'content.sqlite'], ['feedback', 'translation-feedback.sqlite'], ['dictionary', 'dictionary.sqlite']]) {
-        report.push(...await importDatabase(client, path.join(dataDir, name), schema, { snapshotDir }))
-      }
-      fs.writeFileSync(path.join(snapshotDir, 'validation.json'), JSON.stringify(report, null, 2), { mode: 0o600 })
+    const snapshotDir = path.join(dataDir, '.backups', 'postgres-' + new Date().toISOString().replaceAll(':', '-'))
+    for (const [schema, name] of [['content', 'content.sqlite'], ['feedback', 'translation-feedback.sqlite'], ['dictionary', 'dictionary.sqlite']]) {
+      report.push(...await importDatabase(client, path.join(dataDir, name), schema, { snapshotDir }))
     }
+    fs.writeFileSync(path.join(snapshotDir, 'validation.json'), JSON.stringify(report, null, 2), { mode: 0o600 })
     await client.query('COMMIT')
     console.log('PostgreSQL import committed; source SQLite files retained.')
   } catch (error) {
