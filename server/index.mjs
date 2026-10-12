@@ -3,18 +3,23 @@ import fs from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath, pathToFileURL } from 'node:url'
 import { SQLiteD1, createCacheStorage } from './db.mjs'
+import { createPostgresPool, PostgresD1 } from './postgres.mjs'
+import { PostgresDictionary } from './postgres-dictionary.mjs'
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const dataDir = path.resolve(process.env.VMCT_DATA_DIR || path.join(root, 'data'))
-const contentDb = new SQLiteD1(
+const databaseBackend = process.env.VMCT_DATABASE_BACKEND || 'sqlite'
+if (!['sqlite', 'postgres'].includes(databaseBackend)) throw new Error('Invalid VMCT_DATABASE_BACKEND')
+const pool = databaseBackend === 'postgres' ? createPostgresPool(process.env.VMCT_DATABASE_URL) : null
+const contentDb = pool ? new PostgresD1(pool, 'content') : new SQLiteD1(
   path.join(dataDir, 'content.sqlite'),
   path.join(root, 'database', 'content-cms.sql'),
 )
-const feedbackDb = new SQLiteD1(
+const feedbackDb = pool ? new PostgresD1(pool, 'feedback') : new SQLiteD1(
   path.join(dataDir, 'translation-feedback.sqlite'),
   path.join(root, 'database', 'translation-feedback.sql'),
 )
-const dictionaryDb = new SQLiteD1(
+const dictionaryDb = pool ? new PostgresDictionary(pool, 'dictionary') : new SQLiteD1(
   process.env.DICT_DB_PATH || path.join(dataDir, 'dictionary.sqlite'),
 )
 
@@ -162,12 +167,12 @@ server.listen(port, process.env.HOST || '127.0.0.1', () => {
   console.log(`vmct ECS API listening on ${process.env.HOST || '127.0.0.1'}:${port}`)
 })
 
-function close() {
+async function close() {
   clearInterval(avatarRefreshTimer)
-  contentDb.close()
-  feedbackDb.close()
-  dictionaryDb.close()
-  server.close()
+  server.close(async () => {
+    await Promise.all([contentDb.close(), feedbackDb.close(), dictionaryDb.close()])
+    if (pool) await pool.end()
+  })
 }
 process.on('SIGINT', close)
 process.on('SIGTERM', close)

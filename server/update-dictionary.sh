@@ -4,6 +4,7 @@ set -Eeuo pipefail
 APP_DIR="${APP_DIR:-/opt/vmct-website}"
 DATA_DIR="${VMCT_DATA_DIR:-/var/lib/vmct-website/data}"
 DB_PATH="${DICT_DB_PATH:-${DATA_DIR}/dictionary.sqlite}"
+# Database settings are inherited from the service's EnvironmentFile.
 STATE_FILE="${DATA_DIR}/dictionary-release.json"
 API_SERVICE="vmct-website-api.service"
 HELPER="${APP_DIR}/scripts/dictionary-update.mjs"
@@ -70,6 +71,21 @@ if ! node --experimental-sqlite "${HELPER}" verify "${download_file}" "${work_di
   exit 1
 fi
 cp "${download_file}" "${work_dir}/dictionary.sqlite"
+if [[ "${VMCT_DATABASE_BACKEND:-sqlite}" == 'postgres' ]]; then
+  # Build and validate a complete replacement in one PostgreSQL transaction.
+  # Readers keep serving the previous table until COMMIT. SQLite is only the
+  # upstream interchange format; the live API never reopens it.
+  flock -w 300 9
+  node --experimental-sqlite "${APP_DIR}/scripts/migrate-postgres.mjs" --dictionary "${work_dir}/dictionary.sqlite"
+  systemctl restart "${API_SERVICE}"
+  node --experimental-sqlite "${HELPER}" health "${DICTIONARY_API_ORIGIN:-http://127.0.0.1:8787}"
+  chmod 0644 "${work_dir}/manifest.json"
+  mv -f "${work_dir}/manifest.json" "${STATE_FILE}"
+  committed=1
+  rm -f "${download_file}"
+  echo 'PostgreSQL dictionary update completed.'
+  exit 0
+fi
 node --experimental-sqlite "${HELPER}" prepare "${work_dir}/dictionary.sqlite"
 chown vmct:vmct "${work_dir}/dictionary.sqlite"
 chmod 0644 "${work_dir}/dictionary.sqlite"
