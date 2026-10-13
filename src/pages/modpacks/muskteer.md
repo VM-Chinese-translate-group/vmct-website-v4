@@ -31,10 +31,7 @@ Muskteer是一个围绕小型多人游戏社区设计的整合包，玩家生活
 汉化支持整合包版本beta7，不支持最新版，请留意下载的支持整合包版本！
 :::
 
-<DownloadLinks :methods="[
-  { id: 'quark-lanzou', text: '下载汉化', lanzouLink: 'https://vmhanhuazu.lanzoui.com/s/Muskteer-vmct-cn', quarkLink: 'https://pan.quark.cn/s/05136ba14348' },
-  { id: 'lazy', link: 'https://vmhanhuazu.lanzoui.com/s/Muskteer-vmct-cn' }
-]" />
+<DownloadLinks/>
 
 ## 整合包介绍
 

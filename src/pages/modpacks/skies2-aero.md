@@ -45,10 +45,7 @@ Aero 保留了FTB Skies 2中广受好评的内容：经过大规模视觉与教�
 
 ![](https://media.forgecdn.net/attachments/1795/167/classic_island1_compress-png.png)
 
-<DownloadLinks :methods="[
-{ id: 'quark-lanzou', text: '下载汉化', lanzouLink: 'https://vmhanhuazu.lanzouv.com/s/skies2aero', quarkLink: 'https://pan.quark.cn/s/6c7d678d6310' },
-{ id: 'lazy', link: 'https://vmhanhuazu.lanzouv.com/s/skies2aero' }
-]" />
+<DownloadLinks/>
 
 译者：[查看贡献人员排行榜](https://paratranz.cn/projects/19713/leaderboard)
 

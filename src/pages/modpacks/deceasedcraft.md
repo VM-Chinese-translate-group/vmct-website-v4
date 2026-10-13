@@ -45,10 +45,7 @@ links:
 💀 **推荐多人合作**：建议 2 人以上游玩，部分挑战设计具有较高难度。
 :::
 
-<DownloadLinks :methods="[
-{ id: 'quark-lanzou', text: '下载汉化', lanzouLink: 'https://vmhanhuazu.lanzouo.com/s/dece', quarkLink: 'https://pan.quark.cn/s/4f8d739dbaa0' },
-{ id: 'lazy', link: 'https://vmhanhuazu.lanzouo.com/s/dece' }
-]" />
+<DownloadLinks/>
 
 译者：[查看贡献人员排行榜](https://paratranz.cn/projects/15705/leaderboard)
 

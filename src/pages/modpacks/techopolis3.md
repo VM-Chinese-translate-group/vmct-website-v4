@@ -32,10 +32,7 @@ links:
 欢迎来到**科技城3**——一个以科技为核心、囊括顶级科技模组的整合包。
 在这里，你的目标异常明确：**制造出科技锭**。听起来并不难，对吧？
 
-<DownloadLinks :methods="[
-  { id: 'quark-lanzou', text: '下载汉化', lanzouLink: 'https://vmhanhuazu.lanzouv.com/s/tech3', quarkLink: 'https://pan.quark.cn/s/0ba3be3a835d' },
-  { id: 'lazy', link: 'https://vmhanhuazu.lanzouv.com/s/tech3' }
-]" />
+<DownloadLinks/>
 
 译者：[查看贡献人员排行榜](https://paratranz.cn/projects/14287/leaderboard)
 

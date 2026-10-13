@@ -37,6 +37,7 @@ const dictionaryModule = await import(pathToFileURL(path.join(root, 'cf-code', '
 
 const env = {
   CONTENT_DB: contentDb,
+  DOWNLOAD_SEEDS: JSON.parse(fs.readFileSync(path.join(root, 'database', 'download-seeds.json'), 'utf8')),
   FEEDBACK_DB: feedbackDb,
   DB: dictionaryDb,
   CORS_ORIGINS: process.env.CORS_ORIGINS || 'https://www.vmct.top,http://localhost:5173',

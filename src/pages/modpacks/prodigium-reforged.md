@@ -32,10 +32,7 @@ links:
 这不是那种随意拼凑模组的水槽包。
 几乎每一个配置文件、每一个脚本、每一个自定义数据包与结构都经过精心打磨，只为带来独一无二且流畅连贯的游戏体验。
 
-<DownloadLinks :methods="[
-  { id: 'quark-lanzou', text: '下载汉化', lanzouLink: '/doing', quarkLink: '/doing' },
-  { id: 'lazy', link: '/doing' }
-]" />
+<DownloadLinks/>
 
 ## 🌱 成长系统
 

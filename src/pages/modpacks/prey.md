@@ -32,10 +32,7 @@ links:
 
 **“死亡是我们的债，不得不偿还的债”**
 
-<DownloadLinks :methods="[
-  { id: 'quark-lanzou', text: '下载汉化', lanzouLink: 'https://vmhanhuazu.lanzouy.com/s/prey-vmct', quarkLink: 'https://pan.quark.cn/s/8dbc98d8e0b5' },
-  { id: 'lazy', link: 'https://vmhanhuazu.lanzouy.com/s/prey-vmct' }
-]" />
+<DownloadLinks/>
 
 ## 贡献人员（排名不分先后）
 

@@ -28,10 +28,7 @@ links:
 一款使用枪械战斗的世界探索冒险包，以12种不同的末影之眼为目标，探索不同维度，推动剧情的发展。
 此外作者制作了很多酷酷的东西，有超过1600种不同外观的生物，超过1300种不同的生物纹理，给你带来不同于其他整合包的冒险体验。
 
-<DownloadLinks :methods="[
-  { id: 'lanzou', text: '下载汉化 密码KparetR', link: 'https://paret.lanzoum.com/b031b2uad' },
-  { id: 'lazy', link: 'https://paret.lanzoum.com/b031b2uad' }
-]" />
+<DownloadLinks/>
 
 ## 贡献人员
 

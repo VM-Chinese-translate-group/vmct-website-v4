@@ -37,10 +37,7 @@ links:
 **地图是原版MC的！无需模组，请把地图放进存档（saves）文件夹！**
 :::
 
-<DownloadLinks :methods="[
-  { id: 'lanzou-quark-mapdl', text: '下载地图和汉化', lanzouLink: 'https://vmhanhuazu.lanzouv.com/s/yoodexy', quarkLink: 'https://pan.quark.cn/s/70e76ea75729' },
-  { id: 'lazy', link: 'https://vmhanhuazu.lanzouv.com/s/yoodexy' }
-]" />
+<DownloadLinks/>
 
 ## 欢迎来到 ISO-9 综合设施
 

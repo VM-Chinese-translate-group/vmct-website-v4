@@ -46,10 +46,7 @@ links:
 **✧ 多语言支持**
 地图目前支持英语、汉语、德语、俄语和芬兰语。
 
-<DownloadLinks :methods="[
-  { id: 'lanzou-quark-mapdl', text: '下载地图和汉化', lanzouLink: '/doing', quarkLink: '/doing' },
-  { id: 'lazy', link: '/doing' }
-]" />
+<DownloadLinks/>
 
 <DocSupport />
 

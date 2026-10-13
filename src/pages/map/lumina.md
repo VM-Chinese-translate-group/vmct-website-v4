@@ -39,10 +39,7 @@ links:
 **地图是原版MC的！无需模组，请把地图放进存档（saves）文件夹！**
 :::
 
-<DownloadLinks :methods="[
-  { id: 'mediafire', text: '下载地图', link: 'https://www.mediafire.com/file/6jsa2peu3o34pop/Lumina_Complex.zip' },
-  { id: 'lazy', link: 'https://www.mediafire.com/file/6jsa2peu3o34pop/Lumina_Complex.zip' }
-]" />
+<DownloadLinks/>
 
 <DocSupport />
 

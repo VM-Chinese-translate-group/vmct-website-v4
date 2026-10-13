@@ -33,10 +33,7 @@ links:
 汉化仅支持整合包版本1.16.10，**不支持最新版**，请留意下载的支持整合包版本！
 :::
 
-<DownloadLinks :methods="[
-  { id: 'quark-lanzou', text: '下载汉化', lanzouLink: 'https://vmhanhuazu.lanzouo.com/s/witch', quarkLink: 'https://pan.quark.cn/s/4dee96c836ba' },
-  { id: 'lazy', link: 'https://vmhanhuazu.lanzouo.com/s/witch' }
-]" />
+<DownloadLinks/>
 
 ## 关于汉化
 

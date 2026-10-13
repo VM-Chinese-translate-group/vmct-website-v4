@@ -35,10 +35,7 @@ links:
 主打奖励驱动的玩法机制、深度定制的内容逻辑，以及以玩家为核心的成长路径。
 在这里，数百小时的内容等待你探索，热门模组与定制内容深度融合，助你直达星辰大海。
 
-<DownloadLinks :methods="[
-{ id: 'quark-lanzou', text: '下载汉化', lanzouLink: 'https://vmhanhuazu.lanzouo.com/s/skies2', quarkLink: 'https://pan.quark.cn/s/5d8815be19ab' },
-{ id: 'lazy', link: 'https://vmhanhuazu.lanzouo.com/s/skies2' }
-]" />
+<DownloadLinks/>
 
 译者：[查看贡献人员排行榜](https://paratranz.cn/projects/15051/leaderboard)
 

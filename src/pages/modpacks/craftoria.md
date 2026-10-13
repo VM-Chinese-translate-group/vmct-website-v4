@@ -29,10 +29,7 @@ links:
 
 ![图片 =500x](https://i.imgur.com/dK8an1v.png)
 
-<DownloadLinks :methods="[
-  { id: 'quark-lanzou', text: '下载汉化', lanzouLink: '/doing', quarkLink: '/doing' },
-  { id: 'lazy', link: '/doing' }
-]" />
+<DownloadLinks/>
 
 译者：[查看贡献人员排行榜](https://paratranz.cn/projects/15860/leaderboard)
 

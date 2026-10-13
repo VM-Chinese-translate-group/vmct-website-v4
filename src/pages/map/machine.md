@@ -42,10 +42,7 @@ links:
 **地图是原版MC的！无需模组，请把地图放进存档（saves）文件夹！**
 :::
 
-<DownloadLinks :methods="[
-  { id: '123pan', text: '下载地图和汉化', icon: '/imgs/svg/123.svg', link: 'https://www.123684.com/s/99kKVv-0JdEh' },
-  { id: 'lazy', link: 'https://www.123684.com/s/99kKVv-0JdEh' }
-]" />
+<DownloadLinks/>
 
 ## 要求：
 

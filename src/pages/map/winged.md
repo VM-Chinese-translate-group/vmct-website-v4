@@ -41,10 +41,7 @@ links:
 
 - 若游戏运行卡顿，可在游戏内设置选项中调整相关参数以优化性能。
 
-<DownloadLinks :methods="[
-  { id: 'lanzou-quark-mapdl', text: '下载地图和汉化', lanzouLink: 'https://vmhanhuazu.lanzouv.com/s/winged', quarkLink: 'https://pan.quark.cn/s/332e0a7aaf71' },
-  { id: 'lazy', link: 'https://vmhanhuazu.lanzouv.com/s/winged' }
-]" />
+<DownloadLinks/>
 
 <DocSupport />
 

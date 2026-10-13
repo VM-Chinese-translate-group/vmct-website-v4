@@ -35,10 +35,7 @@ FTB Evolution 将你带入一个无限的 Minecraft 世界，在这里，先进�
 完整汉化体验请下载i18n模组，并放在`mods`文件夹！
 :::
 
-<DownloadLinks :methods="[
-{ id: 'quark-lanzou', text: '下载汉化', lanzouLink: '/doing', quarkLink: '/doing' },
-{ id: 'lazy', link: '/doing' }
-]" />
+<DownloadLinks/>
 
 ## 特色
 

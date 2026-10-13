@@ -64,3 +64,9 @@ CREATE TABLE IF NOT EXISTS content_revisions (
 
 CREATE INDEX IF NOT EXISTS content_revisions_page_published_idx
   ON content_revisions(page_id, published_at DESC);
+
+CREATE TABLE IF NOT EXISTS content_downloads (
+  page_id TEXT PRIMARY KEY REFERENCES content_pages(id) ON DELETE CASCADE,
+  methods TEXT NOT NULL,
+  version INTEGER NOT NULL DEFAULT 0
+);

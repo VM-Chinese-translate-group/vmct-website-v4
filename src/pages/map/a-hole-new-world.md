@@ -45,10 +45,7 @@ links:
 
 游玩人数：推荐1-4人，最多支持11人同时游玩
 
-<DownloadLinks :methods="[
-  { id: 'lanzou-quark-mapdl', text: '下载地图和汉化', lanzouLink: 'https://vmhanhuazu.lanzouv.com/s/a-hole-new-world', quarkLink: 'https://pan.quark.cn/s/9443f2403ce0' },
-  { id: 'lazy', link: 'https://vmhanhuazu.lanzouv.com/s/a-hole-new-world' }
-]" />
+<DownloadLinks/>
 
 职业系统——从四种不同职业中选择一种，每种职业都有独特的属性和能力。
 

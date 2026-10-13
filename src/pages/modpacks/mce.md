@@ -34,10 +34,7 @@ links:
 汉化**不支持整合包最新版1.6.3.1，只支持1.6.1！**，请留意下载的支持整合包版本！
 :::
 
-<DownloadLinks :methods="[
-  { id: 'quark-lanzou', text: '下载汉化', lanzouLink: 'https://vmhanhuazu.lanzoui.com/s/MCE-VMCT', quarkLink: 'https://pan.quark.cn/s/30dbcf069bae' },
-  { id: 'lazy', link: 'https://vmhanhuazu.lanzoui.com/s/MCE-VMCT' }
-]" />
+<DownloadLinks/>
 
 译者：虚空、橡树树苗、曲逸、喵呜、X209、cat酱、贪婪、茫氪、自尊寺、逸晨、sine、阿鹉、捂脸、Clark
 

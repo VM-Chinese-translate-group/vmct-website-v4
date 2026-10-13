@@ -27,10 +27,7 @@ links:
 
 这个整合包为各种各样的玩家提供了机会。新玩家将一直受到任务的帮助，而高玩将面临大量魔改合成表和机制的挑战。
 
-<DownloadLinks :methods="[
-  { id: 'quark-lanzou', text: '下载汉化', lanzouLink: 'https://vmhanhuazu.lanzoui.com/s/Decursio-Projectt-VMTT-1165', quarkLink: 'https://pan.quark.cn/s/7bf1b90bc4bf' },
-  { id: 'lazy', link: 'https://vmhanhuazu.lanzoui.com/s/Decursio-Projectt-VMTT-1165' }
-]" />
+<DownloadLinks/>
 
 ## 整合包介绍
 

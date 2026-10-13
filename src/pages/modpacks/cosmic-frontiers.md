@@ -36,10 +36,7 @@ links:
 
 ![图片 =500x](https://github.com/user-attachments/assets/50ef7a63-93c7-4e9b-88a4-d474d8f9ad95)
 
-<DownloadLinks :methods="[
-  { id: 'quark-lanzou', text: '下载汉化', lanzouLink: 'https://vmhanhuazu.lanzouo.com/s/cf-gt', quarkLink: 'https://pan.quark.cn/s/f181b9f4acbb' },
-  { id: 'lazy', link: 'https://vmhanhuazu.lanzouo.com/s/cf-gt' }
-]" />
+<DownloadLinks/>
 
 原名：Cosmic Frontiers
 

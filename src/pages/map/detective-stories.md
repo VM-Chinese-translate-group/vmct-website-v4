@@ -41,10 +41,7 @@ links:
 **我们已和作者达成深度合作，地图本体已经自带汉化，开箱即玩！**
 :::
 
-<DownloadLinks :methods="[
-  { id: 'mediafire', text: '下载地图', link: 'https://www.mediafire.com/file/gvlmv0ynnvcafqt/Detective_Stories_1.0.1_2.zip' },
-  { id: 'lazy', text: '懒汉下载汉化', link: 'https://www.mediafire.com/file/gvlmv0ynnvcafqt/Detective_Stories_1.0.1_2.zip' }
-]" />
+<DownloadLinks/>
 
 <DocSupport />
 

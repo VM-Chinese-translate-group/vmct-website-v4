@@ -37,10 +37,7 @@ links:
 
 这是一个极具挑战性的整合包，从MMO游戏玩法中汲取了大量灵感。这里有大量的自定义起源、具有突袭机制的 Boss 和快节奏。还有大量专门为这个包定制的内容，你在其他任何地方都找不到。
 
-<DownloadLinks :methods="[
-  { id: 'quark-lanzou', text: '下载汉化', lanzouLink: 'https://vmhanhuazu.lanzouo.com/s/infernalorigin', quarkLink: 'https://pan.quark.cn/s/b2becfd4faaa' },
-  { id: 'lazy', link: 'https://vmhanhuazu.lanzouo.com/s/infernalorigin' }
-]" />
+<DownloadLinks/>
 
 译者：[查看贡献人员排行榜](https://paratranz.cn/projects/10136/leaderboard)
 

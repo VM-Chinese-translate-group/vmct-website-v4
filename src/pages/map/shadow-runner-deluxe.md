@@ -30,10 +30,7 @@ links:
 Shadow Runner Deluxe是一张适用于 1.14.4 版本的解谜地图。
 在地图中，你需要使用名为“时间记录器”的装置。它能够记录你的行动并将其重新播放，创造出一个模仿你动作的暗影分身，用来触发各种机关。
 
-<DownloadLinks :methods="[
-  { id: 'lanzou-quark-mapdl', text: '下载地图和汉化', lanzouLink: '/doing', quarkLink: '/doing' },
-  { id: 'lazy', link: '/doing' }
-]" />
+<DownloadLinks/>
 
 ## 这张地图讲述了什么？
 

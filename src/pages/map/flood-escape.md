@@ -30,10 +30,7 @@ links:
 Flood Escape 是一张适用于 1.13.2 版本的速跑地图。
 在地图中，你需要在洪水来临时快速从工厂中逃生。
 
-<DownloadLinks :methods="[
-  { id: 'lanzou-quark-mapdl', text: '下载地图和汉化', lanzouLink: 'https://vmhanhuazu.lanzouv.com/s/flood-escape', quarkLink: 'https://pan.quark.cn/s/37b7ec9298cb' },
-  { id: 'lazy', link: 'https://vmhanhuazu.lanzouv.com/s/flood-escape' }
-]" />
+<DownloadLinks/>
 
 ## 这张地图讲述了什么？
 

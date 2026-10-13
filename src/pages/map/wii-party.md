@@ -54,10 +54,7 @@ links:
 **地图是原版MC的！无需模组，请把地图放进存档（saves）文件夹！**
 :::
 
-<DownloadLinks :methods="[
-  { id: 'curseforge', text: '下载地图与汉化', link: 'https://www.curseforge.com/minecraft/worlds/wii-party-in-mc/files/all' },
-  { id: 'lazy', link: 'https://www.curseforge.com/minecraft/worlds/wii-party-in-mc/files/all' }
-]" />
+<DownloadLinks/>
 
 ## 汉化贡献
 

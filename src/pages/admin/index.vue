@@ -196,6 +196,11 @@
                 :page-kind="editor.pageKind.value"
                 :isNew="!editor.draft.id"
               />
+              <DownloadLinksEditor
+                v-if="editor.pageKind.value !== 'document'"
+                :key="editor.draft.id"
+                :page-id="editor.draft.id"
+              />
             </section>
 
             <section
@@ -286,6 +291,7 @@ import AdminSettings from './AdminSettings.vue'
 import ContentLibrary from './ContentLibrary.vue'
 import MarkdownEditor from './MarkdownEditor.vue'
 import MarkdownPreview from './MarkdownPreview.vue'
+import DownloadLinksEditor from './DownloadLinksEditor.vue'
 import MetadataForm from './MetadataForm.vue'
 import PublishDialog from './PublishDialog.vue'
 import RevisionPanel from './RevisionPanel.vue'
@@ -433,9 +439,7 @@ async function retryDeploy() {
   try {
     const result = (await retryContentDeployment()).deployment
     show(
-      result.requested
-        ? '已请求站点重建。'
-        : `构建未触发：${result.error || '未知错误'}`,
+      result.requested ? '已请求站点重建。' : `构建未触发：${result.error || '未知错误'}`,
       result.requested ? 'success' : 'error',
     )
   } catch (error) {

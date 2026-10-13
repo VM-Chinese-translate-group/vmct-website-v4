@@ -31,10 +31,7 @@ links:
 
 ![吸血鬼的反击](https://media.forgecdn.net/attachments/description/1555758/description_2c551694-ed9f-40ed-8ff8-30f3509fdb11.png)
 
-<DownloadLinks :methods="[
-  { id: 'quark-lanzou', text: '下载汉化', lanzouLink: 'https://vmhanhuazu.lanzouv.com/b009i5g50f', quarkLink: 'https://pan.quark.cn/s/b397bc587ec0' },
-  { id: 'lazy', link: 'https://vmhanhuazu.lanzouv.com/b009i5g50f' }
-]" />
+<DownloadLinks/>
 
 译者：[查看贡献人员排行榜](https://paratranz.cn/projects/19520/leaderboard)
 

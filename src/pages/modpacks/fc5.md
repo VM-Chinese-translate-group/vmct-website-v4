@@ -28,10 +28,7 @@ links:
 本整合包汉化从1.1.11版本起已被合并入包，无需安装汉化补丁！自带汉化！
 :::
 
-<DownloadLinks :methods="[
-  { id: 'curseforge', text: '下载整合包', link: 'https://www.curseforge.com/minecraft/modpacks/farming-crossing-5-made-to-order' },
-  { id: 'vm', text: '整合包wiki（英文）', icon: '/imgs/logo/logo_128.png', link: '/modpacks/fc5-wiki/' }
-]" />
+<DownloadLinks/>
 
 ## 特色
 

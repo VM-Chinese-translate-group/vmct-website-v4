@@ -30,10 +30,7 @@ links:
 
 幻想领域是一个注重质量的RPG冒险和探索整合包！
 
-<DownloadLinks :methods="[
-  { id: 'lanzou', text: '下载1.16汉化', link: 'https://vmhanhuazu.lanzoui.com/s/FR-zhcn-cat' },
-  { id: 'lanzou', text: '下载1.18汉化', link: 'https://vmhanhuazu.lanzoui.com/s/fantasy1-18-2--vmct' }
-]" />
+<DownloadLinks/>
 
 ## 整合包介绍
 

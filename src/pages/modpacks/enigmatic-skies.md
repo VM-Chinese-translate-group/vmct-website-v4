@@ -34,10 +34,7 @@ Enigmatic Skies是一款以流程推进为核心的整合包，目标看似简�
 
 ![图片](https://github.com/EnigmaticaModpacks/Assets/blob/master/headers/E-Header.png?raw=true)
 
-<DownloadLinks :methods="[
-  { id: 'quark-lanzou', text: '下载汉化', lanzouLink: 'https://vmhanhuazu.lanzouv.com/b009i2mh8d', quarkLink: 'https://pan.quark.cn/s/954fec5e186c?pwd=yN49' },
-  { id: 'lazy', link: 'https://vmhanhuazu.lanzouv.com/b009i2mh8d' }
-]" />
+<DownloadLinks/>
 
 译者：[查看贡献人员排行榜](https://paratranz.cn/projects/18919/leaderboard)
 

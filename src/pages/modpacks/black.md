@@ -29,10 +29,7 @@ links:
 
 你出生在一个完全由黑石构成的洞穴中，与石头世界整合包相似，你的主世界充满了黑石，只在世界的顶部和底部各有一层基岩。
 
-<DownloadLinks :methods="[
-  { id: 'baidu-drive', text: '下载汉化', link: 'https://pan.baidu.com/s/1OI533N2IMHssFsoGm5o0lg?pwd=x068#list/path=%2F%E8%87%AA%E5%B0%8A%E5%AF%BA%E6%B1%89%E5%8C%96%E5%85%A8%E9%9B%86%2F1.16.x%2Fblackstone%20block&parentPath=%2F' },
-  { id: 'lazy', link: 'https://pan.baidu.com/s/1OI533N2IMHssFsoGm5o0lg?pwd=x068#list/path=%2F%E8%87%AA%E5%B0%8A%E5%AF%BA%E6%B1%89%E5%8C%96%E5%85%A8%E9%9B%86%2F1.16.x%2Fblackstone%20block&parentPath=%2F' }
-]" />
+<DownloadLinks/>
 
 ## 整合包下载与授权
 

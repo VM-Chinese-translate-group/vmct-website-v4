@@ -25,10 +25,7 @@ links:
 
 ![](https://media.forgecdn.net/attachments/465/302/2022-05-28_22.png)
 
-<DownloadLinks :methods="[
-  { id: 'lanzou', text: '下载汉化', link: 'https://wwn.lanzoux.com/ic4Kx0dmof2h' },
-  { id: 'lazy', link: 'https://wwn.lanzoux.com/ic4Kx0dmof2h' }
-]" />
+<DownloadLinks/>
 
 ## 整合包介绍
 

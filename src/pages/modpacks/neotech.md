@@ -38,10 +38,7 @@ links:
 完整汉化体验请下载i18n和VP模组，并放在`mods`文件夹！
 :::
 
-<DownloadLinks :methods="[
-{ id: 'quark-lanzou', text: '下载汉化', lanzouLink: 'https://vmhanhuazu.lanzoui.com/s/neotech', quarkLink: 'https://pan.quark.cn/s/e74bd572a6fe' },
-{ id: 'lazy', link: 'https://vmhanhuazu.lanzoui.com/s/neotech' }
-]" />
+<DownloadLinks/>
 
 项目主管 @[Cactusstudent](https://github.com/Cactusstudent) @[Wulian233](https://github.com/Wulian233)
 

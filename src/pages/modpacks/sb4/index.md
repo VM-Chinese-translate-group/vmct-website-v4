@@ -44,10 +44,7 @@ links:
 记得在覆盖文件后进入游戏的资源包管理页面，把VM汉化资源包启用并拖到最上方！
 :::
 
-<DownloadLinks :methods="[
-  { id: 'quark-lanzou', text: '下载汉化', lanzouLink: 'https://vmhanhuazu.lanzouo.com/s/sb4', quarkLink: 'https://pan.quark.cn/s/e7e23e916087' },
-  { id: 'lazy', link: 'https://vmhanhuazu.lanzouo.com/s/sb4' }
-]" />
+<DownloadLinks/>
 
 译者：[查看贡献人员排行榜](https://paratranz.cn/projects/16650/leaderboard)
 

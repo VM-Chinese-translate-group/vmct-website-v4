@@ -27,10 +27,7 @@ links:
 汉化支持整合包版本v23，不支持最新版v24，请留意下载的支持整合包版本！
 :::
 
-<DownloadLinks :methods="[
-  { id: 'quark-lanzou', text: '下载汉化', lanzouLink: 'https://vmhanhuazu.lanzoui.com/s/mmc1-19-2-fabric-vmct', quarkLink: 'https://pan.quark.cn/s/c90aab011784' },
-  { id: 'lazy', link: 'https://vmhanhuazu.lanzoui.com/s/mmc1-19-2-fabric-vmct' }
-]" />
+<DownloadLinks/>
 
 ## 整合包介绍
 
