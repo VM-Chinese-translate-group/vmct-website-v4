@@ -79,7 +79,8 @@ function downloadPreview(source: string) {
       stringProperty(match[1], 'quarkLink') ||
       stringProperty(match[1], 'lanzouLink'),
   }))
-  if (!methods.length) return '\n> **下载组件**\n> 暂未配置下载方式。\n'
+  if (!methods.length)
+    return '\n> **下载组件**\n> 下载链接在「下载链接」编辑区配置，保存后在页面显示。\n'
 
   return `\n### 下载方式\n${methods
     .map((method) => {

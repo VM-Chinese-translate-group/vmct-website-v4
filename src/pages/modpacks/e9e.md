@@ -26,10 +26,7 @@ links:
 
 <DownloadLayout :meta="frontmatter">
 
-<DownloadLinks :methods="[
-  { id: 'weiyun', text: '下载汉化', icon: '/imgs/svg/weiyun.svg', link: 'https://share.weiyun.com/4N6KKIcN' },
-  { id: 'lazy', link: 'https://share.weiyun.com/4N6KKIcN' }
-]" />
+<DownloadLinks/>
 
 ## 整合包介绍
 

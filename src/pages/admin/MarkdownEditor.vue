@@ -38,7 +38,7 @@
       <button
         class="cms-button min-h-8 px-2.5 py-1"
         type="button"
-        title="下载组件"
+        title="插入下载组件（链接在下载链接区配置）"
         aria-label="下载组件"
         @click="insertDownload"
       >
@@ -83,11 +83,11 @@ const tools = [
     placeholder: '图片说明',
   },
 ]
-function insert(before: string, after: string, placeholder: string) {
+function insert(before: string, after: string, placeholder: string, preserveSelection = true) {
   const el = textarea.value
   const start = el?.selectionStart ?? model.value.length
   const end = el?.selectionEnd ?? start
-  const selected = model.value.slice(start, end) || placeholder
+  const selected = preserveSelection ? model.value.slice(start, end) || placeholder : placeholder
   model.value = model.value.slice(0, start) + before + selected + after + model.value.slice(end)
   requestAnimationFrame(() => {
     el?.focus()
@@ -98,10 +98,6 @@ function insertContainer(type: string, title: string) {
   insert(`\n::: ${type} ${title}\n`, '\n:::\n', '内容')
 }
 function insertDownload() {
-  insert(
-    '\n<DownloadLinks :methods="[\n  ',
-    '\n]" />\n',
-    "{ id: 'patch', text: '下载汉化', link: 'https://example.com/replace-me' }",
-  )
+  insert('\n<DownloadLinks/>\n', '', '', false)
 }
 </script>

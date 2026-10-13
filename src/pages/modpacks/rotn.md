@@ -34,10 +34,7 @@ links:
 汉化支持整合包版本3.1.1，不支持最新版，请留意下载的支持整合包版本！
 :::
 
-<DownloadLinks :methods="[
-  { id: 'quark-lanzou', text: '下载汉化', lanzouLink: 'https://vmhanhuazu.lanzouv.com/Rotn-cn-4', quarkLink: 'https://pan.quark.cn/s/456a49f2c27a' },
-  { id: 'lazy', link: 'https://vmhanhuazu.lanzouv.com/Rotn-cn-4' }
-]" />
+<DownloadLinks/>
 
 ## 贡献人员
 

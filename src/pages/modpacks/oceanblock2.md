@@ -32,10 +32,7 @@ links:
 完整汉化体验请下载i18n模组，并放在`mods`文件夹！
 :::
 
-<DownloadLinks :methods="[
-{ id: 'quark-lanzou', text: '下载汉化', lanzouLink: 'https://vmhanhuazu.lanzouo.com/s/ob2', quarkLink: 'https://pan.quark.cn/s/3a23c39e812c' },
-{ id: 'lazy', link: 'https://vmhanhuazu.lanzouo.com/s/ob2' }
-]" />
+<DownloadLinks/>
 
 译者：[查看贡献人员排行榜](https://paratranz.cn/projects/13486/leaderboard)
 

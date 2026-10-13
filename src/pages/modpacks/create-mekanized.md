@@ -39,10 +39,7 @@ links:
 完整汉化体验请下载i18n模组，并放在`mods`文件夹！
 :::
 
-<DownloadLinks :methods="[
-{ id: 'baidu-drive', text: '下载汉化', link: 'https://pan.baidu.com/s/1OI533N2IMHssFsoGm5o0lg?pwd=x068#list/path=%2F%E8%87%AA%E5%B0%8A%E5%AF%BA%E6%B1%89%E5%8C%96%E5%85%A8%E9%9B%86%2F1.19.x' },
-{ id: 'lazy', link: 'https://pan.baidu.com/s/1OI533N2IMHssFsoGm5o0lg?pwd=x068#list/path=%2F%E8%87%AA%E5%B0%8A%E5%AF%BA%E6%B1%89%E5%8C%96%E5%85%A8%E9%9B%86%2F1.19.x' }
-]" />
+<DownloadLinks/>
 
 译者：[查看贡献人员排行榜](https://paratranz.cn/projects/11377/leaderboard)
 

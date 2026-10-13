@@ -44,10 +44,7 @@ links:
 **地图是原版MC的！无需模组，请把地图放进存档（saves）文件夹！**
 :::
 
-<DownloadLinks :methods="[
-  { id: 'lanzou-quark-mapdl', text: '下载地图和汉化', lanzouLink: 'https://vmhanhuazu.lanzouo.com/s/divinity', quarkLink: 'https://pan.quark.cn/s/a55ef7997323' },
-  { id: 'lazy', link: 'https://vmhanhuazu.lanzouo.com/s/divinity' }
-]" />
+<DownloadLinks/>
 
 ## 地图下载与授权
 

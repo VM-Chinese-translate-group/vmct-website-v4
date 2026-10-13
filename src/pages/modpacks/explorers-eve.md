@@ -33,10 +33,7 @@ links:
 
 ![图片 =500x](https://media.forgecdn.net/attachments/767/503/super_tnt_distraction.png)
 
-<DownloadLinks :methods="[
-  { id: 'lanzou', text: '下载汉化', icon: '/imgs/quark.jpg', link: 'https://pan.quark.cn/s/37de6b2d081e' },
-  { id: 'lazy', link: 'https://pan.quark.cn/s/37de6b2d081e' }
-]" />
+<DownloadLinks/>
 
 ## 特色
 

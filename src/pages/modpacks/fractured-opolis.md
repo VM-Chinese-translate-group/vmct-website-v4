@@ -35,10 +35,7 @@ links:
 
 你能否跨越所有世界，最终成功返回主世界？
 
-<DownloadLinks :methods="[
-{ id: 'quark-lanzou', text: '下载汉化', lanzouLink: 'https://vmhanhuazu.lanzouv.com/s/fractured', quarkLink: 'https://pan.quark.cn/s/97c7c5736fbe' },
-{ id: 'lazy', link: 'https://vmhanhuazu.lanzouv.com/s/fractured' }
-]" />
+<DownloadLinks/>
 
 译者：冰琳
 

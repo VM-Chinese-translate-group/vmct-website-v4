@@ -43,11 +43,7 @@ links:
 - 玩家：1~4 名（推荐）
 - 地图类型：开放世界 CTM
 
-<DownloadLinks :methods="[
-  { id: 'curseforge', text: '下载地图', link: 'https://www.curseforge.com/minecraft/worlds/sun-guardian-2-stranded-ctm-map/files/all' },
-  { id: 'lanzou-quark-mapdl', text: '下载汉化', lanzouLink: 'https://vmhanhuazu.lanzouo.com/s/ssg2', quarkLink: 'https://pan.quark.cn/s/21835eedae08' },
-  { id: 'lazy', link: 'https://vmhanhuazu.lanzouo.com/s/ssg2' }
-]" />
+<DownloadLinks/>
 
 译者：[查看贡献人员排行榜](https://paratranz.cn/projects/15705/leaderboard)
 

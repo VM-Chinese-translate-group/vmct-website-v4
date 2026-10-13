@@ -41,10 +41,7 @@ links:
 **地图是原版MC的！无需模组，请把地图放进存档（saves）文件夹！**
 :::
 
-<DownloadLinks :methods="[
-  { id: 'lanzou-quark-mapdl', text: '下载地图和汉化', lanzouLink: 'https://vmhanhuazu.lanzouo.com/s/deathrunner', quarkLink: 'https://pan.quark.cn/s/1f33349ea6b5' },
-  { id: 'lazy', link: 'https://vmhanhuazu.lanzouo.com/s/deathrunner' }
-]" />
+<DownloadLinks/>
 
 ## 要求：
 

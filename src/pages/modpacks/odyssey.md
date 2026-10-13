@@ -33,11 +33,7 @@ links:
 完整汉化体验请下载i18n模组，并放在`mods`文件夹！
 :::
 
-<DownloadLinks :methods="[
-  { id: 'quark-lanzou', text: '下载汉化', lanzouLink: 'https://vmhanhuazu.lanzouo.com/s/od', quarkLink: 'https://pan.quark.cn/s/64478aa54f27' },
-  { id: 'gitee', text: 'FTB整合包下载工具', icon: '/imgs/svg/gitee.svg', link: 'https://gitee.com/flrscn/curse-the-beast/releases' },
-  { id: 'lazy', link: '' }
-]" />
+<DownloadLinks/>
 
 ## 整合包介绍
 

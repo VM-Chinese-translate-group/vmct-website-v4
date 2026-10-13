@@ -40,10 +40,7 @@ links:
 
 ![图片 =500x](https://media.forgecdn.net/attachments/description/1276799/description_3d7a6cdd-d2b3-4618-8a34-1d39700630a0.png)
 
-<DownloadLinks :methods="[
-  { id: 'quark-lanzou', text: '下载汉化', lanzouLink: 'https://vmhanhuazu.lanzouo.com/s/LI', quarkLink: 'https://pan.quark.cn/s/edb80f4ce6e0' },
-  { id: 'lazy', link: 'https://vmhanhuazu.lanzouo.com/s/LI' }
-]" />
+<DownloadLinks/>
 
 原名：Liminal Industries
 

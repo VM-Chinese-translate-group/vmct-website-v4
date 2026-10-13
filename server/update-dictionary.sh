@@ -4,6 +4,7 @@ set -Eeuo pipefail
 APP_DIR="${APP_DIR:-/opt/vmct-website}"
 DATA_DIR="${VMCT_DATA_DIR:-/var/lib/vmct-website/data}"
 DB_PATH="${DICT_DB_PATH:-${DATA_DIR}/dictionary.sqlite}"
+# Database settings are inherited from the service's EnvironmentFile.
 STATE_FILE="${DATA_DIR}/dictionary-release.json"
 API_SERVICE="vmct-website-api.service"
 HELPER="${APP_DIR}/scripts/dictionary-update.mjs"
@@ -15,12 +16,39 @@ flock -w 300 9
 
 work_dir="$(mktemp -d "$(dirname "${DB_PATH}")/.dictionary-update.XXXXXX")"
 backup_path="${work_dir}/previous.sqlite"
+state_backup="${work_dir}/previous-release.json"
 api_stopped=0
 swapped=0
+pg_swapped=0
 committed=0
+wait_for_health() {
+  local attempt
+  for ((attempt=1; attempt<=${DICTIONARY_HEALTH_ATTEMPTS:-15}; attempt++)); do
+    if node --experimental-sqlite "${HELPER}" health "${DICTIONARY_API_ORIGIN:-http://127.0.0.1:8787}"; then
+      return 0
+    fi
+    sleep 1
+  done
+  return 1
+}
 cleanup() {
   local status=$?
   trap - EXIT INT TERM
+  if [[ "${committed}" -eq 0 && "${pg_swapped}" -eq 1 ]]; then
+    echo 'Dictionary update failed; restoring the previous PostgreSQL dictionary.' >&2
+    if node --experimental-sqlite "${APP_DIR}/scripts/migrate-postgres.mjs" --dictionary-rollback; then
+      if [[ -f "${state_backup}" ]]; then
+        mv -f "${state_backup}" "${STATE_FILE}"
+      else
+        rm -f "${STATE_FILE}"
+      fi
+    else
+      echo 'PostgreSQL rollback could not complete; database schemas and release state retained for recovery.' >&2
+    fi
+    if systemctl restart "${API_SERVICE}"; then
+      wait_for_health || echo 'Restored dictionary API is not healthy; inspect the service before retrying.' >&2
+    fi
+  fi
   if [[ "${committed}" -eq 0 && "${api_stopped}" -eq 1 ]]; then
     echo 'Dictionary update failed; restoring the previous database.' >&2
     if systemctl stop "${API_SERVICE}"; then
@@ -52,8 +80,12 @@ curl --fail --silent --show-error --location --retry 3 --connect-timeout 15 --ma
   'https://api.github.com/repos/VM-Chinese-translate-group/i18n-Dict-Extender/releases/latest' \
   --output "${work_dir}/release.json"
 node --experimental-sqlite "${HELPER}" select "${work_dir}/release.json" "${work_dir}/manifest.json" "${STATE_FILE}"
-if [[ -f "${DB_PATH}" ]] && node -e 'process.exit(JSON.parse(require("fs").readFileSync(process.argv[1])).unchanged ? 0 : 1)' "${work_dir}/manifest.json"; then
-  exit 0
+if node -e 'process.exit(JSON.parse(require("fs").readFileSync(process.argv[1])).unchanged ? 0 : 1)' "${work_dir}/manifest.json"; then
+  if [[ "${VMCT_DATABASE_BACKEND:-sqlite}" == 'postgres' ]]; then
+    if node --experimental-sqlite "${APP_DIR}/scripts/migrate-postgres.mjs" --dictionary-status; then exit 0; fi
+  elif [[ -f "${DB_PATH}" ]]; then
+    exit 0
+  fi
 fi
 asset_url="$(node -e 'console.log(JSON.parse(require("fs").readFileSync(process.argv[1])).url)' "${work_dir}/manifest.json")"
 asset_id="$(node -e 'console.log(JSON.parse(require("fs").readFileSync(process.argv[1])).assetId)' "${work_dir}/manifest.json")"
@@ -70,6 +102,23 @@ if ! node --experimental-sqlite "${HELPER}" verify "${download_file}" "${work_di
   exit 1
 fi
 cp "${download_file}" "${work_dir}/dictionary.sqlite"
+if [[ "${VMCT_DATABASE_BACKEND:-sqlite}" == 'postgres' ]]; then
+  # Build and validate the candidate, then atomically swap its namespace.
+  # Readers keep serving the previous table until the swap commits. SQLite
+  # is only the upstream interchange format; the live API never reopens it.
+  flock -w 300 9
+  if [[ -f "${STATE_FILE}" ]]; then cp -p "${STATE_FILE}" "${state_backup}"; fi
+  node --experimental-sqlite "${APP_DIR}/scripts/migrate-postgres.mjs" --dictionary "${work_dir}/dictionary.sqlite"
+  pg_swapped=1
+  systemctl restart "${API_SERVICE}"
+  wait_for_health
+  chmod 0644 "${work_dir}/manifest.json"
+  mv -f "${work_dir}/manifest.json" "${STATE_FILE}"
+  committed=1
+  rm -f "${download_file}"
+  echo 'PostgreSQL dictionary update completed.'
+  exit 0
+fi
 node --experimental-sqlite "${HELPER}" prepare "${work_dir}/dictionary.sqlite"
 chown vmct:vmct "${work_dir}/dictionary.sqlite"
 chmod 0644 "${work_dir}/dictionary.sqlite"
@@ -84,15 +133,7 @@ if [[ -f "${DB_PATH}" ]]; then mv "${DB_PATH}" "${backup_path}"; fi
 mv "${work_dir}/dictionary.sqlite" "${DB_PATH}"
 swapped=1
 systemctl start "${API_SERVICE}"
-healthy=0
-for ((attempt=1; attempt<=${DICTIONARY_HEALTH_ATTEMPTS:-15}; attempt++)); do
-  if node --experimental-sqlite "${HELPER}" health "${DICTIONARY_API_ORIGIN:-http://127.0.0.1:8787}"; then
-    healthy=1
-    break
-  fi
-  sleep 1
-done
-[[ "${healthy}" -eq 1 ]] || exit 1
+wait_for_health
 if [[ -f "${backup_path}" ]]; then
   mv -f "${backup_path}" "${DB_PATH}.previous"
   backup_path="${DB_PATH}.previous"

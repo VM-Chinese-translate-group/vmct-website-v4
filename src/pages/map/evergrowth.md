@@ -45,10 +45,7 @@ Evergrowth 拥有丰富多样的解谜机制，但核心玩法始终围绕**推�
 你需要将这个文件发送给你的朋友，并且让他们加载这个资源包。
 :::
 
-<DownloadLinks :methods="[
-  { id: 'curseforge', text: '下载地图和汉化', link: 'https://www.curseforge.com/minecraft/worlds/evergrowth/files/7111682' },
-  { id: 'lazy', link: 'https://www.curseforge.com/minecraft/worlds/evergrowth/files/7111682' }
-]" />
+<DownloadLinks/>
 
 ## 地图信息
 

@@ -33,10 +33,7 @@ links:
 
 ![图片 =450x](https://media.forgecdn.net/attachments/918/742/2024-07-17_23.png)
 
-<DownloadLinks :methods="[
-  { id: 'quark-lanzou', text: '下载汉化', lanzouLink: 'https://vmhanhuazu.lanzouo.com/s/pa2', quarkLink: 'https://pan.quark.cn/s/9c7ff45c84b1' },
-  { id: 'lazy', link: 'https://vmhanhuazu.lanzouo.com/s/pa2' }
-]" />
+<DownloadLinks/>
 
 ## 特色
 

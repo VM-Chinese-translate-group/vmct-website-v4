@@ -37,10 +37,7 @@ Tunnel Rats是一款完全在地下展开的多人起床战争地图！
 
 你还可以自定义游戏规则，并自由选择队伍颜色。
 
-<DownloadLinks :methods="[
-  { id: 'lanzou-quark-mapdl', text: '下载地图和汉化', lanzouLink: '/doing', quarkLink: '/doing' },
-  { id: 'lazy', link: '/doing' }
-]" />
+<DownloadLinks/>
 
 <DocSupport />
 

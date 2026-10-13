@@ -38,10 +38,7 @@ links:
 谜题验证和提示功能等新机制能够在不降低挑战性的前提下为玩家提供引导，
 而通过算法验证解法的谜题则带来了更加流畅、稳定的解谜体验。
 
-<DownloadLinks :methods="[
-  { id: 'lanzou-quark-mapdl', text: '下载地图和汉化', lanzouLink: 'https://vmhanhuazu.lanzouv.com/s/terrace3', quarkLink: 'https://pan.quark.cn/s/be63f4d9075f' },
-  { id: 'lazy', link: 'https://vmhanhuazu.lanzouv.com/s/terrace3' }
-]" />
+<DownloadLinks/>
 
 地图特色：
 

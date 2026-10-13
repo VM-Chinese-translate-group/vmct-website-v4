@@ -31,10 +31,7 @@ links:
 汉化支持整合包版本4.1，不支持最新版，请留意下载的支持整合包版本！
 :::
 
-<DownloadLinks :methods="[
-  { id: 'baidu-drive', text: '下载汉化', link: 'https://pan.baidu.com/s/1OI533N2IMHssFsoGm5o0lg?pwd=x068#list/path=%2F%E8%87%AA%E5%B0%8A%E5%AF%BA%E6%B1%89%E5%8C%96%E5%85%A8%E9%9B%86%2F1.18.x%2FCaveopolis' },
-  { id: 'lazy', link: 'https://pan.baidu.com/s/1OI533N2IMHssFsoGm5o0lg?dp-logid=91125100565815730002&pwd=x068#list/path=%2F%E8%87%AA%E5%B0%8A%E5%AF%BA%E6%B1%89%E5%8C%96%E5%85%A8%E9%9B%86%2F1.18.x%2FCaveopolis' }
-]" />
+<DownloadLinks/>
 
 ## 整合包下载
 

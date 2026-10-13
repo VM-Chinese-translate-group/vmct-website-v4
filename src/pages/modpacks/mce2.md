@@ -34,10 +34,7 @@ links:
 
 ✨ **每个人都能在这里找到属于自己的乐趣！**
 
-<DownloadLinks :methods="[
-{ id: 'quark-lanzou', text: '下载汉化', lanzouLink: '/doing', quarkLink: '/doing' },
-{ id: 'lazy', link: '/doing' }
-]" />
+<DownloadLinks/>
 
 ## 📖 **核心特色**
 

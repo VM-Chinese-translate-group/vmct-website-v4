@@ -49,11 +49,7 @@ links:
 **请不要让玩家连接服务器时自动下载资源包，这会导致进入游戏时部分翻译不加载！**
 :::
 
-<DownloadLinks :methods="[
-  { id: 'mediafire', text: '下载地图', link: 'https://www.mediafire.com/file/lej6nls9cj1kha6/Final_Paradox_v1.1.15.zip/file' },
-  { id: 'lanzou-quark-mapdl', text: '下载汉化', lanzouLink: 'https://vmhanhuazu.lanzouy.com/s/fp-vmct-cn', quarkLink: 'https://pan.quark.cn/s/4047ca438fdd' },
-  { id: 'lazy', text: '懒汉下载汉化', link: 'https://vmhanhuazu.lanzouy.com/s/fp-vmct-cn' }
-]" />
+<DownloadLinks/>
 
 ## 汉化贡献（排名不分先后）
 

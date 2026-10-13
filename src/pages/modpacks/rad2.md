@@ -30,10 +30,7 @@ Roguelite及地城探索类游戏与模组的精华。这款以探索为核心�
 
 ![图片 =500x](https://media.forgecdn.net/attachments/761/848/2021-11-24_18.png)
 
-<DownloadLinks :methods="[
-  { id: 'quark-lanzou', text: '下载汉化', lanzouLink: '/doing', quarkLink: '/doing' },
-  { id: 'lazy', link: '/doing' }
-]" />
+<DownloadLinks/>
 
 原名：Roguelike Adventures and Dungeons 2
 

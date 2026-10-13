@@ -42,11 +42,7 @@ links:
 
 **奥术学院**整合包将带你踏上充满魔法力量、危险旅程和无畏精神的迷人故事！
 
-<DownloadLinks :methods="[
-  { id: 'quark-lanzou', text: '下载汉化', lanzouLink: 'https://vmhanhuazu.lanzouo.com/s/asxy-vmct', quarkLink: 'https://pan.quark.cn/s/356f11fbd914' },
-  { id: 'gitee', text: 'FTB整合包下载工具', icon: '/imgs/svg/gitee.svg', link: 'https://gitee.com/flrscn/curse-the-beast/releases' },
-  { id: 'lazy', link: 'https://vmhanhuazu.lanzouo.com/s/asxy-vmct' }
-]" />
+<DownloadLinks/>
 
 ## 整合包介绍
 

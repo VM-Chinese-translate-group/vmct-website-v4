@@ -277,3 +277,7 @@ export function restoreContentRevision(id: string, revision: number, expectedDra
 export function retryContentDeployment() {
   return request<{ deployment: DeploymentResult }>('/deploy', { method: 'POST', body: '{}' })
 }
+
+export interface DownloadConfiguration { methods: import('@/components/DownloadPage/downloadMethods').DownloadMethodSource[]; version: number }
+export const getDownloads = (id: string) => request<DownloadConfiguration>(`/pages/${id}/downloads`)
+export const saveDownloads = (id: string, data: DownloadConfiguration) => request<DownloadConfiguration>(`/pages/${id}/downloads`, { method: 'PUT', body: JSON.stringify(data) })

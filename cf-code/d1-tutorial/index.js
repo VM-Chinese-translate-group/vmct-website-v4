@@ -348,6 +348,9 @@ async function runSearchQueries({
   offset,
   cachedTotal,
 }) {
+  if (typeof env.DB.searchDictionary === 'function') {
+    return env.DB.searchDictionary({ normalizedQuery, searchColumn, itemsPerPage, offset, cachedTotal })
+  }
   const hasFtsQuery = Boolean(searchPlan.ftsQuery)
   const sqlFilter = searchPlan.sqlConditions.length
     ? ` AND ${searchPlan.sqlConditions.join(' AND ')}`

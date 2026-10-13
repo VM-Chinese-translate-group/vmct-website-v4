@@ -37,13 +37,6 @@ VM汉化实用工具是一个为 Minecraft 整合包汉化补丁设计的自动�
 
 检测汉化更新功能为VM汉化组内部使用。如果你是一位感兴趣的开发者，请查看我们的模组使用文档。
 
-<DownloadLinks :methods="[
-  { id: 'vmtu', text: '模组使用文档', icon: '/imgs/logo/logo_128.png', link: 'https://docs.vmct-cn.top/vmtu/' },
-  { id: 'curseforge', text: 'CurseForge', link: 'https://www.curseforge.com/minecraft/mc-mods/vmtu' },
-  { id: 'modrinth', text: 'Modrinth', link: 'https://modrinth.com/mod/vmtu' },
-  { id: 'github', text: '模组主代码仓库', link: 'https://github.com/VM-Chinese-translate-group/VMTranslationUtilityMod' },
-  { id: 'github-core', text: '通用逻辑代码仓库', icon: '/imgs/svg/github.svg', link: 'https://github.com/VM-Chinese-translate-group/VMTULibraries' },
-  { id: 'github-metadata', text: '云端配置数据仓库', icon: '/imgs/svg/github.svg', link: 'https://github.com/VM-Chinese-translate-group/VM-Resources' }
-]" />
+<DownloadLinks/>
 
 </DownloadLayout>

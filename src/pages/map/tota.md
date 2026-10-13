@@ -48,10 +48,7 @@ links:
 
 在途中找到并拯救你的同胞，将新NPC带回到两次战斗之间的起始区域。每层楼都有隐藏的秘密和谜题等你解锁和探索！
 
-<DownloadLinks :methods="[
-  { id: 'lanzou-quark-mapdl', text: '下载地图和汉化', lanzouLink: 'https://vmhanhuazu.lanzouo.com/s/tota', quarkLink: 'https://pan.quark.cn/s/e6eab616fa9f' },
-  { id: 'lazy', link: 'https://vmhanhuazu.lanzouo.com/s/tota' }
-]" />
+<DownloadLinks/>
 
 ## 要求：
 

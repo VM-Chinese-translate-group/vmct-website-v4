@@ -45,10 +45,7 @@ links:
 
 ![图片 =500x](https://github.com/nvb-uy/cdn/blob/f70cba5260e5a833994bc0d849025df91893f26e/desc/prominence/rpg/promlogo.webp?raw=true)
 
-<DownloadLinks :methods="[
-  { id: 'quark-lanzou', text: '下载汉化', lanzouLink: 'https://vmhanhuazu.lanzouo.com/s/prominence2', quarkLink: 'https://pan.quark.cn/s/29e3994b9d1d' },
-  { id: 'lazy', link: 'https://vmhanhuazu.lanzouo.com/s/prominence2' }
-]" />
+<DownloadLinks/>
 
 译者：[查看贡献人员排行榜](https://paratranz.cn/projects/13782/leaderboard)
 

@@ -27,11 +27,7 @@ links:
 
 FTB和Direwolf20将带来一场新的刺激冒险！自2011年以来，FTB和Direwolf20提供了简单而独特的水槽类整合包，适合各种技能水平的玩家。现在，1.19 版本来袭，游戏变得更棒了！
 
-<DownloadLinks :methods="[
-  { id: 'lanzou', text: '下载汉化', link: 'https://wulian233.lanzouu.com/isX0E27rys7g' },
-  { id: 'gitee', text: 'FTB整合包下载工具', icon: '/imgs/svg/gitee.svg', link: 'https://gitee.com/flrscn/curse-the-beast/releases' },
-  { id: 'lazy', link: 'https://wulian233.lanzouu.com/isX0E27rys7g' }
-]" />
+<DownloadLinks/>
 
 译者：捂脸，sine，X209，虚空，Chark_TSC
 

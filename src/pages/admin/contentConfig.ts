@@ -69,11 +69,11 @@ export function templateFor(kind: PageKind) {
   if (kind === 'modpack')
     return {
       metadata: defaultResourceMetadata(),
-      body: `<DownloadLayout :meta="frontmatter">\n\n::: warning 下载前请确认\n请确认 Minecraft、加载器与整合包版本。\n:::\n\n## 整合包简介\n\n在这里介绍玩法与汉化范围。\n\n<DownloadLinks :methods="[\n  { id: 'quark-lanzou', text: '下载汉化', lanzouLink: '填写蓝奏云下载链接', quarkLink: '填写夸克网盘下载链接' },\n  { id: 'lazy', link: '填写蓝奏云下载链接' }\n]" />\n\n## 安装说明\n\n1. 下载对应版本的整合包和汉化补丁。\n2. 按说明安装补丁。\n\n<DocSupport />\n\n</DownloadLayout>`,
+      body: `<DownloadLayout :meta="frontmatter">\n\n::: warning 下载前请确认\n请确认 Minecraft、加载器与整合包版本。\n:::\n\n## 整合包简介\n\n在这里介绍玩法与汉化范围。\n\n<DownloadLinks/>\n\n## 安装说明\n\n1. 下载对应版本的整合包和汉化补丁。\n2. 按说明安装补丁。\n\n<DocSupport />\n\n</DownloadLayout>`,
     }
   return {
     metadata: defaultResourceMetadata(),
-    body: `<DownloadLayout :meta="frontmatter">\n\n## 地图信息\n\n在这里介绍地图玩法、人数与规则。\n\n::: warning 安装前确认\n请确认游戏版本，并将存档放入 saves 目录。\n:::\n\n<DownloadLinks :methods="[\n  { id: 'quark-lanzou', text: '下载汉化', lanzouLink: '填写蓝奏云下载链接', quarkLink: '填写夸克网盘下载链接' },\n  { id: 'lazy', link: '填写蓝奏云下载链接' }\n]" />\n\n## 游玩方式\n\n1. 解压地图文件。\n2. 将存档文件夹放入 Minecraft 的 saves 目录。\n\n<DocSupport />\n\n</DownloadLayout>`,
+    body: `<DownloadLayout :meta="frontmatter">\n\n## 地图信息\n\n在这里介绍地图玩法、人数与规则。\n\n::: warning 安装前确认\n请确认游戏版本，并将存档放入 saves 目录。\n:::\n\n<DownloadLinks/>\n\n## 游玩方式\n\n1. 解压地图文件。\n2. 将存档文件夹放入 Minecraft 的 saves 目录。\n\n<DocSupport />\n\n</DownloadLayout>`,
   }
 }
 

@@ -27,10 +27,7 @@ links:
 
 这个包不同以往的模组开局，而是采用蜜蜂来获得在空岛中你需要的资源，你得到你的第一只蜜蜂后你就需要繁殖它们以此获得所有的蜜蜂。一些配方变得更加困难，更具有挑战性。
 
-<DownloadLinks :methods="[
-  { id: 'quark-lanzou', text: '下载汉化', lanzouLink: 'https://vmhanhuazu.lanzouv.com/S-B-VM-cn-1', quarkLink: 'https://pan.quark.cn/s/f328fb592944' },
-  { id: 'lazy', link: 'https://vmhanhuazu.lanzouv.com/S-B-VM-cn-1' }
-]" />
+<DownloadLinks/>
 
 ## 整合包介绍
 

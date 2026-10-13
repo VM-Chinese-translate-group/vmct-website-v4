@@ -35,10 +35,7 @@ links:
 汉化覆盖安装完成后**并不代表完成了汉化安装**，还需要手动在游戏`选项`->`资源包`中启用汉化资源包！否则汉化无效！
 :::
 
-<DownloadLinks :methods="[
-  { id: 'quark-lanzou', text: '下载汉化', lanzouLink: 'https://vmhanhuazu.lanzouo.com/s/chunkblock', quarkLink: 'https://pan.quark.cn/s/c2d804de67d5' },
-  { id: 'lazy', link: 'https://vmhanhuazu.lanzouo.com/s/chunkblock' }
-]" />
+<DownloadLinks/>
 
 项目主管 @[Wulian233](https://github.com/Wulian233)
 

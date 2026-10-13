@@ -32,10 +32,7 @@ links:
 
 ![图片](https://media.forgecdn.net/attachments/1362/945/sky_base-png.png)
 
-<DownloadLinks :methods="[
-  { id: 'quark-lanzou', text: '下载汉化', lanzouLink: '/doing', quarkLink: '/doing' },
-  { id: 'lazy', link: '/doing' }
-]" />
+<DownloadLinks/>
 
 ### 模式设置
 

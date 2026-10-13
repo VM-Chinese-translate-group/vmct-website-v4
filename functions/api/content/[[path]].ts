@@ -116,6 +116,7 @@ function documentFrom(input: any) {
     .trim()
   const body = String(input?.body || '').replace(/\r\n/g, '\n')
   if (frontmatter.length > 100_000 || body.length > 500_000) throw new ApiError(413, '页面内容过长')
+  if (/^(modpacks|map|maps)\//.test(path) && /<DownloadLinks\s+:methods=/.test(body)) throw new ApiError(400, '请使用 <DownloadLinks/>，在下载链接控件中编辑链接')
   return { path, frontmatter, body }
 }
 
@@ -190,6 +191,85 @@ async function ensureContentSchema(db: any) {
       )
       .run()
   }
+}
+
+// Parse the old literal syntax without executing Markdown as JavaScript.
+function extractDownloads(body: string) {
+  const tag = /<DownloadLinks\s+:methods="([\s\S]*?)"\s*\/>/g
+  const methods: Record<string, string>[] = []
+  const clean = body.replace(tag, (_, literal) => {
+    let rest: string = String(literal).trim()
+    if (!rest.startsWith('[') || !rest.endsWith(']')) throw new ApiError(400, '下载组件必须使用静态链接')
+    rest = rest.slice(1, -1)
+    const objectPattern = /\{([^{}]*)\}/g
+    for (const object of rest.matchAll(objectPattern)) {
+      const method: Record<string, string> = {}
+      let fields = object[1]
+      fields = fields.replace(/([a-zA-Z]+)\s*:\s*(['"])((?:\\.|(?!\2)[^\\])*)\2\s*,?/g, (_: string, key: string, quote: string, value: string) => {
+        method[key] = value.replace(/\\(['"\\])/g, '$1')
+        return ''
+      })
+      if (fields.trim()) throw new ApiError(400, '下载组件包含不支持的表达式')
+      methods.push(method)
+    }
+    if (rest.replace(objectPattern, '').replace(/[,\s]/g, '')) throw new ApiError(400, '下载组件格式无效')
+    return '<DownloadLinks/>'
+  })
+  return { body: clean, methods }
+}
+
+async function ensureDownloads(context: any) {
+  const db = context.env.CONTENT_DB
+  await db.prepare("CREATE TABLE IF NOT EXISTS content_downloads (page_id TEXT PRIMARY KEY REFERENCES content_pages(id) ON DELETE CASCADE, methods TEXT NOT NULL, version INTEGER NOT NULL DEFAULT 0)").run()
+  if (await setting(db, 'download_links_migrated_v1')) return
+  const rows = (await db.prepare('SELECT id, path, draft_body AS draftBody, published_body AS publishedBody FROM content_pages').all()).results || []
+  for (const row of rows) {
+    if (!/^(modpacks|map|maps)\//.test(row.path)) continue
+    const draft = extractDownloads(row.draftBody || '')
+    const published = extractDownloads(row.publishedBody || '')
+    const methods = published.methods.length ? published.methods : draft.methods.length ? draft.methods : context.env.DOWNLOAD_SEEDS?.[row.path] || []
+    await db.batch([
+      db.prepare('INSERT OR IGNORE INTO content_downloads(page_id, methods) VALUES (?, ?)').bind(row.id, JSON.stringify(methods)),
+      db.prepare('UPDATE content_pages SET draft_body = ?, published_body = ?, draft_version = draft_version + 1 WHERE id = ? AND (draft_body != ? OR published_body != ?)').bind(draft.body, row.publishedBody == null ? null : published.body, row.id, draft.body, published.body),
+    ])
+  }
+  await saveSetting(db, 'download_links_migrated_v1', '1')
+}
+
+async function downloads(context: any, id: string, write = false) {
+  const db = context.env.CONTENT_DB
+  const current = await page(db, id)
+  await db.prepare('INSERT OR IGNORE INTO content_downloads(page_id, methods) VALUES (?, ?)').bind(id, JSON.stringify(context.env.DOWNLOAD_SEEDS?.[current.path] || [])).run()
+  if (write) {
+    requireSameOrigin(context.request)
+    const input = await readJson(context.request)
+    if (!Array.isArray(input.methods) || input.methods.length > 30) throw new ApiError(400, '下载方式最多 30 项')
+    const allowed = new Set(['id', 'text', 'subText', 'icon', 'link', 'lanzouLink', 'quarkLink', 'lazyLink'])
+    const ids = new Set()
+    for (const method of input.methods) {
+      if (!method || typeof method !== 'object' || Array.isArray(method) || typeof method.id !== 'string' || !method.id.trim() || method.id.length > 128 || ids.has(method.id.trim().toLowerCase())) throw new ApiError(400, '下载方式 ID 必须填写且不能重复')
+      method.id = method.id.trim()
+      ids.add(method.id.toLowerCase())
+      for (const [key, value] of Object.entries(method)) {
+        if (!allowed.has(key) || typeof value !== 'string' || value.length > 4000) throw new ApiError(400, '下载字段无效')
+        if (value && (key === 'link' || key.endsWith('Link') || key === 'icon')) {
+          if (!/^https?:\/\//i.test(value) && !(value.startsWith('/') && !value.startsWith('//'))) throw new ApiError(400, '链接必须使用 http(s) 或站内路径')
+        }
+      }
+    }
+    await db.prepare('INSERT OR IGNORE INTO content_downloads(page_id, methods) VALUES (?, ?)').bind(id, '[]').run()
+    const result = await db.prepare('UPDATE content_downloads SET methods = ?, version = version + 1 WHERE page_id = ? AND version = ?').bind(JSON.stringify(input.methods), id, input.version).run()
+    if (!result.meta?.changes) throw new ApiError(409, '下载链接已在其他窗口更新，请重新加载')
+  }
+  const row = await db.prepare('SELECT methods, version FROM content_downloads WHERE page_id = ?').bind(id).first()
+  return json({ methods: row ? JSON.parse(row.methods) : context.env.DOWNLOAD_SEEDS?.[current.path] || [], version: row?.version || 0 })
+}
+
+async function publicDownloads(context: any) {
+  const path = new URL(context.request.url).searchParams.get('path')?.replace(/^\/+|\/+$/g, '') || ''
+  const row = await context.env.CONTENT_DB.prepare("SELECT p.id, d.methods FROM content_pages p LEFT JOIN content_downloads d ON d.page_id = p.id WHERE p.state = 'published' AND (COALESCE(p.published_path, p.path) = ? OR COALESCE(p.published_path, p.path) = ?)").bind(path, path + '/index').first()
+  if (!row) throw new ApiError(404, '页面不存在')
+  return json({ pageId: row.id, methods: row.methods ? JSON.parse(row.methods) : context.env.DOWNLOAD_SEEDS?.[path] || [] })
 }
 
 async function passwordConfig(context: any) {
@@ -685,7 +765,7 @@ async function restoreRevision(context: any, id: string, revisionNumber: string)
     result = await context.env.CONTENT_DB.prepare(
       "UPDATE content_pages SET path = ?, draft_frontmatter = ?, draft_body = ?, has_unpublished_changes = 1, draft_version = draft_version + 1, updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now') WHERE id = ? AND draft_version = ?",
     )
-      .bind(historical.path, historical.frontmatter, historical.body, id, expectedDraftVersion)
+      .bind(historical.path, historical.frontmatter, /^(modpacks|map|maps)\//.test(historical.path) ? extractDownloads(historical.body).body : historical.body, id, expectedDraftVersion)
       .run()
   } catch (error: any) {
     if (String(error?.message || '').includes('UNIQUE constraint failed'))
@@ -719,7 +799,9 @@ async function importContent(context: any) {
   if (!Array.isArray(payload?.pages) || !payload.pages.length || payload.pages.length > 500)
     throw new ApiError(400, 'pages 必须是 1 到 500 项的数组')
   const now = new Date().toISOString()
-  for (const item of payload.pages.map(documentFrom)) {
+  for (const source of payload.pages) {
+    const legacy = extractDownloads(String(source.body || ''))
+    const item = documentFrom({ ...source, body: /^(modpacks|map|maps)\//.test(String(source.path)) ? legacy.body : source.body })
     const existing = await context.env.CONTENT_DB.prepare(
       'SELECT id, published_revision AS revision FROM content_pages WHERE path = ? LIMIT 1',
     )
@@ -764,6 +846,9 @@ async function importContent(context: any) {
         )
         .run()
     }
+    if (/^(modpacks|map|maps)\//.test(item.path)) {
+      await context.env.CONTENT_DB.prepare('INSERT OR IGNORE INTO content_downloads(page_id, methods) VALUES (?, ?)').bind(id, JSON.stringify(legacy.methods.length ? legacy.methods : context.env.DOWNLOAD_SEEDS?.[item.path] || [])).run()
+    }
     await context.env.CONTENT_DB.prepare(
       'INSERT INTO content_revisions (id, page_id, revision, path, frontmatter, body, message, published_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
     )
@@ -786,6 +871,8 @@ export const onRequest = async (context: any) => {
   try {
     const path = route(context)
     await ensureContentSchema(context.env.CONTENT_DB)
+    await ensureDownloads(context)
+    if (path === 'downloads' && context.request.method === 'GET') return await publicDownloads(context)
     if (path === 'internal/export' && context.request.method === 'GET')
       return await exportContent(context)
     if (path === 'admin/auth/status' && context.request.method === 'GET')
@@ -823,6 +910,7 @@ export const onRequest = async (context: any) => {
       Array.isArray(rawSegments) ? rawSegments : rawSegments ? [rawSegments] : []
     ) as string[]
     if (!id) throw new ApiError(404, '接口不存在')
+    if (action === 'downloads' && ['GET', 'PUT'].includes(context.request.method)) return await downloads(context, id, context.request.method === 'PUT')
     if (!action && context.request.method === 'GET')
       return json({ page: await page(context.env.CONTENT_DB, id) })
     if (!action && context.request.method === 'PUT') return await saveDraft(context, id)

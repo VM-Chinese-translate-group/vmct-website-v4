@@ -42,10 +42,7 @@ links:
 - 请确保已安装 Java 18 或 17，否则可能会导致崩溃
 - 如果你是 MacOS 用户，请[查看此文档](https://vmhanhuazu.lanzouo.com/Dawncraft-mac)
 
-<DownloadLinks :methods="[
-  { id: 'quark-lanzou', text: '下载汉化', lanzouLink: 'https://vmhanhuazu.lanzoui.com/s/DawnCraft-VMct', quarkLink: 'https://pan.quark.cn/s/e60d5ec60233' },
-  { id: 'lazy', link: 'https://vmhanhuazu.lanzoui.com/s/DawnCraft-VMct' }
-]" />
+<DownloadLinks/>
 
 ## 整合包介绍
 

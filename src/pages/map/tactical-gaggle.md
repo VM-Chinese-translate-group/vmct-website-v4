@@ -36,10 +36,7 @@ links:
 特别感谢所有帮我测试地图的小伙伴，爱你们 <3
 同时也特别感谢 White Bat Audio 的 Karl Casey 带来的超赞配乐！
 
-<DownloadLinks :methods="[
-  { id: 'lanzou-quark-mapdl', text: '下载地图和汉化', lanzouLink: 'https://vmhanhuazu.lanzouv.com/s/tactical-gaggle', quarkLink: 'https://pan.quark.cn/s/4f9abcad498c' },
-  { id: 'lazy', link: 'https://vmhanhuazu.lanzouv.com/s/tactical-gaggle' }
-]" />
+<DownloadLinks/>
 
 <DocSupport />
 

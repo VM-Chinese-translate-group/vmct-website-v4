@@ -29,10 +29,7 @@ links:
 
 利用魔法与科技，按你的设计锻造出属于你的领域。
 
-<DownloadLinks :methods="[
-  { id: 'lanzou', text: '下载汉化', link: 'https://wulian233.lanzouu.com/iNLBv38skbxe' },
-  { id: 'lazy', link: 'https://wulian233.lanzouu.com/iNLBv38skbxe' }
-]" />
+<DownloadLinks/>
 
 ## 整合包下载与授权
 
