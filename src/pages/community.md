@@ -37,7 +37,7 @@ sidebar: false
 
 汉化组B站账号▶️ <https://space.bilibili.com/2085089798>
 
-汉化组爱发电▶️[https://vmct-cn.top/support-us](support-us)
+汉化组爱发电▶️[https://vmct.top/support-us](support-us)
 
 :::
 

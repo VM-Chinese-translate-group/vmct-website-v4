@@ -23,7 +23,7 @@ description: 所有工具均完全免费且开源，一切为了社区发展。
 
 <DownloadLinks :methods="[
   { id: 'github', text: '源代码', icon: '/imgs/svg/github.svg', link: 'https://github.com/Wulian233/mcmod-translation-dict' },
-  { id: 'dl', text: '网站链接', icon: 'https://dict.vmct-cn.top/favicon.ico', link: 'https://dict.vmct-cn.top/' }
+  { id: 'dl', text: '网站链接', icon: 'https://dict.vmct.top/favicon.ico', link: 'https://dict.vmct.top/' }
 ]" />
 
 # 整合包翻译工具

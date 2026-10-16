@@ -76,12 +76,12 @@
               <a href="/map" class="vm-link-underline mb-2">{{ $t('footer.maps') }}</a>
             </li>
             <li>
-              <a href="https://dict.vmct-cn.top/" class="vm-link-underline mb-2">
+              <a href="https://dict.vmct.top/" class="vm-link-underline mb-2">
                 {{ $t('footer.dict') }}
               </a>
             </li>
             <li>
-              <a href="https://docs.vmct-cn.top/vmtu/" class="vm-link-underline mb-2">
+              <a href="https://docs.vmct.top/vmtu/" class="vm-link-underline mb-2">
                 {{ $t('footer.vmtu') }}
               </a>
             </li>
