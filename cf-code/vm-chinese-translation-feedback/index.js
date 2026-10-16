@@ -839,52 +839,27 @@ async function handleVote(request, env, visitorHash) {
 
   if (!item) throw new Error('item not found')
 
-  const existing = await env.FEEDBACK_DB.prepare(
-    'SELECT active FROM feedback_votes WHERE item_id = ? AND voter_hash = ?',
-  )
-    .bind(body.itemId, visitorHash)
-    .first()
-
   const shouldBeActive = body.action === 'like'
-
-  if (existing && Boolean(existing.active) === shouldBeActive) {
-    return { item: await loadSingleItem(env, body.itemId, visitorHash) }
-  }
-
-  if (!existing && !shouldBeActive) {
-    return { item: await loadSingleItem(env, body.itemId, visitorHash) }
-  }
-
   const now = new Date().toISOString()
   const activeValue = shouldBeActive ? 1 : 0
-
-  if (existing) {
-    const update = await env.FEEDBACK_DB.prepare(
-      'UPDATE feedback_votes SET active = ?, updated_at = ? WHERE item_id = ? AND voter_hash = ? AND active != ?',
-    )
-      .bind(activeValue, now, body.itemId, visitorHash, activeValue)
-      .run()
-
-    if (Number(update.meta?.changes || 0) === 0) {
-      return { item: await loadSingleItem(env, body.itemId, visitorHash) }
-    }
-  } else {
-    const insert = await env.FEEDBACK_DB.prepare(
-      'INSERT OR IGNORE INTO feedback_votes (item_id, voter_hash, active, created_at, updated_at) VALUES (?, ?, ?, ?, ?)',
-    )
-      .bind(body.itemId, visitorHash, activeValue, now, now)
-      .run()
-
-    if (Number(insert.meta?.changes || 0) === 0) {
-      return { item: await loadSingleItem(env, body.itemId, visitorHash) }
-    }
-  }
-
-  await env.FEEDBACK_DB.prepare(
-    'UPDATE feedback_items SET vote_count = MAX(0, vote_count + ?), updated_at = ? WHERE id = ?',
-  )
-    .bind(shouldBeActive ? 1 : -1, now, body.itemId)
-    .run()
+  await env.FEEDBACK_DB.batch([
+    // Serialize votes for this item before writing a voter row. This also works
+    // with PostgreSQL's FK locks and gives the recount a fresh committed view.
+    env.FEEDBACK_DB.prepare('UPDATE feedback_items SET updated_at = updated_at WHERE id = ?')
+      .bind(body.itemId),
+    env.FEEDBACK_DB.prepare(
+      `INSERT INTO feedback_votes (item_id, voter_hash, active, created_at, updated_at)
+       VALUES (?, ?, ?, ?, ?)
+       ON CONFLICT (item_id, voter_hash) DO UPDATE
+       SET active = excluded.active, updated_at = excluded.updated_at
+       WHERE feedback_votes.active != excluded.active`,
+    ).bind(body.itemId, visitorHash, activeValue, now, now),
+    env.FEEDBACK_DB.prepare(
+      `UPDATE feedback_items SET vote_count =
+       (SELECT COUNT(*) FROM feedback_votes WHERE item_id = ? AND active = 1),
+       updated_at = ? WHERE id = ?`,
+    ).bind(body.itemId, now, body.itemId),
+  ])
 
   return { item: await loadSingleItem(env, body.itemId, visitorHash) }
 }
