@@ -59,7 +59,7 @@ const coins = computed(() => ({
   },
   afdian: {
     name: t('supportUs.afdText'),
-    address: 'https://afdian.com/a/VMhanhuazu',
+    address: 'https://afdian.com/a/vmhhz',
   },
 }))
 
