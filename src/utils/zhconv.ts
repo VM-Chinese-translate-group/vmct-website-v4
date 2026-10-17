@@ -4,20 +4,22 @@ const customDict: [string, string][] = [
   ['服務端', '伺服端'],
 ]
 
-let cachedConverter: ((text: string) => string) | null = null
+let converterPromise: Promise<(text: string) => string> | null = null
 
-async function getConverter() {
-  if (cachedConverter) return cachedConverter
-
-  const [{ ConverterBuilder, CustomConverter }, cn2tPreset] = await Promise.all([
-    import('opencc-js/core'),
-    import('opencc-js/preset/cn2t'),
-  ])
-  const baseConverter = ConverterBuilder(cn2tPreset)({ from: 'cn', to: 'twp' })
-  const customConverter = CustomConverter(customDict)
-
-  cachedConverter = (text) => customConverter(baseConverter(text))
-  return cachedConverter
+function getConverter() {
+  // Many resource labels request conversion together. Share initialization as
+  // well as the loaded modules so the dictionary trie is only built once.
+  converterPromise ??= Promise.all([import('opencc-js/core'), import('opencc-js/preset/cn2t')])
+    .then(([{ ConverterBuilder, CustomConverter }, cn2tPreset]) => {
+      const baseConverter = ConverterBuilder(cn2tPreset)({ from: 'cn', to: 'twp' })
+      const customConverter = CustomConverter(customDict)
+      return (text: string) => customConverter(baseConverter(text))
+    })
+    .catch((error) => {
+      converterPromise = null
+      throw error
+    })
+  return converterPromise
 }
 
 const cache = new Map<string, string>()

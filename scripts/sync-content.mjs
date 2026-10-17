@@ -17,7 +17,10 @@ function normalizePath(value) {
 }
 
 try {
-  const response = await fetch(CONTENT_EXPORT_URL, { headers: { Accept: 'application/json' } })
+  const response = await fetch(CONTENT_EXPORT_URL, {
+    headers: { Accept: 'application/json' },
+    signal: AbortSignal.timeout(15_000),
+  })
   if (!response.ok) throw new Error('content endpoint returned HTTP ' + response.status)
   const payload = await response.json()
   if (!Array.isArray(payload.pages)) throw new Error('content response did not contain pages')

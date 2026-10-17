@@ -26,6 +26,12 @@ declare module 'virtual:search-index' {
   export const searchIndex: SearchIndexItem[]
 }
 
+declare module 'virtual:markdown-pages' {
+  import type { ComponentOptions } from 'vue'
+
+  export const mdComponents: Record<string, () => Promise<{ default: ComponentOptions }>>
+}
+
 declare module 'virtual:resources' {
   import type { ResourceItem } from '@/types/resource'
 

@@ -1,13 +1,13 @@
 <template>
   <teleport to="body">
-    <transition name="search-fade">
+    <transition name="search-fade" @after-enter="prepareSearch" @after-leave="resetSearch">
       <div
         v-if="visible"
-        class="fixed inset-0 z-2000 flex justify-center overscroll-contain bg-[var(--search-overlay)] pt-[12vh] backdrop-blur-1"
+        class="fixed inset-0 z-2000 flex justify-center overscroll-contain bg-[var(--search-overlay)] pt-[12vh]"
         @click.self="close"
       >
         <div
-          class="flex max-h-[70vh] w-160 max-w-[95%] flex-col overflow-hidden border border-[var(--search-border)] rounded-3 bg-[var(--bg-white)] shadow-[var(--card-shadow)]"
+          class="search-panel flex max-h-[70vh] w-160 max-w-[95%] flex-col overflow-hidden border border-[var(--search-border)] rounded-3 bg-[var(--bg-white)] shadow-[var(--card-shadow)]"
         >
           <div class="flex items-center border-b border-b-[var(--search-border)] px-5">
             <div>
@@ -98,7 +98,6 @@ import { ref, computed, watch, nextTick, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { Icon } from '@iconify/vue'
-import { searchIndex } from 'virtual:search-index'
 import { isEnglishLocale } from '@/utils/resourceDisplay'
 import { convertInlineText } from '@/utils/zhconv'
 import { createSearchSnippet, normalizeSearchText, rankSearchIndex } from '@/utils/search'
@@ -143,6 +142,8 @@ const performSearch = async () => {
     return
   }
 
+  const { searchIndex } = await import('virtual:search-index')
+  if (requestId !== searchRequestId || !props.visible) return
   const rankedResults = rankSearchIndex(searchIndex, query, targetLocale)
 
   const translatedResults = await Promise.all(
@@ -238,6 +239,22 @@ const goTo = (url: string) => {
 
 const close = () => emit('close')
 
+const prepareSearch = () => {
+  inputRef.value?.focus({ preventScroll: true })
+  // Parse the index after the opening animation, keeping the shell lightweight.
+  void import('virtual:search-index').catch(() => {
+    // A later query retries loading if prefetching fails.
+  })
+}
+
+const resetSearch = () => {
+  if (props.visible) return
+  unlockBodyScroll()
+  keyword.value = ''
+  results.value = []
+  activeIndex.value = -1
+}
+
 const scrollActiveIntoView = () => {
   nextTick(() => {
     const area = resultsAreaRef.value
@@ -282,14 +299,9 @@ watch(
   (newVal) => {
     if (newVal) {
       lockBodyScroll()
-      nextTick(() => inputRef.value?.focus())
     } else {
       searchRequestId += 1
       clearTimeout(timer)
-      unlockBodyScroll()
-      keyword.value = ''
-      results.value = []
-      activeIndex.value = -1
     }
   },
   { immediate: true },
@@ -304,6 +316,7 @@ onMounted(() => {
 })
 
 onUnmounted(() => {
+  searchRequestId += 1
   unlockBodyScroll()
   window.removeEventListener('keydown', onKeyDown)
   clearTimeout(timer)
@@ -336,15 +349,32 @@ onUnmounted(() => {
 
 .search-fade-enter-active,
 .search-fade-leave-active {
-  transition:
-    opacity 0.2s ease,
-    transform 0.2s ease;
+  transition: opacity 0.18s ease;
+}
+
+.search-fade-enter-active .search-panel,
+.search-fade-leave-active .search-panel {
+  transition: transform 0.18s ease;
+  will-change: transform;
 }
 
 .search-fade-enter-from,
 .search-fade-leave-to {
   opacity: 0;
+}
+
+.search-fade-enter-from .search-panel,
+.search-fade-leave-to .search-panel {
   transform: translateY(-10px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .search-fade-enter-active,
+  .search-fade-leave-active,
+  .search-fade-enter-active .search-panel,
+  .search-fade-leave-active .search-panel {
+    transition: none;
+  }
 }
 
 :deep(mark) {

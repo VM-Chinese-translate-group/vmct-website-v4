@@ -2,14 +2,10 @@ import { createMemoryHistory, createRouter, createWebHistory } from 'vue-router'
 import type { RouteRecordRaw } from 'vue-router'
 
 import DefaultLayout from '@/layout/DefaultLayout.vue'
-import Home from '@/layout/HomeLayout.vue'
-import ContentAdmin from '@/pages/admin/index.vue'
 import { routeMeta } from 'virtual:route-meta'
+import { mdComponents } from 'virtual:markdown-pages'
 
-const mdComponents = {
-  ...import.meta.glob('../pages/**/*.md'),
-  ...import.meta.glob('../generated-pages/**/*.md'),
-}
+const ContentAdmin = () => import('@/pages/admin/index.vue')
 
 function fileToRoutePath(file: string) {
   let p = file.replace(/^\.\.\/(?:pages|generated-pages)/, '').replace(/\.md$/, '')
@@ -46,7 +42,7 @@ const routes: RouteRecordRaw[] = [
     path: '/',
     component: DefaultLayout,
     children: [
-      { path: '', name: 'Home', component: Home },
+      { path: '', name: 'Home', component: () => import('@/layout/HomeLayout.vue') },
       { path: 'modpacks', name: 'modpacks-list', component: () => import('@/pages/modpacks.vue') },
       { path: 'map', name: 'map-list', component: () => import('@/pages/map.vue') },
       {

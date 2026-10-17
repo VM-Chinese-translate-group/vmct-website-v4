@@ -1,5 +1,6 @@
 import { defineConfig } from 'vite'
 import path from 'node:path'
+import { constants } from 'node:zlib'
 
 import vue from '@vitejs/plugin-vue'
 import Markdown from 'unplugin-vue-markdown/vite'
@@ -24,6 +25,7 @@ import { resourcesPlugin } from './src/plugins/resourcesList.ts'
 import { routeMetaPlugin } from './src/plugins/routeMeta.ts'
 import { searchIndexPlugin } from './src/plugins/searchIndex.ts'
 import { prerenderRoutesPlugin } from './src/plugins/prerenderRoutes.ts'
+import { markdownPagesPlugin } from './src/plugins/markdownPages.ts'
 
 const gitEnv = getGitEnv()
 
@@ -32,7 +34,7 @@ const repoPath =
     ? `${gitEnv.owner}/${gitEnv.name}`
     : 'VM-Chinese-translate-group/vmct-website-v4'
 
-export default defineConfig({
+export default defineConfig(({ isSsrBuild }) => ({
   define: {
     'import.meta.env.VITE_GIT_COMMIT': JSON.stringify(getGitCommitHash()),
     'import.meta.env.VITE_GIT_BRANCH': JSON.stringify(getGitBranch()),
@@ -144,18 +146,26 @@ export default defineConfig({
 
     routeMetaPlugin(),
 
+    markdownPagesPlugin(),
+
     searchIndexPlugin(),
 
     prerenderRoutesPlugin(),
 
-    Sitemap({
-      hostname: 'https://www.vmct.top',
-      dynamicRoutes: [...getMarkdownRoutes(), '/translation-feedback'],
-    }),
+    !isSsrBuild &&
+      Sitemap({
+        hostname: 'https://www.vmct.top',
+        dynamicRoutes: [...getMarkdownRoutes(), '/translation-feedback'],
+      }),
 
-    compression({
-      threshold: 10240,
-    }),
+    !isSsrBuild &&
+      compression({
+        threshold: 10240,
+        algorithms: [
+          'gzip',
+          ['brotliCompress', { params: { [constants.BROTLI_PARAM_QUALITY]: 6 } }],
+        ],
+      }),
   ],
 
   // In development, keep the browser on localhost while proxying CMS requests
@@ -171,6 +181,9 @@ export default defineConfig({
   },
 
   build: {
+    // The server bundle is temporary input to prerendering, not a deployment.
+    copyPublicDir: !isSsrBuild,
+    reportCompressedSize: !isSsrBuild,
     rolldownOptions: {
       output: {
         manualChunks(id) {
@@ -182,4 +195,4 @@ export default defineConfig({
       },
     },
   },
-})
+}))

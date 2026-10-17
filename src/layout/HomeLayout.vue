@@ -220,7 +220,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, defineAsyncComponent, onMounted, onUnmounted, ref, watch } from 'vue'
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { Icon } from '@iconify/vue'
 import { maps, modpacks } from 'virtual:resources'
@@ -229,7 +229,7 @@ import { formatUpdateDate } from '@/utils/dateFormat'
 import { getLocalizedResourceName } from '@/utils/resourceDisplay'
 import type { ResourceItem, ResourceStatusType } from '@/types/resource'
 
-const SearchOverlay = defineAsyncComponent(() => import('@/components/NavBar/SearchOverlay.vue'))
+import SearchOverlay from '@/components/NavBar/SearchOverlay.vue'
 
 const { locale, t } = useI18n()
 const isSearchOpen = ref(false)
