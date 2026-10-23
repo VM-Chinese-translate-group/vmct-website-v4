@@ -67,7 +67,7 @@
           class="min-w-0 rounded-2xl border border-[var(--switcher-border)] bg-[var(--bg-soft)] shadow-[var(--vp-shadow-1)]"
         >
           <header
-            class="sticky top-18 z-20 flex items-center justify-between gap-3 rounded-t-2xl border-b border-[var(--switcher-border)] bg-[color-mix(in_srgb,var(--bg-alt)_94%,transparent)] px-5 py-3 backdrop-blur max-sm:items-start max-sm:flex-col max-sm:px-3"
+            class="flex items-center justify-between gap-3 rounded-t-2xl border-b border-[var(--switcher-border)] bg-[color-mix(in_srgb,var(--bg-alt)_94%,transparent)] px-5 py-3 backdrop-blur max-sm:items-start max-sm:flex-col max-sm:px-3"
           >
             <div class="min-w-0">
               <div class="flex flex-wrap items-center gap-2">

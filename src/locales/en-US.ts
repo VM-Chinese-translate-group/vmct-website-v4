@@ -35,7 +35,7 @@ export default {
     modpackBtn: 'Modpack Translation',
     mapBtn: 'Map Translation',
     homeHub: {
-      kicker: 'VM Chinese Translation Group',
+      kicker: 'VM汉化组',
       description:
         'A community-powered, non-profit organization focused on localizing Minecraft modpacks and maps.',
       browseModpacks: 'Browse modpacks',
