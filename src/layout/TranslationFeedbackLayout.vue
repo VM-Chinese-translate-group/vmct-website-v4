@@ -43,9 +43,6 @@
           <div class="feedback-form-content min-h-0">
             <div class="flex items-center justify-between gap-4 lt-sm:flex-col lt-sm:items-stretch">
               <div>
-                <p class="m-0 mb-1 text-xs font-700 uppercase tracking-wider text-[var(--info-1)]">
-                  {{ $t('translationFeedback.formKicker') }}
-                </p>
                 <h2 id="feedback-form-title" class="m-0 text-[1.35rem] text-[var(--text-dark)]">
                   {{ $t('translationFeedback.formTitle') }}
                 </h2>
