@@ -168,14 +168,19 @@ export default defineConfig(({ isSsrBuild }) => ({
       }),
   ],
 
-  // In development, keep the browser on localhost while proxying CMS requests
-  // to the ECS API service through the public origin.
+  // Keep development requests same-origin while proxying to the public ECS API.
+  // Set FEEDBACK_API_ORIGIN to a local API when testing feedback mutations.
   server: {
     proxy: {
       '/api/content': {
         target: process.env.CONTENT_API_ORIGIN || 'https://www.vmct.top',
         changeOrigin: true,
         headers: { Origin: process.env.CONTENT_API_ORIGIN || 'https://www.vmct.top' },
+      },
+      '/api/translation-feedback': {
+        target: process.env.FEEDBACK_API_ORIGIN || 'https://www.vmct.top',
+        changeOrigin: true,
+        headers: { Origin: process.env.FEEDBACK_API_ORIGIN || 'https://www.vmct.top' },
       },
     },
   },

@@ -7,9 +7,6 @@
         class="mb-6 flex items-center justify-between gap-4 rounded-lg border border-[var(--switcher-border)] bg-[var(--bg-white)] p-6 lt-sm:flex-col lt-sm:items-stretch lt-sm:p-4"
       >
         <div class="min-w-0">
-          <p class="m-0 mb-1 text-xs font-700 uppercase tracking-wider text-[var(--info-1)]">
-            {{ $t('translationFeedback.kicker') }}
-          </p>
           <h1 class="m-0 mb-[0.45rem] text-[clamp(1.65rem,3.4vw,2.25rem)] text-[var(--text-dark)]">
             {{ $t('translationFeedback.title') }}
           </h1>
@@ -87,47 +84,37 @@
                   />
                 </label>
 
-                <fieldset
-                  class="m-0 flex min-w-0 flex-wrap items-center gap-x-3 gap-y-3 border-0 p-0 leading-[1.45] sm:col-span-2 lt-sm:grid lt-sm:grid-cols-2 lt-sm:gap-x-3 lt-sm:gap-y-4"
-                >
-                  <legend
-                    class="m-0 mb-1 w-full basis-full text-[0.94rem] font-600 text-[var(--text-dark)] lt-sm:col-span-2"
-                  >
+                <fieldset class="m-0 min-w-0 border-0 p-0 sm:col-span-2">
+                  <legend class="m-0 mb-2 text-sm font-600 text-[var(--text-dark)]">
                     {{ $t('translationFeedback.typeLabel') }}
                   </legend>
-                  <label
-                    v-for="subtype in subtypeOptions"
-                    :key="subtype"
-                    class="feedback-flat-control feedback-type-option box-border inline-flex min-h-10 min-w-[7.5rem] cursor-pointer items-center justify-center gap-2 whitespace-nowrap rounded-lg border px-3.5 py-1.5 text-center text-[0.94rem] font-600 text-[var(--text-dark)] focus-within:relative focus-within:z-1 focus-within:outline-2 focus-within:outline-[var(--info-1)] focus-within:outline-offset-0 lt-sm:min-w-0 lt-sm:w-full"
-                    :class="
-                      form.subtypes.includes(subtype)
-                        ? 'border-[var(--info-1)] bg-[var(--info-soft)] font-700 text-[var(--info-1)]'
-                        : 'border-[color-mix(in_srgb,var(--switcher-border)_86%,transparent)] bg-transparent font-600 text-[var(--text-dark)] hover:border-[var(--info-1)] hover:bg-[var(--switcher-item-hover)]'
-                    "
-                  >
-                    <span
-                      class="relative grid size-4 shrink-0 place-items-center rounded-[3px] border transition-colors duration-150"
-                      :class="
-                        form.subtypes.includes(subtype)
-                          ? 'border-[var(--info-1)] bg-[var(--info-1)]'
-                          : 'border-[var(--text-muted)] bg-[var(--bg-white)]'
-                      "
+                  <div class="flex flex-wrap gap-2 lt-sm:grid lt-sm:grid-cols-2">
+                    <label
+                      v-for="subtype in subtypeOptions"
+                      :key="subtype"
+                      class="feedback-flat-control feedback-type-option relative box-border inline-flex min-h-11 min-w-28 cursor-pointer items-center justify-center gap-2 rounded-[10px] border border-solid border-[var(--switcher-border)] bg-[var(--bg-white)] px-3.5 py-2 text-center text-sm font-600 leading-snug text-[var(--text-2)] lt-sm:min-w-0"
+                      :data-selected="form.subtypes.includes(subtype)"
                     >
                       <input
                         v-model="form.subtypes"
-                        class="absolute inset-0 m-0 size-full cursor-pointer opacity-0"
+                        class="absolute inset-0 z-1 m-0 size-full cursor-pointer opacity-0"
                         type="checkbox"
                         :value="subtype"
                       />
-                      <Icon
-                        v-if="form.subtypes.includes(subtype)"
-                        class="pointer-events-none size-3 text-white"
-                        icon="lucide:check"
+                      <span
+                        class="feedback-type-check pointer-events-none grid size-[18px] shrink-0 place-items-center rounded-[5px] border border-solid border-[var(--text-2)]"
                         aria-hidden="true"
-                      />
-                    </span>
-                    <span>{{ $t(`translationFeedback.types.${form.category}.${subtype}`) }}</span>
-                  </label>
+                      >
+                        <Icon
+                          v-if="form.subtypes.includes(subtype)"
+                          class="size-3.5 text-white"
+                          icon="lucide:check"
+                          aria-hidden="true"
+                        />
+                      </span>
+                      <span>{{ $t(`translationFeedback.types.${form.category}.${subtype}`) }}</span>
+                    </label>
+                  </div>
                 </fieldset>
               </div>
 
@@ -203,37 +190,31 @@
                     </div>
                   </div>
                   <div class="grid gap-2">
-                    <div
-                      v-for="(_, index) in form.urls"
-                      :key="index"
-                      class="flex items-center gap-2"
-                    >
+                    <div v-for="(_, index) in form.urls" :key="index" class="relative min-w-0">
                       <span
-                        class="inline-flex h-[1.65rem] w-[1.65rem] flex-[0_0_1.65rem] items-center justify-center rounded-[0.5rem] bg-[var(--info-soft)] text-[0.75rem] font-800 text-[var(--info-1)]"
+                        class="pointer-events-none absolute inset-y-px left-px z-1 inline-flex w-11 items-center justify-center rounded-l-[9px] border-0 border-r border-solid border-[var(--switcher-border)] bg-[var(--info-soft)] text-sm font-700 text-[var(--info-1)]"
                         aria-hidden="true"
                       >
                         {{ index + 1 }}
                       </span>
-                      <div class="relative min-w-0 flex-1">
-                        <input
-                          v-model.trim="form.urls[index]"
-                          class="feedback-field"
-                          :class="{ 'pr-12': index > 0 }"
-                          type="url"
-                          :required="index === 0 && !form.selectedExistingItemId"
-                          :placeholder="$t('translationFeedback.sourceUrlPlaceholder')"
-                          @blur="scheduleSuggestions"
-                        />
-                        <button
-                          v-if="index > 0"
-                          class="feedback-flat-control absolute inset-y-0 right-0 inline-flex w-11 cursor-pointer items-center justify-center border-0 bg-transparent p-0 text-red-600 transition-colors hover:bg-red-50 focus-visible:outline-2 focus-visible:outline-red-500 focus-visible:outline-offset-[-2px] dark:text-red-400 dark:hover:bg-red-950/30"
-                          type="button"
-                          :aria-label="$t('translationFeedback.removeUrl')"
-                          @click="removeUrl(index)"
-                        >
-                          <Icon class="h-5 w-5" icon="lucide:trash-2" aria-hidden="true" />
-                        </button>
-                      </div>
+                      <input
+                        v-model.trim="form.urls[index]"
+                        class="feedback-field feedback-source-input"
+                        :class="{ 'pr-12': index > 0 }"
+                        type="url"
+                        :required="index === 0 && !form.selectedExistingItemId"
+                        :placeholder="$t('translationFeedback.sourceUrlPlaceholder')"
+                        @blur="scheduleSuggestions"
+                      />
+                      <button
+                        v-if="index > 0"
+                        class="feedback-flat-control absolute inset-y-px right-px inline-flex w-11 cursor-pointer items-center justify-center rounded-r-[9px] border-0 bg-transparent p-0 text-red-600 transition-colors hover:bg-red-50 focus-visible:outline-2 focus-visible:outline-red-500 focus-visible:outline-offset-[-2px] dark:text-red-400 dark:hover:bg-red-950/30"
+                        type="button"
+                        :aria-label="$t('translationFeedback.removeUrl')"
+                        @click="removeUrl(index)"
+                      >
+                        <Icon class="h-5 w-5" icon="lucide:trash-2" aria-hidden="true" />
+                      </button>
                     </div>
                   </div>
                   <button
@@ -306,7 +287,7 @@
             {{ $t('translationFeedback.listTitle') }}
           </h2>
           <button
-            class="feedback-flat-control inline-flex h-9 shrink-0 cursor-pointer items-center justify-center gap-2 rounded-md border-0 bg-[var(--btn-primary-bg)] px-3 font-inherit text-sm font-700 text-white transition-colors hover:bg-[var(--btn-primary-hover)] focus-visible:outline-2 focus-visible:outline-[var(--info-1)] focus-visible:outline-offset-2 disabled:cursor-wait disabled:opacity-60"
+            class="feedback-flat-control inline-flex min-h-11 shrink-0 cursor-pointer items-center justify-center gap-2 rounded-[10px] border border-solid border-[var(--switcher-border)] bg-[var(--bg-white)] px-3.5 font-inherit text-sm font-600 text-[var(--text-2)] transition-colors hover:bg-[var(--bg-soft)] hover:text-[var(--info-1)] focus-visible:outline-2 focus-visible:outline-[var(--info-1)] focus-visible:outline-offset-2 disabled:cursor-wait disabled:opacity-60 motion-reduce:transition-none"
             type="button"
             :disabled="loading"
             :aria-busy="loading"
@@ -322,64 +303,71 @@
           </button>
         </div>
 
-        <div
-          class="feedback-tab-group mb-3 mt-5 lt-sm:grid lt-sm:w-full lt-sm:grid-cols-3"
-          role="tablist"
-          :aria-label="$t('translationFeedback.categoryLabel')"
-        >
-          <button
-            v-for="category in categories"
-            :key="category"
-            class="feedback-tab"
-            :class="
-              selectedCategory === category
-                ? 'bg-[var(--info-soft)] font-700 text-[var(--info-1)]'
-                : 'bg-transparent text-[var(--text-medium)] hover:bg-[var(--switcher-item-hover)] hover:text-[var(--info-1)]'
-            "
-            type="button"
-            role="tab"
-            :aria-selected="selectedCategory === category"
-            @click="selectCategory(category)"
+        <div class="feedback-filters mt-6 grid gap-4">
+          <div
+            class="grid grid-cols-[4rem_minmax(0,1fr)] items-start gap-3 lt-sm:grid-cols-1 lt-sm:gap-2"
           >
-            {{ $t(`translationFeedback.categories.${category}`) }}
-          </button>
-        </div>
+            <span
+              id="feedback-category-label"
+              class="pt-3 text-sm font-600 text-[var(--text-2)] lt-sm:pt-0"
+            >
+              {{ $t('translationFeedback.categoryLabel') }}
+            </span>
+            <div
+              class="feedback-tab-group feedback-category-tabs grid w-fit max-w-full grid-cols-3 rounded-xl bg-[var(--bg-soft)] p-1 lt-sm:w-full"
+              role="tablist"
+              aria-labelledby="feedback-category-label"
+            >
+              <button
+                v-for="category in categories"
+                :key="category"
+                class="feedback-tab min-w-24 lt-sm:min-w-0"
+                type="button"
+                role="tab"
+                :aria-selected="selectedCategory === category"
+                @click="selectCategory(category)"
+              >
+                {{ $t(`translationFeedback.categories.${category}`) }}
+              </button>
+            </div>
+          </div>
 
-        <div
-          class="feedback-tab-group mb-3 ml-1 lt-sm:ml-0 lt-sm:grid lt-sm:w-full lt-sm:grid-cols-3"
-          role="tablist"
-          :aria-label="$t('translationFeedback.typeLabel')"
-        >
-          <button
-            class="feedback-tab"
-            :class="
-              !selectedSubtype
-                ? 'bg-[var(--info-soft)] font-700 text-[var(--info-1)]'
-                : 'bg-transparent text-[var(--text-medium)] hover:bg-[var(--switcher-item-hover)] hover:text-[var(--info-1)]'
-            "
-            type="button"
-            role="tab"
-            :aria-selected="!selectedSubtype"
-            @click="selectedSubtype = ''"
+          <div
+            class="grid grid-cols-[4rem_minmax(0,1fr)] items-start gap-3 lt-sm:grid-cols-1 lt-sm:gap-2"
           >
-            {{ $t('translationFeedback.allTypes') }}
-          </button>
-          <button
-            v-for="subtype in activeSubtypeOptions"
-            :key="subtype"
-            class="feedback-tab"
-            :class="
-              selectedSubtype === subtype
-                ? 'bg-[var(--info-soft)] font-700 text-[var(--info-1)]'
-                : 'bg-transparent text-[var(--text-medium)] hover:bg-[var(--switcher-item-hover)] hover:text-[var(--info-1)]'
-            "
-            type="button"
-            role="tab"
-            :aria-selected="selectedSubtype === subtype"
-            @click="selectedSubtype = subtype"
-          >
-            {{ $t(`translationFeedback.types.${selectedCategory}.${subtype}`) }}
-          </button>
+            <span
+              id="feedback-type-label"
+              class="pt-3 text-sm font-600 text-[var(--text-2)] lt-sm:pt-0"
+            >
+              {{ $t('translationFeedback.filterTypeLabel') }}
+            </span>
+            <div
+              class="feedback-tab-group feedback-subtype-tabs flex flex-wrap"
+              role="tablist"
+              aria-labelledby="feedback-type-label"
+            >
+              <button
+                class="feedback-tab"
+                type="button"
+                role="tab"
+                :aria-selected="!selectedSubtype"
+                @click="selectedSubtype = ''"
+              >
+                {{ $t('translationFeedback.allTypes') }}
+              </button>
+              <button
+                v-for="subtype in activeSubtypeOptions"
+                :key="subtype"
+                class="feedback-tab"
+                type="button"
+                role="tab"
+                :aria-selected="selectedSubtype === subtype"
+                @click="selectedSubtype = subtype"
+              >
+                {{ $t(`translationFeedback.types.${selectedCategory}.${subtype}`) }}
+              </button>
+            </div>
+          </div>
         </div>
 
         <p
@@ -409,9 +397,9 @@
           <article
             v-for="item in paginatedItems"
             :key="item.id"
-            class="min-w-0 overflow-hidden rounded-lg border border-[var(--switcher-border)] bg-[var(--bg-white)] transition-colors hover:border-[var(--info-1)]"
+            class="feedback-card flex min-w-0 flex-col overflow-hidden rounded-2xl border border-solid border-[var(--switcher-border)] bg-[var(--bg-white)]"
           >
-            <div class="relative aspect-video bg-[var(--bg-soft)] image-loading-frame">
+            <div class="relative aspect-video shrink-0 bg-[var(--bg-soft)] image-loading-frame">
               <img
                 :src="item.coverUrl || '/imgs/missing.png'"
                 :alt="item.displayName"
@@ -420,107 +408,120 @@
                 @error="onCoverError"
               />
               <span
-                class="absolute left-[0.65rem] top-[0.65rem] z-4 rounded-full bg-[rgb(17_24_39_/_78%)] px-2 py-1 text-[0.78rem] font-750 text-white"
+                class="absolute left-3 top-3 z-4 rounded-lg border border-solid border-white/20 bg-[rgb(17_24_39_/_80%)] px-2.5 py-1.5 text-sm font-750 leading-none text-white backdrop-blur-sm"
               >
                 #{{ item.rank }}
               </span>
             </div>
-            <div class="grid gap-[0.6rem] p-4">
-              <div class="flex flex-wrap gap-2">
-                <span class="rounded bg-[var(--info-soft)] px-2 py-1 text-xs text-[var(--info-1)]">
+            <div class="flex flex-1 flex-col gap-3 p-4">
+              <div class="flex flex-wrap gap-1.5">
+                <span
+                  class="rounded-md bg-[var(--info-soft)] px-2 py-1 text-xs font-600 text-[var(--info-1)]"
+                >
                   {{ $t(`translationFeedback.categories.${item.category}`) }}
                 </span>
                 <span
                   v-for="subtype in item.subtypes"
                   :key="subtype"
-                  class="rounded bg-[var(--info-soft)] px-2 py-1 text-xs text-[var(--info-1)]"
+                  class="rounded-md bg-[var(--bg-soft)] px-2 py-1 text-xs text-[var(--text-2)]"
                 >
                   {{ $t(`translationFeedback.types.${item.category}.${subtype}`) }}
                 </span>
               </div>
-              <h3 class="m-0 text-[1.08rem] text-[var(--text-dark)]">{{ item.displayName }}</h3>
-              <p class="m-0 text-[0.78rem] text-[var(--text-muted)]">
-                {{ $t(`translationFeedback.status.${item.status}`) }}
-              </p>
-              <div class="flex items-center justify-between gap-4">
-                <span
-                  class="inline-flex items-center gap-[0.3rem] text-[0.9rem] font-700 text-[var(--text-medium)]"
+              <h3
+                class="m-0 text-xl font-700 leading-snug text-[var(--text-dark)] [overflow-wrap:anywhere]"
+              >
+                {{ item.displayName }}
+              </h3>
+              <div class="mt-auto flex flex-wrap items-center justify-between gap-2">
+                <p
+                  class="feedback-card-status m-0 inline-flex w-fit shrink-0 items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-600"
+                  :data-status="item.status"
                 >
-                  <Icon icon="lucide:heart" aria-hidden="true" />
-                  {{ item.voteCount }}
-                </span>
-                <button
-                  class="feedback-flat-control inline-flex min-h-9 cursor-pointer items-center justify-center gap-2 rounded-lg border-0 bg-[var(--btn-primary-bg)] px-3 py-2 font-inherit text-sm font-700 text-white transition-colors hover:bg-[var(--btn-primary-hover)] disabled:cursor-wait disabled:opacity-60"
-                  :class="{
-                    'bg-[var(--tip-1)] hover:bg-[var(--tip-1)] dark:text-[#10251b]':
-                      item.votedByCurrentVisitor,
-                  }"
-                  type="button"
-                  :disabled="votingIds.has(item.id)"
-                  :aria-busy="votingIds.has(item.id)"
-                  @click="toggleVote(item)"
-                >
-                  <Icon
-                    :icon="item.votedByCurrentVisitor ? 'lucide:heart' : 'lucide:heart-plus'"
-                    aria-hidden="true"
-                  />
-                  {{
-                    item.votedByCurrentVisitor
-                      ? $t('translationFeedback.unlike')
-                      : $t('translationFeedback.like')
-                  }}
-                </button>
+                  <span class="size-1.5 shrink-0 rounded-full bg-current" aria-hidden="true" />
+                  {{ $t(`translationFeedback.status.${item.status}`) }}
+                </p>
+                <div v-if="item.sources.length" class="flex min-w-0 flex-wrap gap-2">
+                  <a
+                    v-for="source in item.sources"
+                    :key="source.url"
+                    class="inline-flex min-h-8 min-w-0 items-center gap-1.5 rounded-md px-1.5 text-xs font-500 text-[var(--text-2)] no-underline transition-colors hover:bg-[var(--bg-soft)] hover:text-[var(--info-1)] focus-visible:outline-2 focus-visible:outline-[var(--info-1)] focus-visible:outline-offset-2"
+                    :href="source.url"
+                    target="_blank"
+                    rel="noopener"
+                  >
+                    <img
+                      v-if="feedbackSourceIcon(source)"
+                      :src="feedbackSourceIcon(source)!"
+                      class="size-4 shrink-0 object-contain"
+                      alt=""
+                      aria-hidden="true"
+                    />
+                    <Icon
+                      v-else
+                      class="size-4 shrink-0"
+                      icon="lucide:external-link"
+                      aria-hidden="true"
+                    />
+                    <span class="[overflow-wrap:anywhere]">{{ source.platform }}</span>
+                    <Icon
+                      v-if="feedbackSourceIcon(source)"
+                      class="size-3 shrink-0 opacity-60"
+                      icon="lucide:arrow-up-right"
+                      aria-hidden="true"
+                    />
+                  </a>
+                </div>
               </div>
-              <div v-if="item.sources.length" class="flex flex-wrap gap-[0.4rem]">
-                <a
-                  v-for="source in item.sources"
-                  :key="source.url"
-                  class="inline-flex min-h-7 items-center gap-1.5 rounded border border-[var(--switcher-border)] bg-[var(--link-bg)] px-2 py-1 text-xs font-500 text-[var(--info-1)] no-underline hover:border-[var(--info-1)] hover:bg-[var(--link-bg-hover)]"
-                  :href="source.url"
-                  target="_blank"
-                  rel="noopener"
-                >
-                  <img
-                    v-if="feedbackSourceIcon(source)"
-                    :src="feedbackSourceIcon(source)!"
-                    class="size-4 shrink-0 object-contain"
-                    alt=""
-                    aria-hidden="true"
-                  />
-                  <Icon
-                    v-else
-                    class="size-4 shrink-0"
-                    icon="lucide:external-link"
-                    aria-hidden="true"
-                  />
-                  {{ source.platform }}
-                </a>
-              </div>
+            </div>
+            <div
+              class="mx-4 flex items-center justify-between gap-3 border-0 border-t border-solid border-[var(--switcher-border)] py-3"
+            >
+              <span
+                class="inline-flex min-w-0 items-center gap-2 text-base font-700 tabular-nums text-[var(--text-medium)]"
+              >
+                <Icon class="size-[1.1rem] shrink-0" icon="lucide:heart" aria-hidden="true" />
+                {{ item.voteCount }}
+              </span>
+              <button
+                class="feedback-card-vote feedback-flat-control inline-flex min-h-11 shrink-0 cursor-pointer items-center justify-center gap-2 rounded-xl border border-solid border-transparent bg-[var(--btn-primary-bg)] px-4 py-2 font-inherit text-sm font-700 text-white transition-colors hover:bg-[var(--btn-primary-hover)] focus-visible:outline-2 focus-visible:outline-[var(--info-1)] focus-visible:outline-offset-2 disabled:cursor-wait disabled:opacity-60"
+                type="button"
+                :disabled="votingIds.has(item.id)"
+                :aria-busy="votingIds.has(item.id)"
+                :aria-pressed="item.votedByCurrentVisitor"
+                @click="toggleVote(item)"
+              >
+                <Icon
+                  :icon="item.votedByCurrentVisitor ? 'lucide:heart' : 'lucide:heart-plus'"
+                  aria-hidden="true"
+                />
+                {{
+                  item.votedByCurrentVisitor
+                    ? $t('translationFeedback.unlike')
+                    : $t('translationFeedback.like')
+                }}
+              </button>
             </div>
           </article>
         </div>
         <nav
           v-if="!error && items.length && pageCount > 1"
-          class="mt-5 flex items-center justify-center gap-2 lt-sm:gap-1"
+          class="mt-8 flex flex-wrap items-center justify-center gap-2 pt-6 lt-sm:gap-1.5"
           :aria-label="$t('translationFeedback.pagination')"
         >
           <button
-            class="feedback-flat-control inline-flex min-h-9 cursor-pointer items-center justify-center rounded-lg border border-[var(--switcher-border)] bg-[var(--bg-alt)] px-3 py-2 text-sm text-[var(--text-medium)] hover:border-[var(--btn-primary-bg)] hover:text-[var(--info-1)] lt-sm:px-2 disabled:cursor-not-allowed disabled:opacity-60"
+            class="feedback-page-button feedback-flat-control"
             type="button"
             :disabled="currentPage === 1"
             :aria-label="$t('translationFeedback.previousPage')"
             @click="goToPage(currentPage - 1)"
           >
-            <Icon icon="lucide:chevron-left" aria-hidden="true" />
+            <Icon class="size-5" icon="lucide:chevron-left" aria-hidden="true" />
           </button>
           <button
             v-for="page in pageCount"
             :key="page"
-            class="feedback-flat-control inline-flex min-h-9 min-w-9 cursor-pointer items-center justify-center rounded-lg border border-[var(--switcher-border)] bg-[var(--bg-alt)] px-2 py-2 text-sm text-[var(--text-medium)] hover:border-[var(--btn-primary-bg)] hover:text-[var(--info-1)]"
-            :class="{
-              'border-[var(--btn-primary-bg)] bg-[var(--info-soft)] text-[var(--info-1)]':
-                currentPage === page,
-            }"
+            class="feedback-page-button feedback-flat-control"
             type="button"
             :aria-current="currentPage === page ? 'page' : undefined"
             :aria-label="$t('translationFeedback.page', { page })"
@@ -529,13 +530,13 @@
             {{ page }}
           </button>
           <button
-            class="feedback-flat-control inline-flex min-h-9 cursor-pointer items-center justify-center rounded-lg border border-[var(--switcher-border)] bg-[var(--bg-alt)] px-3 py-2 text-sm text-[var(--text-medium)] hover:border-[var(--btn-primary-bg)] hover:text-[var(--info-1)] lt-sm:px-2 disabled:cursor-not-allowed disabled:opacity-60"
+            class="feedback-page-button feedback-flat-control"
             type="button"
             :disabled="currentPage === pageCount"
             :aria-label="$t('translationFeedback.nextPage')"
             @click="goToPage(currentPage + 1)"
           >
-            <Icon icon="lucide:chevron-right" aria-hidden="true" />
+            <Icon class="size-5" icon="lucide:chevron-right" aria-hidden="true" />
           </button>
         </nav>
       </section>
@@ -853,6 +854,151 @@ function onCoverError(event: Event) {
 </script>
 
 <style scoped>
+.feedback-type-option:hover:not([data-selected='true']) {
+  border-color: var(--info-1);
+  background: var(--bg-soft);
+  color: var(--text-dark);
+}
+
+.feedback-type-option[data-selected='true'] {
+  border-color: var(--info-1);
+  background: var(--info-soft);
+  color: var(--info-1);
+}
+
+.feedback-type-option[data-selected='true'] .feedback-type-check {
+  border-color: var(--btn-primary-bg);
+  background: var(--btn-primary-bg);
+}
+
+.feedback-type-option:has(input:focus-visible) {
+  outline: 2px solid var(--info-1);
+  outline-offset: 2px;
+}
+
+.feedback-source-input {
+  padding-inline-start: 3.5rem;
+}
+
+.feedback-category-tabs .feedback-tab:hover:not([aria-selected='true']) {
+  background: var(--bg-white);
+  color: var(--text-dark);
+}
+
+.feedback-category-tabs .feedback-tab[aria-selected='true'] {
+  background: var(--btn-primary-bg);
+  color: white;
+  font-weight: 700;
+}
+
+.feedback-subtype-tabs .feedback-tab {
+  border-color: var(--switcher-border);
+  background: var(--bg-white);
+}
+
+.feedback-subtype-tabs .feedback-tab:hover {
+  border-color: var(--info-1);
+  color: var(--info-1);
+}
+
+.feedback-subtype-tabs .feedback-tab[aria-selected='true'] {
+  border-color: var(--info-1);
+  background: var(--info-soft);
+  color: var(--info-1);
+  font-weight: 700;
+}
+
+.feedback-card {
+  box-shadow: var(--vp-shadow-1);
+  transition:
+    border-color 180ms ease,
+    box-shadow 180ms ease,
+    transform 180ms ease;
+}
+
+.feedback-card:focus-within {
+  border-color: var(--info-1);
+}
+
+.feedback-card-status {
+  color: var(--text-2);
+  background: var(--bg-soft);
+}
+
+.feedback-card-status[data-status='planned'] {
+  color: var(--info-1);
+  background: var(--info-soft);
+}
+
+.feedback-card-status[data-status='translating'] {
+  color: var(--warning-1);
+  background: var(--warning-soft);
+}
+
+.feedback-card-status[data-status='completed'] {
+  color: var(--tip-1);
+  background: var(--tip-soft);
+}
+
+.feedback-card-vote[aria-pressed='true'] {
+  border-color: var(--info-1);
+  background: var(--info-soft);
+  color: var(--info-1);
+}
+
+.feedback-page-button {
+  display: inline-flex;
+  box-sizing: border-box;
+  align-items: center;
+  justify-content: center;
+  min-width: 44px;
+  height: 44px;
+  border: 1px solid var(--switcher-border);
+  border-radius: 10px;
+  padding: 0 10px;
+  background: var(--bg-white);
+  color: var(--text-2);
+  font: inherit;
+  font-size: 0.875rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+  transition:
+    background-color 160ms ease,
+    border-color 160ms ease,
+    color 160ms ease;
+}
+
+.feedback-page-button:hover:not(:disabled):not([aria-current='page']) {
+  border-color: var(--info-1);
+  background: var(--info-soft);
+  color: var(--info-1);
+}
+
+.feedback-page-button[aria-current='page'] {
+  border-color: var(--btn-primary-bg);
+  background: var(--btn-primary-bg);
+  color: white;
+}
+
+.feedback-page-button:focus-visible {
+  outline: 2px solid var(--info-1);
+  outline-offset: 3px;
+}
+
+.feedback-page-button:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .feedback-card:hover {
+    border-color: color-mix(in srgb, var(--info-1) 45%, var(--switcher-border));
+    box-shadow: var(--card-shadow);
+    transform: translateY(-3px);
+  }
+}
+
 .feedback-form-enter-active,
 .feedback-form-leave-active {
   grid-template-rows: 1fr;
@@ -876,9 +1022,15 @@ function onCoverError(event: Event) {
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .feedback-card,
+  .feedback-page-button,
   .feedback-form-enter-active,
   .feedback-form-leave-active {
     transition: none;
+  }
+
+  .feedback-card:hover {
+    transform: none;
   }
 }
 </style>
