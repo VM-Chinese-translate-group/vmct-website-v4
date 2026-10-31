@@ -3,7 +3,8 @@ import assert from 'node:assert/strict'
 import fs from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
-import { spawnSync } from 'node:child_process'
+import { spawn, spawnSync } from 'node:child_process'
+import { once } from 'node:events'
 
 async function fixture(t) {
   const root = await fs.mkdtemp(path.join(os.tmpdir(), 'vmct-update-'))
@@ -16,6 +17,7 @@ case " $* " in
   *" fetch "*) exit 0 ;;
   *" rev-parse "*) echo aabbccdd ;;
   *" diff "*) exit 0 ;;
+  *" checkout "*|*" reset "*) echo "$*" >>"$APP_DIR/worktree-writes"; exit 0 ;;
   *) echo "unexpected git operation" >&2; exit 99 ;;
 esac
 `, { mode: 0o755 })
@@ -44,6 +46,22 @@ test('retry deployment after failed build even when git already fetched latest S
 test('skip a version only after a successful deployment', async (t) => {
   const { root, update } = await fixture(t)
   assert.equal(update().status, 0)
+  assert.equal(update().status, 0)
+  assert.equal((await fs.readFile(path.join(root, 'attempts'), 'utf8')).trim(), 'attempt')
+})
+
+test('an existing release lock prevents checkout and deployment', async (t) => {
+  const { root, update } = await fixture(t)
+  const holder = spawn('flock', [path.join(root, '.vmct-deploy.lock'), 'bash', '-c', 'echo locked; read -r done'], { stdio: ['pipe', 'pipe', 'pipe'] })
+  t.after(() => holder.kill())
+  await once(holder.stdout, 'data')
+  const result = update()
+  assert.equal(result.status, 0, result.stderr)
+  await assert.rejects(fs.stat(path.join(root, 'attempts')), { code: 'ENOENT' })
+  await assert.rejects(fs.stat(path.join(root, 'worktree-writes')), { code: 'ENOENT' })
+  const closed = once(holder, 'close')
+  holder.stdin.end('done\n')
+  await closed
   assert.equal(update().status, 0)
   assert.equal((await fs.readFile(path.join(root, 'attempts'), 'utf8')).trim(), 'attempt')
 })

@@ -53,6 +53,8 @@ VMPM `ContentSsoServiceTest` 覆盖一次兑换、并发重放、票据过期、
 
 发布时按以下顺序：
 
+低配服务器推荐在开发机设置 `BRANCH=cn-mainland` 后运行 `pnpm build:package`，上传生成的 `dist-package/site.tar.gz`。部署时提供 `SITE_BUILD_ARCHIVE` 的服务器绝对路径和打包命令输出的 `SITE_BUILD_SHA256`。脚本核对归档校验和、提交号及关键文件，安装运行依赖并切换产物，不在服务器运行 Vite 或 TypeScript。未提供预构建归档时保留原代码构建方式。官网默认就绪等待为 600 秒，可用 `SITE_READY_TIMEOUT_SECONDS` 调整。
+
 1. 备份内容数据库、官网产物、VMPM 后端/前端和现有配置。
    暂停 `vmct-website-update.timer` 并等待已运行的更新结束；手动发布和自动更新共用 `/opt/vmct-website/.vmct-deploy.lock`，不要并行执行另一套构建或重置仓库。
 2. 先升级 VMPM 后端并验证新 SSO 接口，再发布包含“官网内容”入口的 VMPM 前端。

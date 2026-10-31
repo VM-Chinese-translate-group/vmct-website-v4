@@ -60,6 +60,19 @@ test('new release keeps old hashed assets while new files take precedence', asyn
   assert.equal(await fs.readFile(path.join(target, 'assets', 'shared.js'), 'utf8'), 'new value')
 })
 
+test('restrictive operator umask cannot make the public release unreadable', { skip: process.platform !== 'linux' }, async (t) => {
+  const { source, target } = await fixture(t)
+  await fs.chmod(source, 0o700)
+  await fs.chmod(path.join(source, 'index.html'), 0o600)
+  const mask = process.umask(0o077)
+  try { await publishStatic({ source, target, health: async () => {} }) }
+  finally { process.umask(mask) }
+  assert.equal((await fs.stat(target)).mode & 0o777, 0o755)
+  assert.equal((await fs.stat(path.join(target, 'index.html'))).mode & 0o777, 0o644)
+  assert.equal((await fs.stat(path.join(target, '.vmct-release.json'))).mode & 0o777, 0o644)
+  assert.equal((await fs.stat(path.dirname(await fs.realpath(target)))).mode & 0o777, 0o755)
+})
+
 test('invalid build leaves live release intact', async (t) => {
   const { source, target } = await fixture(t)
   await publishStatic({ source, target, health: async () => {} })

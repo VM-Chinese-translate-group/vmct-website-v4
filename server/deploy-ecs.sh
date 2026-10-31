@@ -135,8 +135,12 @@ else
   echo '缺少可用的 pnpm、npm、curl 或系统包管理器，无法安装依赖。' >&2
   exit 1
 fi
-run_as_vmct "${PNPM_CMD[@]}" install --frozen-lockfile
-run_as_vmct node scripts/build-api.mjs
+if [[ -n "${SITE_BUILD_ARCHIVE:-}" ]]; then
+  run_as_vmct "${PNPM_CMD[@]}" install --prod --frozen-lockfile
+else
+  run_as_vmct "${PNPM_CMD[@]}" install --frozen-lockfile
+  run_as_vmct node scripts/build-api.mjs
+fi
 
 ${SUDO} mkdir -p "${DATA_DIR}" /etc/vmct-website "${NGINX_CONF_DIR}"
 ${SUDO} chown -R vmct:vmct "$(dirname "${DATA_DIR}")"
@@ -228,8 +232,13 @@ ${SUDO} systemctl enable vmct-website-api
 release_id="$(git -c "safe.directory=${APP_DIR}" -C "${APP_DIR}" rev-parse HEAD)-$(date +%s)"
 site_release="${APP_DIR}/.site-releases/${release_id}"
 run_as_vmct mkdir -p "${site_release}"
-SITE_BUILD_DIR="${site_release}" NODE_OPTIONS="${NODE_OPTIONS:---max-old-space-size=768}" \
-  run_as_vmct "${PNPM_CMD[@]}" run build
+if [[ -n "${SITE_BUILD_ARCHIVE:-}" ]]; then
+  run_as_vmct node scripts/unpack-site-build.mjs "${SITE_BUILD_ARCHIVE}" "${site_release}" \
+    "${SITE_BUILD_SHA256:-}" "$(git -c "safe.directory=${APP_DIR}" -C "${APP_DIR}" rev-parse HEAD)"
+else
+  SITE_BUILD_DIR="${site_release}" NODE_OPTIONS="${NODE_OPTIONS:---max-old-space-size=768}" \
+    run_as_vmct "${PNPM_CMD[@]}" run build
+fi
 # Publish new hashed assets before the new renderer can reference them. Keep
 # both generations available while already-open clients finish navigating.
 if [[ -d "${STATIC_ROOT}/assets" ]]; then
@@ -246,12 +255,15 @@ ${SUDO} systemctl restart vmct-website-api
 ${SUDO} systemctl --no-pager --full status vmct-website-api
 
 api_ready=0
-for attempt in $(seq 1 30); do
-  if curl --fail --silent --show-error http://127.0.0.1:8787/api/content/admin/auth/status >/tmp/vmct-api-status.json; then
+api_deadline=$((SECONDS + ${SITE_READY_TIMEOUT_SECONDS:-600}))
+while (( SECONDS < api_deadline )); do
+  if curl --noproxy '*' --fail --silent --max-time 10 http://127.0.0.1:8787/api/content/admin/auth/status >/tmp/vmct-api-status.json; then
     api_ready=1
     break
   fi
-  sleep 1
+  # On the small ECS instance, cold imports can take minutes while Java,
+  # PostgreSQL and the filesystem cache compete for CPU and IO.
+  sleep 2
 done
 if [[ "${api_ready}" -ne 1 ]]; then
   echo 'ECS API 启动失败，最近日志如下：' >&2

@@ -4,6 +4,7 @@
   "type": "module",
   "scripts": {
     "build": "vite build && vite build --ssr src/entry-server.ts && node scripts/build-api.mjs",
+    "build:package": "pnpm run build && node scripts/package-site.mjs",
     "dev": "node scripts/build-api.mjs && node --experimental-sqlite scripts/dev.mjs",
     "start": "node --experimental-sqlite server/index.mjs",
     "api:start": "node scripts/build-api.mjs && node --experimental-sqlite server/index.mjs",

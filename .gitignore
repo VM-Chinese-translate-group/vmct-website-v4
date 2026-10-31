@@ -7,6 +7,7 @@ node_modules
 .DS_Store
 dist
 dist-ssr
+dist-package/
 .site-releases/
 src/generated-pages/
 content-export/

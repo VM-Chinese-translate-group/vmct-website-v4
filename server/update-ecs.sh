@@ -31,11 +31,22 @@ if [[ "${local_revision}" == "${remote_revision}" ]]; then
 fi
 
 echo "检测到 ${BRANCH} 更新：${local_revision} -> ${remote_revision}"
+lock_file="${DEPLOY_LOCK_FILE:-${APP_DIR}/.vmct-deploy.lock}"
+exec 9>"${lock_file}"
+if ! flock -n 9; then
+  echo '已有 ECS 部署正在进行，跳过本次更新。'
+  exit 0
+fi
 if ! "${git_cmd[@]}" diff --quiet HEAD -- server scripts; then
   echo '部署脚本有未提交修改，请先合入部署分支。' >&2
   exit 1
 fi
-# deploy-ecs.sh takes the shared lock before changing the worktree.
-# Do not reset here: a CMS rebuild may still be using the source directory.
+# Refresh under the shared lock before loading the deployer. Otherwise Bash
+# keeps executing the old script after its checkout, including an obsolete
+# restart-before-build sequence during a static-to-dynamic upgrade.
+"${git_cmd[@]}" checkout "${BRANCH}"
+"${git_cmd[@]}" reset --hard "origin/${BRANCH}"
+# The new deployer reuses inherited descriptor 9 for the same lock file.
+export DEPLOY_LOCK_FILE="${lock_file}"
 
 exec bash "${APP_DIR}/server/deploy-ecs.sh"
