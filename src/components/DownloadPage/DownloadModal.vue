@@ -1,6 +1,6 @@
 <template>
   <template v-if="isDialog">
-    <Teleport to="body">
+    <Teleport to="#vmct-overlays">
       <Transition name="download-modal-fade">
         <div v-if="visible" class="download-modal-backdrop" role="presentation" @click.self="close">
           <section

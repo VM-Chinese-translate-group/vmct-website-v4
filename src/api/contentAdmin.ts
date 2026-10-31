@@ -30,6 +30,7 @@ export interface ContentRevision extends ContentRevisionSummary {
 export interface DeploymentResult {
   requested: boolean
   error?: string
+  mode?: 'dynamic'
 }
 
 export interface ContentPage extends ContentPageSummary {
@@ -65,18 +66,25 @@ async function request<T>(path: string, init: RequestInit = {}) {
     code?: string
     page?: ContentPage
   } | null
-  if (!response.ok)
+  if (!response.ok) {
+    if ([401, 403].includes(response.status) && !path.startsWith('/auth/') && typeof window !== 'undefined')
+      window.dispatchEvent(new Event('content-session-expired'))
     throw new ContentApiError(
       body?.error || 'HTTP ' + response.status,
       response.status,
       body?.code,
       body?.page,
     )
+  }
   return body as T
 }
 
 export function getContentAuthStatus() {
-  return request<{ needsSetup: boolean; managedByEnvironment: boolean }>('/auth/status')
+  return request<{ needsSetup: boolean; managedByEnvironment: boolean; authMode?: 'vmpm'; ssoOrigin?: string }>('/auth/status')
+}
+
+export function loginContentWithVmpm(ticket: string) {
+  return request<{ ok: true }>('/auth/login', { method: 'POST', body: JSON.stringify({ ticket }) })
 }
 
 interface AuthChallenge {

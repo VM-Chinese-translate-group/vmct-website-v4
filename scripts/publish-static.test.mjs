@@ -45,6 +45,21 @@ test('health failure restores previous release and removes failed release', asyn
   assert.equal((await fs.readdir(path.dirname(path.resolve(path.dirname(target), previous)))).length, 1)
 })
 
+test('new release keeps old hashed assets while new files take precedence', async (t) => {
+  const { source, target } = await fixture(t)
+  await fs.mkdir(path.join(source, 'assets'))
+  await fs.writeFile(path.join(source, 'assets', 'old-123.js'), 'old client')
+  await fs.writeFile(path.join(source, 'assets', 'shared.js'), 'old value')
+  await publishStatic({ source, target, health: async () => {} })
+  await fs.rm(path.join(source, 'assets', 'old-123.js'))
+  await fs.writeFile(path.join(source, 'assets', 'shared.js'), 'new value')
+  await fs.writeFile(path.join(source, 'assets', 'new-456.js'), 'new client')
+  await publishStatic({ source, target, health: async () => {} })
+  assert.equal(await fs.readFile(path.join(target, 'assets', 'old-123.js'), 'utf8'), 'old client')
+  assert.equal(await fs.readFile(path.join(target, 'assets', 'new-456.js'), 'utf8'), 'new client')
+  assert.equal(await fs.readFile(path.join(target, 'assets', 'shared.js'), 'utf8'), 'new value')
+})
+
 test('invalid build leaves live release intact', async (t) => {
   const { source, target } = await fixture(t)
   await publishStatic({ source, target, health: async () => {} })

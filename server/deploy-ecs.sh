@@ -32,7 +32,11 @@ elif [[ -z "${DEPLOY_LOCK_FILE:-}" ]]; then
   DEPLOY_LOCK_FILE="/tmp/vmct-website-deploy.lock"
 fi
 mkdir -p "$(dirname "${DEPLOY_LOCK_FILE}")"
-exec 9>"${DEPLOY_LOCK_FILE}"
+# A coordinated release may already hold this exact descriptor while it
+# upgrades VMPM and checks out this script. Reuse its lock without a gap.
+if [[ "$(readlink "/proc/$$/fd/9" 2>/dev/null || true)" != "${DEPLOY_LOCK_FILE}" ]]; then
+  exec 9>"${DEPLOY_LOCK_FILE}"
+fi
 if ! flock -n 9; then
   echo '已有 ECS 部署正在进行，跳过本次部署。'
   exit 0
@@ -65,6 +69,10 @@ else
     exit 1
   fi
   git -c "safe.directory=${APP_DIR}" -C "${APP_DIR}" fetch origin "${BRANCH}"
+  if [[ -n "${EXPECTED_DEPLOY_REVISION:-}" && "$(git -c "safe.directory=${APP_DIR}" -C "${APP_DIR}" rev-parse "origin/${BRANCH}")" != "${EXPECTED_DEPLOY_REVISION}" ]]; then
+    echo '远端部署分支已变化，请重新核对发布版本后重试。' >&2
+    exit 1
+  fi
   git -c "safe.directory=${APP_DIR}" -C "${APP_DIR}" checkout "${BRANCH}"
   git -c "safe.directory=${APP_DIR}" -C "${APP_DIR}" reset --hard "origin/${BRANCH}"
 fi
@@ -215,6 +223,25 @@ else
 fi
 ${SUDO} systemctl daemon-reload
 ${SUDO} systemctl enable vmct-website-api
+# Build code once per deployment. Published content is loaded at request time,
+# so this step does not need the CMS export endpoint or a running API.
+release_id="$(git rev-parse HEAD)-$(date +%s)"
+site_release="${APP_DIR}/.site-releases/${release_id}"
+run_as_vmct mkdir -p "${site_release}"
+SITE_BUILD_DIR="${site_release}" NODE_OPTIONS="${NODE_OPTIONS:---max-old-space-size=768}" \
+  run_as_vmct "${PNPM_CMD[@]}" run build
+# Publish new hashed assets before the new renderer can reference them. Keep
+# both generations available while already-open clients finish navigating.
+if [[ -d "${STATIC_ROOT}/assets" ]]; then
+  run_as_vmct cp -an "${site_release}/assets/." "${STATIC_ROOT}/assets/"
+fi
+# Node resolves the SSR import through this symlink to an immutable release.
+# Future builds therefore cannot remove the running renderer's lazy chunks.
+if [[ -d "${APP_DIR}/dist" && ! -L "${APP_DIR}/dist" ]]; then
+  run_as_vmct mv "${APP_DIR}/dist" "${APP_DIR}/.site-releases/legacy-${release_id}"
+fi
+run_as_vmct ln -s ".site-releases/${release_id}" "${APP_DIR}/.dist-next-${release_id}"
+run_as_vmct mv -Tf "${APP_DIR}/.dist-next-${release_id}" "${APP_DIR}/dist"
 ${SUDO} systemctl restart vmct-website-api
 ${SUDO} systemctl --no-pager --full status vmct-website-api
 
@@ -240,14 +267,8 @@ ${SUDO} env -u VMCT_DATABASE_BACKEND -u VMCT_DATABASE_URL \
   "${DATA_DIR}/content.sqlite" \
   'http://127.0.0.1:8787/internal/rebuild'
 
-# Build the static frontend against the local CMS export endpoint. The output
-# is published to the host directory already mounted read-only by Nginx.
-CONTENT_EXPORT_URL=http://127.0.0.1:8787/api/content/internal/export \
-  NODE_OPTIONS="${NODE_OPTIONS:---max-old-space-size=768}" \
-  run_as_vmct "${PNPM_CMD[@]}" run build
-
 if command -v docker >/dev/null 2>&1 && ${SUDO} docker ps --format '{{.Names}}' | grep -qx nginx; then
-  # Both the CLI deployment and CMS rebuild use this publisher.
+  # Publish browser assets; the Node service retains its private SSR bundle.
   ${SUDO} mkdir -p "$(dirname "${STATIC_ROOT}")"
   ${SUDO} chown vmct:vmct "$(dirname "${STATIC_ROOT}")"
   ${SUDO} docker exec nginx nginx -t
@@ -267,7 +288,9 @@ ${SUDO} mkdir -p /var/lib/vmct-website
 revision_tmp="$(${SUDO} mktemp /var/lib/vmct-website/.deployed-revision.XXXXXX)"
 git -c "safe.directory=${APP_DIR}" -C "${APP_DIR}" rev-parse HEAD | ${SUDO} tee "${revision_tmp}" >/dev/null
 ${SUDO} mv -f "${revision_tmp}" /var/lib/vmct-website/deployed-revision
-${SUDO} systemctl enable --now vmct-website-update.timer
-${SUDO} systemctl enable --now vmct-dictionary-update.timer
+if [[ "${VMCT_KEEP_UPDATE_TIMERS_STOPPED:-0}" != 1 ]]; then
+  ${SUDO} systemctl enable --now vmct-website-update.timer
+  ${SUDO} systemctl enable --now vmct-dictionary-update.timer
+fi
 
-echo "单 ECS 部署完成：Node API、静态前端和 Nginx 已启动。请将 www.vmct.top DNS 指向 ECS 公网 IP。"
+echo "单 ECS 部署完成：动态官网、原 API 和 Nginx 已启动。内容发布即时生效；代码更新时才构建。"

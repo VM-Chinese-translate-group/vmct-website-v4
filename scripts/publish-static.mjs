@@ -58,6 +58,13 @@ export async function publishStatic({ source, target, health = checkRelease }) {
   let switched = false
   try {
     await fs.cp(source, staging, { recursive: true, dereference: true })
+    // Keep old hashed chunks usable by tabs opened before the deployment.
+    // Source files win if a filename is already present in the new release.
+    if (existing) {
+      await fs.cp(path.join(target, 'assets'), path.join(staging, 'assets'), {
+        recursive: true, force: false,
+      }).catch(error => { if (error.code !== 'ENOENT') throw error })
+    }
     // Server rendering output is build machinery, not a public web asset.
     await fs.rm(path.join(staging, 'server'), { recursive: true, force: true })
     await fs.writeFile(path.join(staging, '.vmct-release.json'), JSON.stringify({ id }))

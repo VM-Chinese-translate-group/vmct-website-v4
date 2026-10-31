@@ -74,8 +74,8 @@ const {
 
 const pageTitle = computed(() => props.meta?.title || '')
 const pageDescription = computed(() => props.meta?.description || '')
-const convertedPageTitle = ref('')
-const convertedPageDescription = ref('')
+const convertedPageTitle = ref(pageTitle.value)
+const convertedPageDescription = ref(pageDescription.value)
 let conversionRequestId = 0
 let headerRequestId = 0
 let headerRefreshFrame = 0

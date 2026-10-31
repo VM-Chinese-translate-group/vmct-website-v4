@@ -50,10 +50,10 @@
             <SelectMenu
               :model-value="platform(method)"
               :options="platforms"
-              :aria-label="`下载方式 ${index + 1}`"
+              :ariaLabel="`下载方式 ${index + 1}`"
               variant="flat"
               style="--select-width: 100%; --select-menu-min-width: 100%"
-              @update:model-value="changePlatform(method, $event)"
+              @update:model-value="changePlatform(method, String($event))"
             />
           </div>
           <label class="cms-label download-caption">

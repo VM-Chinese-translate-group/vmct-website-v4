@@ -1,32 +1,13 @@
 <template>
   <div class="grid gap-5">
     <section class="cms-panel">
-      <h2 class="m-0 text-xl">部署设置</h2>
+      <h2 class="m-0 text-xl">内容发布</h2>
       <p class="text-sm text-[var(--text-2)]">
-        发布内容后触发 ECS 本机重建并更新官网静态页面。
+        发布后网站会读取最新内容，无需重新构建。需要重新读取已发布内容时，可刷新站点缓存。
       </p>
-      <label class="cms-label max-w-4xl">
-        站点重建地址
-        <div class="flex gap-2 max-sm:flex-col">
-          <input
-            v-model="hook"
-            class="cms-field flex-1"
-            type="url"
-            placeholder="http://127.0.0.1:8787/internal/rebuild"
-          />
-          <button
-            class="cms-button"
-            type="button"
-            :disabled="busy"
-            @click="$emit('save-hook', hook)"
-          >
-            保存设置
-          </button>
-          <button class="cms-button" type="button" :disabled="busy" @click="$emit('retry-deploy')">
-            测试构建
-          </button>
-        </div>
-      </label>
+      <button class="cms-button" type="button" :disabled="busy" @click="$emit('retry-deploy')">
+        刷新站点缓存
+      </button>
     </section>
     <section class="cms-panel">
       <h2 class="m-0 text-xl">登录安全</h2>
@@ -34,7 +15,7 @@
         修改密码后所有设备会退出。原始密码只在浏览器中派生。
       </p>
       <p v-if="managedByEnvironment" class="text-sm text-[var(--text-muted)]">
-        当前密码由 ECS 环境变量管理，请在服务器配置中更新。
+        {{ unifiedLogin ? '登录身份与管理权限由 VMPM 统一管理。' : '当前密码由 ECS 环境变量管理，请在服务器配置中更新。' }}
       </p>
       <form v-else class="grid max-w-lg gap-2" @submit.prevent="submitPassword">
         <input
@@ -62,27 +43,19 @@
   </div>
 </template>
 <script setup lang="ts">
-import { ref, watch } from 'vue'
-const props = defineProps<{
-  deploymentHook: string
+import { ref } from 'vue'
+defineProps<{
   managedByEnvironment: boolean
+  unifiedLogin: boolean
   busy: boolean
 }>()
 const emit = defineEmits<{
-  'save-hook': [value: string]
   'change-password': [value: string]
   'retry-deploy': []
 }>()
-const hook = ref(props.deploymentHook),
-  password = ref(''),
+const password = ref(''),
   confirmation = ref(''),
   passwordError = ref('')
-watch(
-  () => props.deploymentHook,
-  (value) => {
-    hook.value = value
-  },
-)
 function submitPassword() {
   if (password.value !== confirmation.value) {
     passwordError.value = '两次输入的新密码不一致。'

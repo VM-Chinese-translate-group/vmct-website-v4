@@ -65,6 +65,8 @@ export default {
     quickCommunityDesc: '加入社群、了解進度與招募',
   },
   footer: {
+    icpLicense: '豫ICP備2024105509號-4',
+    policeRecord: '豫公網安備41019702001135號',
     copyright: '© 2026 VM漢化組官網開發團隊',
     buildInfo: '構建號：{branch}',
     about: '關於',

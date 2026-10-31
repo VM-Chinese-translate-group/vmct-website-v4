@@ -1,5 +1,5 @@
 <template>
-  <teleport to="body">
+  <teleport to="#vmct-overlays">
     <transition name="search-fade" @after-enter="prepareSearch" @after-leave="resetSearch">
       <div
         v-if="visible"
@@ -98,6 +98,7 @@ import { ref, computed, watch, nextTick, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { Icon } from '@iconify/vue'
+import { useSiteContent } from '@/content/store'
 import { isEnglishLocale } from '@/utils/resourceDisplay'
 import { convertInlineText } from '@/utils/zhconv'
 import { createSearchSnippet, normalizeSearchText, rankSearchIndex } from '@/utils/search'
@@ -117,6 +118,7 @@ interface HighlightPart {
 const props = defineProps<{ visible: boolean }>()
 const emit = defineEmits<{ close: [] }>()
 const router = useRouter()
+const content = useSiteContent()
 const { locale } = useI18n()
 const { lock: lockBodyScroll, unlock: unlockBodyScroll } = usePageScrollLock()
 
@@ -142,9 +144,8 @@ const performSearch = async () => {
     return
   }
 
-  const { searchIndex } = await import('virtual:search-index')
   if (requestId !== searchRequestId || !props.visible) return
-  const rankedResults = rankSearchIndex(searchIndex, query, targetLocale)
+  const rankedResults = rankSearchIndex(content.searchIndex.value, query, targetLocale)
 
   const translatedResults = await Promise.all(
     rankedResults.map(async ({ item }) => {
@@ -241,10 +242,6 @@ const close = () => emit('close')
 
 const prepareSearch = () => {
   inputRef.value?.focus({ preventScroll: true })
-  // Parse the index after the opening animation, keeping the shell lightweight.
-  void import('virtual:search-index').catch(() => {
-    // A later query retries loading if prefetching fails.
-  })
 }
 
 const resetSearch = () => {
@@ -296,9 +293,13 @@ const onKeyDown = (e: KeyboardEvent) => {
 
 watch(
   () => props.visible,
-  (newVal) => {
+  async (newVal) => {
     if (newVal) {
       lockBodyScroll()
+      try {
+        await content.load(router.currentRoute.value.path, true)
+        if (props.visible && keyword.value) await performSearch()
+      } catch { /* Keep the current page's index available during a network interruption. */ }
     } else {
       searchRequestId += 1
       clearTimeout(timer)

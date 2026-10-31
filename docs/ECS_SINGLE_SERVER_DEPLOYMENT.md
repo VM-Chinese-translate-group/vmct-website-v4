@@ -1,6 +1,6 @@
 # 单 ECS 部署
 
-官网、CMS API、字典搜索和反馈接口全部运行在 ECS 上。现有 Docker Nginx 负责 `www.vmct.top`，并直接托管构建后的 `dist/`，Node 服务监听 `8787` 提供动态接口。ESA 不参与访问链路。
+官网、CMS API、字典搜索和反馈接口全部运行在 ECS。Nginx 提供静态资产，Node 服务在 `8787` 承载动态 HTML 与原 API。内容发布无需构建。升级时先发布 VMPM 统一登录后端，再发布官网；具体配置、兼容路由、验证与回滚见 [动态官网说明](DYNAMIC_SITE.md)。
 
 ## 部署
 
@@ -15,9 +15,9 @@ bash /tmp/vmct-deploy.sh
 脚本会：
 
 1. 拉取 `cn-mainland` 并安装依赖。
-2. 启动 ECS API 服务和独立 SQLite 数据库。
-3. 构建前端静态文件到 `/opt/vmct-website/dist`。
-4. 将 `dist/` 原子复制到现有 Nginx 容器的 `/home/vmct/vmct-website-dist`。
+2. 准备现有 SQLite 或 PostgreSQL 数据库适配和 API 服务配置。
+3. 构建浏览器资产、私有 SSR 组件与 API，然后启动 Node 服务。
+4. 将 `dist/` 中的公开资产原子发布到 Nginx 挂载的 `/home/vmct/vmpm/dist/www.vmct.top`，不公开 SSR 目录。
 5. 更新并重载现有 Nginx 的 `www.vmct.top` 配置。
 
 预构建字典数据库可以直接复制，跳过 ECS 上的 SQL 导入：
@@ -26,15 +26,16 @@ bash /tmp/vmct-deploy.sh
 DICT_DB_FILE=/home/vmct/vmweb/dictionary.sqlite bash /tmp/vmct-deploy.sh
 ```
 
-首次运行创建 `/etc/vmct-website/api.env` 后会退出。填写至少一段随机的 `ID_HASH_SECRET`，然后再次运行脚本。脚本会让 API 服务使用 `docker` 用户组，以便内容发布后通过现有 Nginx 容器完成静态文件替换。
+首次运行创建 `/etc/vmct-website/api.env` 后会退出。填写随机的 `ID_HASH_SECRET`，确认 VMPM 的公网 origin 和私网 API 地址，再次运行脚本。先部署 VMPM 统一登录后端，避免官网更新后暂时无法进入管理页。
 
 ## Nginx 路由
 
 - `/api/*` → `172.17.0.1:8787`。
 - `/search` → `172.17.0.1:8787`。
-- 其他请求 → 现有 Nginx 容器内的 `/home/vmct/vmct-website-dist`。
+- 哈希资产和图片 → `/home/vmct/vmpm/dist/www.vmct.top`。
+- 首页、内容页、管理页、`/sitemap.xml` 和其他 HTML 路由 → `172.17.0.1:8787`。
 
-Nginx 使用 `try_files` 回退到 `index.html`，所以 Vue 路由可以直接访问。脚本不会修改 VMPM 的文件或数据库；静态文件保存在现有 Nginx 容器的独立目录中。
+Nginx 的内容路由回退到 Node SSR。缺失或下线的页面由服务端返回 404；`/server`、`/.vite` 等私有构建路径禁止公开。原 VMPM 公开下载 include 保留。
 
 ## DNS 和 HTTPS
 
@@ -42,15 +43,15 @@ Nginx 使用 `try_files` 回退到 `index.html`，所以 Vue 路由可以直接�
 
 ## 内容发布
 
-发布内容后，ECS API 会调用本机 `SITE_REBUILD_HOOK_URL`，默认是：
+发布内容后直接使运行时数据与 HTML 缓存失效，不再调用重建钩子。原本机地址保留为兼容的缓存刷新入口：
 
 ```text
 http://127.0.0.1:8787/internal/rebuild
 ```
 
-该接口使用 `SITE_REBUILD_SECRET` 保护，并在后台启动一次静态站点构建。构建完成后，API 会把新 `dist/` 原子复制到现有 Nginx 容器并重载 Nginx，因此 CMS 发布后不需要重新执行完整部署脚本。完整代码升级仍使用 `deploy-ecs.sh`。
+该接口仍由 `SITE_REBUILD_SECRET` 保护，仅刷新缓存。代码升级使用 `deploy-ecs.sh`；内容编辑与发布不会构建代码或替换静态资产。
 
-部署脚本会把内容数据库中的 `deployment_hook_url` 自动改为上述 ECS 地址，覆盖旧的 Cloudflare Pages deploy hook。该地址只在 ECS 本机调用，不需要暴露到公网。
+旧 `deployment_hook_url` 设置可保留用于回滚，动态发布不会执行它。兼容刷新入口只在本机调用，不需要暴露到公网。
 
 ## 仓库自动更新
 

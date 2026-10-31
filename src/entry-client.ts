@@ -8,6 +8,7 @@ import { isAprilFoolsDay, syncAprilFoolsBranding } from '@/utils/aprilFools'
 import { startImageLoadingFrames, syncImageLoadingLabel } from '@/utils/imageLoading'
 import { convertMarkdownContainers } from '@/utils/zhconv'
 import { applyTheme, getPreferredTheme } from '@/utils/theme'
+import type { SiteContent } from '@/content/store'
 
 import '@/styles/imageLoading.css'
 import '@/styles/markdown.css'
@@ -24,8 +25,12 @@ applyTheme(getPreferredTheme(), false)
 void syncImageLoadingLabel(clientLocale)
 startImageLoadingFrames()
 
+const contentElement = document.getElementById('vmct-content')
+const initialContent = contentElement?.textContent ? JSON.parse(contentElement.textContent) as SiteContent : undefined
 const { app, i18n, router } = createApp({
-  locale: clientLocale,
+  locale: initialContent ? 'zh-CN' : clientLocale,
+  hydrate: Boolean(initialContent),
+  content: initialContent,
 })
 
 const registerImageCache = () => {
