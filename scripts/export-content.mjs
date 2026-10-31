@@ -1,7 +1,5 @@
 import fs from 'node:fs/promises'
 import path from 'node:path'
-import { createInterface } from 'node:readline/promises'
-import { stdin, stdout } from 'node:process'
 import { loginContentAdmin } from './content-auth.mjs'
 
 const SITE_ORIGIN = process.env.SITE_ORIGIN || 'https://www.vmct.top'
@@ -26,11 +24,7 @@ function normalizePath(value) {
 const existing = await fs.readdir(OUTPUT_DIR).catch(() => [])
 if (existing.length) throw new Error('导出目录非空：' + OUTPUT_DIR + '。请指定新的 --output 目录。')
 
-const prompt = createInterface({ input: stdin, output: stdout })
-const password = await prompt.question('请输入后台密码：')
-prompt.close()
-
-const cookie = await loginContentAdmin(SITE_ORIGIN, password)
+const cookie = await loginContentAdmin(SITE_ORIGIN)
 
 const response = await fetch(SITE_ORIGIN + '/api/content/admin/export', {
   headers: { Cookie: cookie },

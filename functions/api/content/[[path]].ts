@@ -4,6 +4,11 @@ interface Env {
   CMS_ADMIN_SALT?: string
   SITE_REBUILD_HOOK_URL?: string
   SITE_REBUILD_SECRET?: string
+  CONTENT_CHANGED?: () => void
+  CONTENT_SITE_DATA?: (path: string) => Promise<unknown>
+  VALIDATE_CONTENT?: (page: { frontmatter: string; body: string }) => Promise<void>
+  VMPM_SSO_ORIGIN?: string
+  VMPM_AUTH?: (action: string, credential: string) => Promise<any>
 }
 
 const JSON_HEADERS = {
@@ -343,15 +348,25 @@ async function loginFailure(context: any, ip: string) {
     .run()
 }
 
-async function createSession(context: any) {
+const externalSchemas = new WeakSet<object>()
+async function ensureExternalSessions(db: any) {
+  if (externalSchemas.has(db)) return
+  await db.prepare('CREATE TABLE IF NOT EXISTS cms_external_sessions (token_hash TEXT PRIMARY KEY REFERENCES cms_sessions(token_hash) ON DELETE CASCADE, grant_token TEXT NOT NULL)').run()
+  externalSchemas.add(db)
+}
+
+async function createSession(context: any, grant?: string) {
   const token = randomToken()
+  const tokenHash = await hash(token)
+  if (grant) await ensureExternalSessions(context.env.CONTENT_DB)
   await context.env.CONTENT_DB.batch([
     context.env.CONTENT_DB.prepare('DELETE FROM cms_sessions WHERE expires_at <= ?').bind(
       new Date().toISOString(),
     ),
     context.env.CONTENT_DB.prepare(
       'INSERT INTO cms_sessions (token_hash, expires_at) VALUES (?, ?)',
-    ).bind(await hash(token), new Date(Date.now() + SESSION_MAX_AGE_SECONDS * 1000).toISOString()),
+    ).bind(tokenHash, new Date(Date.now() + SESSION_MAX_AGE_SECONDS * 1000).toISOString()),
+    ...(grant ? [context.env.CONTENT_DB.prepare('INSERT INTO cms_external_sessions (token_hash, grant_token) VALUES (?, ?)').bind(tokenHash, grant)] : []),
   ])
   return token
 }
@@ -366,9 +381,25 @@ async function requireAdmin(context: any) {
     .bind(tokenHash, new Date().toISOString())
     .first()
   if (!row) throw new ApiError(401, '登录已失效，请重新登录')
+  if (context.env.VMPM_SSO_ORIGIN) {
+    await ensureExternalSessions(context.env.CONTENT_DB)
+    const external = await context.env.CONTENT_DB.prepare('SELECT grant_token AS grantToken FROM cms_external_sessions WHERE token_hash = ?').bind(tokenHash).first()
+    if (!external || !context.env.VMPM_AUTH) throw new ApiError(401, '请通过 VMPM 登录官网后台')
+    try {
+      context.adminIdentity = await context.env.VMPM_AUTH('session', external.grantToken)
+    } catch (error: any) {
+      if ([401, 403].includes(error.status)) {
+        await context.env.CONTENT_DB.prepare('DELETE FROM cms_sessions WHERE token_hash = ?').bind(tokenHash).run()
+        throw new ApiError(error.status, 'VMPM 登录已失效或管理权限已撤销')
+      }
+      throw new ApiError(503, '暂时无法验证 VMPM 身份，请稍后重试')
+    }
+  }
 }
 
 async function authStatus(context: any) {
+  if (context.env.VMPM_SSO_ORIGIN) return json({ needsSetup: false, managedByEnvironment: true,
+    authMode: 'vmpm', ssoOrigin: context.env.VMPM_SSO_ORIGIN })
   const config = await passwordConfig(context)
   return json({
     needsSetup: !config.verifier,
@@ -377,6 +408,7 @@ async function authStatus(context: any) {
 }
 
 async function authChallenge(context: any) {
+  if (context.env.VMPM_SSO_ORIGIN) throw new ApiError(401, '请通过 VMPM 登录官网后台')
   const ip = await assertLoginAllowed(context)
   const config = await passwordConfig(context)
   await ensureChallengeTable(context.env.CONTENT_DB)
@@ -420,6 +452,7 @@ async function consumeChallenge(context: any, id: unknown) {
 
 async function setup(context: any) {
   requireSameOrigin(context.request)
+  if (context.env.VMPM_SSO_ORIGIN) throw new ApiError(403, '登录由 VMPM 统一管理')
   if ((await passwordConfig(context)).verifier) throw new ApiError(409, '后台已初始化')
   const ip = await assertLoginAllowed(context)
   const input = await readJson(context.request)
@@ -442,6 +475,20 @@ async function login(context: any) {
   requireSameOrigin(context.request)
   const ip = await assertLoginAllowed(context)
   const input = await readJson(context.request)
+  if (context.env.VMPM_SSO_ORIGIN) {
+    const ticket = String(input?.ticket || '')
+    if (!/^[A-Za-z0-9_-]{43}$/.test(ticket)) throw new ApiError(401, '官网登录凭证无效')
+    if (!context.env.VMPM_AUTH) throw new ApiError(503, 'VMPM 登录服务尚未配置')
+    let grant
+    try { grant = (await context.env.VMPM_AUTH('redeem', ticket)).grant }
+    catch (error: any) {
+      await loginFailure(context, ip)
+      throw new ApiError([401, 403].includes(error.status) ? error.status : 503, 'VMPM 登录未完成，请重新进入官网内容管理')
+    }
+    if (typeof grant !== 'string' || !/^[A-Za-z0-9_-]{43}$/.test(grant)) throw new ApiError(503, 'VMPM 登录响应无效')
+    await context.env.CONTENT_DB.prepare('DELETE FROM cms_login_attempts WHERE client_ip = ?').bind(ip).run()
+    return json({ ok: true }, 200, { 'Set-Cookie': sessionCookie(await createSession(context, grant)) })
+  }
   const challenge = await consumeChallenge(context, input?.challengeId)
   const config = await passwordConfig(context)
   const submittedProof = String(input?.proof || '')
@@ -457,6 +504,7 @@ async function login(context: any) {
 
 async function changePassword(context: any) {
   requireSameOrigin(context.request)
+  if (context.env.VMPM_SSO_ORIGIN) throw new ApiError(403, '登录由 VMPM 统一管理')
   if (context.env.CMS_ADMIN_VERIFIER)
     throw new ApiError(409, '密码由 CMS_ADMIN_VERIFIER 环境变量管理')
   const input = await readJson(context.request)
@@ -491,10 +539,8 @@ async function logout(context: any) {
 
 async function getSettings(context: any) {
   return json({
-    deploymentHookUrl:
-      context.env.SITE_REBUILD_HOOK_URL ||
-      (await setting(context.env.CONTENT_DB, 'deployment_hook_url')) ||
-      '',
+    deploymentHookUrl: '',
+    delivery: 'dynamic',
   })
 }
 
@@ -508,22 +554,18 @@ async function saveSettings(context: any) {
 }
 
 async function deploy(context: any) {
-  const hook =
-    context.env.SITE_REBUILD_HOOK_URL ||
-    (await setting(context.env.CONTENT_DB, 'deployment_hook_url'))
-  if (!hook) return { requested: false, error: '请先配置站点重建地址' }
+  // Keep the existing admin endpoints and response shape for older clients.
+  // Publishing now invalidates runtime data; it never starts a build or hook.
+  context.env.CONTENT_CHANGED?.()
+  return { requested: true, mode: 'dynamic' }
+}
+
+async function validateRuntimeContent(context: any, current: any) {
+  if (!context.env.VALIDATE_CONTENT) return
   try {
-    const headers: Record<string, string> = {}
-    if (context.env.SITE_REBUILD_SECRET) headers.Authorization = `Bearer ${context.env.SITE_REBUILD_SECRET}`
-    const response = await fetch(hook, { method: 'POST', headers })
-    return response.ok
-      ? { requested: true }
-      : { requested: false, error: '站点重建地址返回 HTTP ' + response.status }
+    await context.env.VALIDATE_CONTENT({ frontmatter: current.draftFrontmatter, body: current.draftBody })
   } catch (error) {
-    return {
-      requested: false,
-      error: error instanceof Error ? error.message : '无法调用站点重建地址',
-    }
+    throw new ApiError(400, error instanceof Error ? error.message : '页面内容格式无效')
   }
 }
 
@@ -674,6 +716,7 @@ async function publish(context: any, id: string) {
   const input = await readJson(context.request).catch(() => ({}))
   if (Number(input?.expectedDraftVersion) !== Number(current.draftVersion))
     throw new ApiError(409, '草稿已在其他窗口中更新', 'EDIT_CONFLICT', { page: current })
+  await validateRuntimeContent(context, current)
   await context.env.CONTENT_DB.batch(
     publishStatements(context.env.CONTENT_DB, current, input?.message),
   )
@@ -694,6 +737,7 @@ async function publishBatch(context: any) {
     const current = await page(context.env.CONTENT_DB, id)
     try {
       validatePublishable(current)
+      await validateRuntimeContent(context, current)
     } catch (error) {
       if (error instanceof ApiError)
         throw new ApiError(
@@ -780,6 +824,11 @@ async function restoreRevision(context: any, id: string, revisionNumber: string)
 }
 
 async function exportContent(context: any) {
+  const url = new URL(context.request.url)
+  if (url.searchParams.get('view') === 'site') {
+    if (!context.env.CONTENT_SITE_DATA) throw new ApiError(503, '动态内容服务尚未启动')
+    return json(await context.env.CONTENT_SITE_DATA(url.searchParams.get('path') || '/'))
+  }
   const result = await context.env.CONTENT_DB.prepare(
     "SELECT COALESCE(published_path, path) AS path, published_frontmatter AS frontmatter, published_body AS body FROM content_pages WHERE state = 'published' AND published_at IS NOT NULL ORDER BY COALESCE(published_path, path) ASC",
   ).all()

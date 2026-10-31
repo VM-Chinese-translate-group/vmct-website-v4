@@ -2,40 +2,9 @@ import { createMemoryHistory, createRouter, createWebHistory } from 'vue-router'
 import type { RouteRecordRaw } from 'vue-router'
 
 import DefaultLayout from '@/layout/DefaultLayout.vue'
-import { routeMeta } from 'virtual:route-meta'
-import { mdComponents } from 'virtual:markdown-pages'
+import type { createContentStore } from '@/content/store'
 
 const ContentAdmin = () => import('@/pages/admin/index.vue')
-
-function fileToRoutePath(file: string) {
-  let p = file.replace(/^\.\.\/(?:pages|generated-pages)/, '').replace(/\.md$/, '')
-  if (p.endsWith('/index')) p = p.replace(/\/index$/, '')
-  if (p === '') return '/'
-  return p.startsWith('/') ? p : `/${p}`
-}
-
-const mdRouteMap = new Map<string, RouteRecordRaw>()
-
-Object.keys(mdComponents).forEach((file) => {
-  const routePath = fileToRoutePath(file)
-
-  if (['/', '/modpacks', '/map'].includes(routePath)) return
-
-  const isDocLayout = routePath.startsWith('/modpacks/fc5-wiki') || routePath.endsWith('/secret')
-
-  mdRouteMap.set(routePath, {
-    path: routePath,
-    name: routePath.replace(/^\//, '').replace(/\//g, '-') || `md-${Math.random()}`,
-    component: mdComponents[file],
-    meta: {
-      ...(routeMeta[file] || {}),
-      layout: isDocLayout ? 'doc' : 'default',
-      noindex: routePath.endsWith('/secret'),
-    },
-  })
-})
-
-const mdRoutes = [...mdRouteMap.values()]
 
 const routes: RouteRecordRaw[] = [
   {
@@ -69,22 +38,17 @@ const routes: RouteRecordRaw[] = [
         component: () => import('@/pages/credits.vue'),
       },
 
-      ...mdRoutes,
-
       {
         path: '/:pathMatch(.*)*',
-        name: 'not-found',
-        component: () => import('@/layout/NotFoundLayout.vue'),
-        meta: {
-          noindex: true,
-        },
+        name: 'content-page',
+        component: () => import('@/content/ContentPage.vue'),
       },
     ],
   },
 ]
 
-export function createAppRouter(ssr = false) {
-  return createRouter({
+export function createAppRouter(content: ReturnType<typeof createContentStore>, ssr = false) {
+  const router = createRouter({
     history: ssr ? createMemoryHistory() : createWebHistory(),
     routes,
     scrollBehavior(to, from, savedPosition) {
@@ -101,4 +65,13 @@ export function createAppRouter(ssr = false) {
       return { top: 0 }
     },
   })
+  router.beforeResolve(async (to) => {
+    await content.load(to.path)
+    if (to.name === 'content-page') {
+      const page = content.state.value.page
+      to.meta = page ? { ...page.meta, noindex: page.meta.noindex === true || to.path.endsWith('/secret') }
+        : { noindex: true, contentMissing: true }
+    }
+  })
+  return router
 }

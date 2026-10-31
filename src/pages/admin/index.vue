@@ -12,7 +12,8 @@
       </p>
     </Transition>
 
-    <AdminLogin v-if="!loggedIn" :needs-setup="needsSetup" :busy="busy" @submit="authenticate" />
+    <p v-if="!authChecked" role="status">正在连接内容管理…</p>
+    <AdminLogin v-else-if="!loggedIn" :needs-setup="needsSetup" :busy="busy" :sso-origin="ssoOrigin" :embedded="embedded" @submit="authenticate" @sso="requestSso" />
 
     <template v-else>
       <header
@@ -26,7 +27,7 @@
           <p class="mb-0 mt-1 text-sm text-[var(--text-2)]">
             {{
               isSettingsPage
-                ? '管理部署与登录安全。'
+                ? '管理内容发布与登录安全。'
                 : '草稿自动保存，可在左侧选择多个更改后统一发布。'
             }}
           </p>
@@ -43,10 +44,9 @@
 
       <AdminSettings
         v-if="isSettingsPage"
-        :deployment-hook="deployHook"
         :managed-by-environment="passwordManagedByEnvironment"
+        :unified-login="Boolean(ssoOrigin)"
         :busy="busy"
-        @save-hook="saveSettings"
         @change-password="changePassword"
         @retry-deploy="retryDeploy"
       />
@@ -276,14 +276,13 @@ import {
   changeContentAdminPassword,
   discardContentDraft,
   getContentAuthStatus,
-  getContentSettings,
   loginContentAdmin,
+  loginContentWithVmpm,
   logoutContentAdmin,
   publishContentPage,
   publishContentPages,
   restoreContentRevision,
   retryContentDeployment,
-  saveContentSettings,
   setupContentAdmin,
 } from '@/api/contentAdmin'
 import AdminLogin from './AdminLogin.vue'
@@ -302,11 +301,14 @@ import { useContentEditor } from './useContentEditor'
 const route = useRoute(),
   router = useRouter()
 const loggedIn = ref(false),
+  authChecked = ref(false),
   needsSetup = ref(false),
   passwordManagedByEnvironment = ref(false),
   busy = ref(false)
-const deployHook = ref(''),
-  notice = ref(''),
+const ssoOrigin = ref('')
+const embedded = typeof window !== 'undefined' && window.parent !== window
+let ssoNonce = ''
+const notice = ref(''),
   noticeKind = ref<'success' | 'error'>('success')
 const publishOpen = ref(false),
   publishMode = ref<'single' | 'batch'>('single'),
@@ -389,7 +391,7 @@ const saveStateClass = computed(
 )
 
 async function loadAdmin() {
-  await Promise.all([editor.refresh(), loadSettings()])
+  await editor.refresh()
   if (editor.pages.value.length && !editor.draft.id) await editor.open(editor.pages.value[0].id)
   else if (!editor.pages.value.length) await editor.createNew('document')
 }
@@ -404,20 +406,6 @@ async function authenticate(password: string) {
     show('已进入内容工作台。')
   } catch (error) {
     show(error instanceof Error ? error.message : '登录失败', 'error')
-  } finally {
-    busy.value = false
-  }
-}
-async function loadSettings() {
-  deployHook.value = (await getContentSettings()).deploymentHookUrl
-}
-async function saveSettings(value: string) {
-  busy.value = true
-  try {
-    deployHook.value = (await saveContentSettings(value)).deploymentHookUrl
-    show('部署设置已保存。')
-  } catch (error) {
-    show(error instanceof Error ? error.message : '保存失败', 'error')
   } finally {
     busy.value = false
   }
@@ -439,11 +427,11 @@ async function retryDeploy() {
   try {
     const result = (await retryContentDeployment()).deployment
     show(
-      result.requested ? '已请求站点重建。' : `构建未触发：${result.error || '未知错误'}`,
+      result.requested ? '站点缓存已刷新。' : `缓存刷新失败：${result.error || '未知错误'}`,
       result.requested ? 'success' : 'error',
     )
   } catch (error) {
-    show(error instanceof Error ? error.message : '构建请求失败', 'error')
+    show(error instanceof Error ? error.message : '缓存刷新失败', 'error')
   } finally {
     busy.value = false
   }
@@ -520,8 +508,8 @@ async function publish(message: string) {
     publishOpen.value = false
     show(
       result.deployment.requested
-        ? `${publishedPages.length} 个更改已发布，站点正在重建。`
-        : `${publishedPages.length} 个更改已发布，但构建未触发：${result.deployment.error || '未知错误'}`,
+        ? `${publishedPages.length} 个更改已发布，下次访问即可看到新版内容。`
+        : `${publishedPages.length} 个更改已发布，但缓存刷新失败：${result.deployment.error || '未知错误'}`,
       result.deployment.requested ? 'success' : 'error',
     )
   } catch (error) {
@@ -531,7 +519,7 @@ async function publish(message: string) {
   }
 }
 async function archive() {
-  if (!window.confirm('确定下线这个页面吗？网站构建后将不再公开显示。')) return
+  if (!window.confirm('确定下线这个页面吗？下次访问时将不再公开显示。')) return
   if (!(await editor.saveNow())) {
     show('请先解决草稿保存问题。', 'error')
     return
@@ -543,8 +531,8 @@ async function archive() {
     await editor.refresh()
     show(
       result.deployment.requested
-        ? '页面已下线，站点正在重建。'
-        : `页面已下线，但构建未触发：${result.deployment.error || '未知错误'}`,
+        ? '页面已下线。'
+        : `页面已下线，但缓存刷新失败：${result.deployment.error || '未知错误'}`,
       result.deployment.requested ? 'success' : 'error',
     )
   } catch (error) {
@@ -574,13 +562,14 @@ async function restoreRevision(revision: number) {
 }
 async function openSection() {
   if (!isSettingsPage.value && !(await editor.leaveCurrent())) return
-  await router.push(isSettingsPage.value ? '/admin' : '/admin/settings')
+  await router.push({ path: isSettingsPage.value ? '/admin' : '/admin/settings', query: embedded ? { embedded: '1' } : {} })
 }
 async function logout() {
   if (!(await editor.leaveCurrent())) return
   await logoutContentAdmin().catch(() => {})
   loggedIn.value = false
-  await router.push('/admin')
+  if (ssoOrigin.value && embedded) window.parent.postMessage({ type: 'vmct-content:logout' }, ssoOrigin.value)
+  await router.push({ path: '/admin', query: embedded ? { embedded: '1' } : {} })
 }
 const keydown = (event: KeyboardEvent) => {
   if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 's') {
@@ -588,24 +577,57 @@ const keydown = (event: KeyboardEvent) => {
     void editor.saveNow()
   }
 }
+function requestSso() {
+  if (!ssoOrigin.value || !embedded) return
+  ssoNonce = crypto.randomUUID()
+  window.parent.postMessage({ type: 'vmct-content:ready', nonce: ssoNonce }, ssoOrigin.value)
+}
+function authenticated() {
+  if (ssoOrigin.value && embedded) window.parent.postMessage({ type: 'vmct-content:authenticated' }, ssoOrigin.value)
+}
+async function ssoMessage(event: MessageEvent) {
+  if (!embedded || !ssoOrigin.value || event.origin !== ssoOrigin.value || event.source !== window.parent
+    || event.data?.type !== 'vmpm-content:ticket' || !ssoNonce || event.data.nonce !== ssoNonce || typeof event.data.ticket !== 'string') return
+  ssoNonce = ''
+  busy.value = true
+  try {
+    await loginContentWithVmpm(event.data.ticket)
+    await loadAdmin()
+    loggedIn.value = true
+    authenticated()
+  } catch (error) { show(error instanceof Error ? error.message : 'VMPM 登录失败', 'error') }
+  finally { busy.value = false }
+}
+function sessionExpired() {
+  if (ssoOrigin.value && loggedIn.value) { loggedIn.value = false; requestSso() }
+}
 onMounted(async () => {
   document.addEventListener('keydown', keydown)
+  window.addEventListener('message', ssoMessage)
+  window.addEventListener('content-session-expired', sessionExpired)
   try {
     const status = await getContentAuthStatus()
     needsSetup.value = status.needsSetup
     passwordManagedByEnvironment.value = status.managedByEnvironment
+    ssoOrigin.value = status.authMode === 'vmpm' ? new URL(status.ssoOrigin!).origin : ''
     if (!status.needsSetup) {
       try {
         await loadAdmin()
         loggedIn.value = true
+        authenticated()
       } catch {}
     }
+    if (!loggedIn.value) requestSso()
   } catch (error) {
     show(error instanceof Error ? error.message : '无法连接内容服务', 'error')
+  } finally {
+    authChecked.value = true
   }
 })
 onBeforeUnmount(() => {
   document.removeEventListener('keydown', keydown)
+  window.removeEventListener('message', ssoMessage)
+  window.removeEventListener('content-session-expired', sessionExpired)
   if (noticeTimer) clearTimeout(noticeTimer)
 })
 </script>

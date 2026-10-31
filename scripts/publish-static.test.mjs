@@ -45,6 +45,34 @@ test('health failure restores previous release and removes failed release', asyn
   assert.equal((await fs.readdir(path.dirname(path.resolve(path.dirname(target), previous)))).length, 1)
 })
 
+test('new release keeps old hashed assets while new files take precedence', async (t) => {
+  const { source, target } = await fixture(t)
+  await fs.mkdir(path.join(source, 'assets'))
+  await fs.writeFile(path.join(source, 'assets', 'old-123.js'), 'old client')
+  await fs.writeFile(path.join(source, 'assets', 'shared.js'), 'old value')
+  await publishStatic({ source, target, health: async () => {} })
+  await fs.rm(path.join(source, 'assets', 'old-123.js'))
+  await fs.writeFile(path.join(source, 'assets', 'shared.js'), 'new value')
+  await fs.writeFile(path.join(source, 'assets', 'new-456.js'), 'new client')
+  await publishStatic({ source, target, health: async () => {} })
+  assert.equal(await fs.readFile(path.join(target, 'assets', 'old-123.js'), 'utf8'), 'old client')
+  assert.equal(await fs.readFile(path.join(target, 'assets', 'new-456.js'), 'utf8'), 'new client')
+  assert.equal(await fs.readFile(path.join(target, 'assets', 'shared.js'), 'utf8'), 'new value')
+})
+
+test('restrictive operator umask cannot make the public release unreadable', { skip: process.platform !== 'linux' }, async (t) => {
+  const { source, target } = await fixture(t)
+  await fs.chmod(source, 0o700)
+  await fs.chmod(path.join(source, 'index.html'), 0o600)
+  const mask = process.umask(0o077)
+  try { await publishStatic({ source, target, health: async () => {} }) }
+  finally { process.umask(mask) }
+  assert.equal((await fs.stat(target)).mode & 0o777, 0o755)
+  assert.equal((await fs.stat(path.join(target, 'index.html'))).mode & 0o777, 0o644)
+  assert.equal((await fs.stat(path.join(target, '.vmct-release.json'))).mode & 0o777, 0o644)
+  assert.equal((await fs.stat(path.dirname(await fs.realpath(target)))).mode & 0o777, 0o755)
+})
+
 test('invalid build leaves live release intact', async (t) => {
   const { source, target } = await fixture(t)
   await publishStatic({ source, target, health: async () => {} })

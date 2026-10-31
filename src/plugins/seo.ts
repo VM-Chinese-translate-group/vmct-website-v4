@@ -112,7 +112,7 @@ function getRouteSeo(route: RouteLocationNormalizedLoaded, t: TranslateFn): SeoM
     }
   }
 
-  if (route.name === 'not-found') {
+  if (route.name === 'not-found' || route.meta.contentMissing) {
     return {
       title: t('notFound.title'),
       description: t('notFound.desc'),

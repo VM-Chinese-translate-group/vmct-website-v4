@@ -223,7 +223,7 @@
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { Icon } from '@iconify/vue'
-import { maps, modpacks } from 'virtual:resources'
+import { useSiteContent } from '@/content/store'
 import { getLoaderClass, getLoaderIcon } from '@/data/loaderIcons'
 import { formatUpdateDate } from '@/utils/dateFormat'
 import { getLocalizedResourceName } from '@/utils/resourceDisplay'
@@ -232,6 +232,7 @@ import type { ResourceItem, ResourceStatusType } from '@/types/resource'
 import SearchOverlay from '@/components/NavBar/SearchOverlay.vue'
 
 const { locale, t } = useI18n()
+const { maps, modpacks } = useSiteContent()
 const isSearchOpen = ref(false)
 const activeResourceTab = ref<'hot' | 'updated'>('hot')
 const heroCarouselIndex = ref(0)
@@ -239,12 +240,12 @@ const isCarouselPaused = ref(false)
 let carouselTimer: ReturnType<typeof setInterval> | undefined
 
 const sortedModpacks = computed(() =>
-  modpacks.slice().sort((a, b) => (b.date || 0) - (a.date || 0)),
+  modpacks.value.slice().sort((a, b) => (b.date || 0) - (a.date || 0)),
 )
 
-const featuredMaps = computed(() => maps.slice(0, 4))
+const featuredMaps = computed(() => maps.value.slice(0, 4))
 const heroCarouselItems = computed<ResourceItem[]>(() =>
-  [...modpacks, ...maps].sort((a, b) => (b.date || 0) - (a.date || 0)).slice(0, 6),
+  [...modpacks.value, ...maps.value].sort((a, b) => (b.date || 0) - (a.date || 0)).slice(0, 6),
 )
 const heroCarouselItem = computed(() => heroCarouselItems.value[heroCarouselIndex.value])
 const resourceCards = computed(() => {
@@ -257,17 +258,17 @@ const resourceCards = computed(() => {
 const statItems = computed(() => [
   {
     label: t('main.homeHub.totalResources'),
-    value: t('main.homeHub.countValue', { count: modpacks.length + maps.length }),
+    value: t('main.homeHub.countValue', { count: modpacks.value.length + maps.value.length }),
     icon: 'lucide:boxes',
   },
   {
     label: t('main.homeHub.totalModpacks'),
-    value: t('main.homeHub.countValue', { count: modpacks.length }),
+    value: t('main.homeHub.countValue', { count: modpacks.value.length }),
     icon: 'lucide:package',
   },
   {
     label: t('main.homeHub.mapTranslations'),
-    value: t('main.homeHub.countValue', { count: maps.length }),
+    value: t('main.homeHub.countValue', { count: maps.value.length }),
     icon: 'lucide:map',
   },
   {

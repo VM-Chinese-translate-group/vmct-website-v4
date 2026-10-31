@@ -6,7 +6,8 @@
 
 <script setup lang="ts">
 import DownloadCards from '@/layout/DownloadCards.vue'
-import { modpacks } from 'virtual:resources'
+import { useSiteContent } from '@/content/store'
+const { modpacks } = useSiteContent()
 </script>
 
 <style scoped>

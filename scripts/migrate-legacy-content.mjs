@@ -1,7 +1,5 @@
 import fs from 'node:fs/promises'
 import path from 'node:path'
-import { createInterface } from 'node:readline/promises'
-import { stdin, stdout } from 'node:process'
 import { loginContentAdmin } from './content-auth.mjs'
 
 const PAGES_DIR = path.join(process.cwd(), 'src', 'pages')
@@ -29,13 +27,9 @@ async function walk(dir, pages = []) {
   return pages
 }
 
-const prompt = createInterface({ input: stdin, output: stdout })
-const password = await prompt.question('请输入 /admin 后台密码（输入会显示在终端）：')
-prompt.close()
-
 let cookie
 try {
-  cookie = await loginContentAdmin(SITE_ORIGIN, password)
+  cookie = await loginContentAdmin(SITE_ORIGIN)
 } catch (error) {
   console.error(error instanceof Error ? error.message : '登录失败。')
   process.exitCode = 1
@@ -53,7 +47,7 @@ if (cookie) {
   } else {
     console.log('已导入 ' + result.imported + ' 个页面。')
     console.log(
-      result.deployment?.requested ? '已触发完整站点重建。' : '请先配置站点重建地址后重试发布。',
+      result.deployment?.requested ? '已刷新站点内容，无需重建。' : '内容导入成功，请检查站点缓存状态。',
     )
   }
 }

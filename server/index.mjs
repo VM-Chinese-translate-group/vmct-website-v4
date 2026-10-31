@@ -5,6 +5,10 @@ import { fileURLToPath, pathToFileURL } from 'node:url'
 import { SQLiteD1, createCacheStorage } from './db.mjs'
 import { createPostgresPool, PostgresD1 } from './postgres.mjs'
 import { PostgresDictionary } from './postgres-dictionary.mjs'
+import { createSiteContent } from './site-content.mjs'
+import { createSiteHandler } from './site-handler.mjs'
+import { pageMetadata, renderContent } from './content-renderer.mjs'
+import { createVmpmAuth } from './vmpm-auth.mjs'
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const dataDir = path.resolve(process.env.VMCT_DATA_DIR || path.join(root, 'data'))
@@ -35,6 +39,22 @@ const feedbackModule = await import(pathToFileURL(path.join(root, 'cf-code', 'vm
 const aifadianModule = await import(pathToFileURL(path.join(root, 'cf-code', 'aifadian', 'worker.js')).href)
 const dictionaryModule = await import(pathToFileURL(path.join(root, 'cf-code', 'd1-tutorial', 'index.js')).href)
 
+const development = process.env.VMCT_VITE_DEV === '1'
+const vmpmOrigin = process.env.VMPM_SSO_ORIGIN ?? (development ? '' : 'https://vmpm.vmct.top')
+const vite = development ? await import('vite').then(({ createServer }) => createServer({
+  server: { middlewareMode: true }, appType: 'custom',
+})) : null
+const dist = path.resolve(process.env.SITE_DIST_DIR || path.join(root, 'dist'))
+const productionTemplate = development ? null : fs.readFileSync(path.join(dist, 'index.html'), 'utf8')
+const manifest = development ? {} : JSON.parse(fs.readFileSync(path.join(dist, '.vite', 'ssr-manifest.json'), 'utf8'))
+const productionRenderer = development ? null : (await import(pathToFileURL(path.join(dist, 'server', 'entry-server.js')).href)).render
+const siteContent = createSiteContent({ db: contentDb, pagesDirectory: path.join(root, 'src', 'pages') })
+const site = createSiteHandler({ content: siteContent, development, manifest,
+  frameOrigin: vmpmOrigin,
+  renderer: async () => vite ? (await vite.ssrLoadModule('/src/entry-server.ts')).render : productionRenderer,
+  template: async url => vite ? vite.transformIndexHtml(url, fs.readFileSync(path.join(root, 'index.html'), 'utf8')) : productionTemplate,
+})
+
 const env = {
   CONTENT_DB: contentDb,
   DOWNLOAD_SEEDS: JSON.parse(fs.readFileSync(path.join(root, 'database', 'download-seeds.json'), 'utf8')),
@@ -49,6 +69,11 @@ const env = {
   BILIBILI_WORKER_ORIGIN: process.env.BILIBILI_WORKER_ORIGIN || 'http://127.0.0.1:8787',
   SITE_REBUILD_HOOK_URL: process.env.SITE_REBUILD_HOOK_URL,
   SITE_REBUILD_SECRET: process.env.SITE_REBUILD_SECRET,
+  CONTENT_CHANGED: site.invalidate,
+  CONTENT_SITE_DATA: siteContent.forPath,
+  async VALIDATE_CONTENT(page) { pageMetadata(page.frontmatter); await renderContent(page) },
+  VMPM_SSO_ORIGIN: vmpmOrigin,
+  VMPM_AUTH: vmpmOrigin ? createVmpmAuth(process.env.VMPM_API_ORIGIN || 'http://127.0.0.1:8080') : undefined,
 }
 
 function requestBody(request) {
@@ -99,26 +124,36 @@ async function dispatch(request, nodeResponse) {
   const pathname = new URL(url).pathname
   let response
 
+  // Nginx serves these in production. Also support a direct local `start`
+  // so the exact production bundle can be exercised without an Nginx install.
+  if (!development && ['GET', 'HEAD'].includes(request.method)
+    && !/^\/(?:api|internal|server|src|node_modules|\.git|\.vite)(?:\/|$)/.test(pathname)
+    && /\.(?:css|js|json|svg|png|jpe?g|gif|webp|ico|avif|woff2?|ttf|mp[34]|pdf|txt)$/.test(pathname)) {
+    let decoded
+    try { decoded = decodeURIComponent(pathname) } catch { decoded = '' }
+    const file = path.resolve(dist, '.' + decoded)
+    if (decoded && !decoded.includes('\\') && file.startsWith(dist + path.sep) && fs.existsSync(file) && fs.statSync(file).isFile()) {
+      const extension = path.extname(file)
+      const types = { '.css': 'text/css', '.js': 'text/javascript', '.json': 'application/json', '.svg': 'image/svg+xml', '.png': 'image/png', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.webp': 'image/webp', '.ico': 'image/x-icon', '.woff': 'font/woff', '.woff2': 'font/woff2', '.ttf': 'font/ttf', '.mp3': 'audio/mpeg', '.mp4': 'video/mp4', '.txt': 'text/plain', '.pdf': 'application/pdf' }
+      await sendResponse(new Response(request.method === 'HEAD' ? null : fs.readFileSync(file), { headers: {
+        'Content-Type': types[extension] || 'application/octet-stream', 'X-Content-Type-Options': 'nosniff',
+        'Cache-Control': pathname.startsWith('/assets/') ? 'public, max-age=31536000, immutable' : 'no-cache',
+      } }), nodeResponse)
+      return
+    }
+  }
+
   if (pathname === '/internal/rebuild' && request.method === 'POST') {
     const secret = env.SITE_REBUILD_SECRET
     const authorization = webRequest.headers.get('authorization') || ''
     if (!secret || authorization !== `Bearer ${secret}`) {
       response = new Response('Unauthorized', { status: 401 })
     } else {
-      response = new Response(JSON.stringify({ requested: true }), {
+      site.invalidate()
+      response = new Response(JSON.stringify({ requested: true, mode: 'dynamic' }), {
         status: 202,
         headers: { 'Content-Type': 'application/json' },
       })
-      const child = await import('node:child_process')
-      const rebuild = child.spawn(process.execPath, ['scripts/rebuild-site.mjs'], {
-        cwd: root,
-        detached: true,
-        // Keep the build output in the systemd journal so a failed
-        // container copy or Nginx reload can be diagnosed from ECS.
-        stdio: 'inherit',
-        env: { ...process.env, CONTENT_EXPORT_URL: 'http://127.0.0.1:8787/api/content/internal/export' },
-      })
-      rebuild.unref()
     }
     await sendResponse(response, nodeResponse)
     return
@@ -138,7 +173,7 @@ async function dispatch(request, nodeResponse) {
       : new Request(new URL(url).toString().replace('/api/dict/search', '/search'), webRequest)
     response = await dictionaryModule.default.fetch(dictionaryRequest, env, contextFor(request, dictionaryRequest, ''))
   } else {
-    response = new Response('Not Found', { status: 404 })
+    response = await site.handle(webRequest)
   }
 
   await sendResponse(response, nodeResponse)
@@ -146,11 +181,13 @@ async function dispatch(request, nodeResponse) {
 
 const port = Number(process.env.PORT || 8787)
 const server = http.createServer((request, response) => {
-  dispatch(request, response).catch((error) => {
+  const handle = () => dispatch(request, response).catch((error) => {
     console.error('request failed', error)
     if (!response.headersSent) response.writeHead(500, { 'Content-Type': 'application/json' })
     response.end(JSON.stringify({ error: 'Internal Server Error' }))
   })
+  if (vite) vite.middlewares(request, response, handle)
+  else void handle()
 })
 
 const avatarRefreshTimer = setInterval(() => {
@@ -164,12 +201,18 @@ const avatarRefreshTimer = setInterval(() => {
 }, 6 * 60 * 60 * 1000)
 avatarRefreshTimer.unref?.()
 
+// Complete the existing idempotent schema/download migration before serving
+// either SSR or the public content API, including on an older CMS database.
+await contentModule.onRequest(contextFor(null, new Request('http://localhost/api/content/admin/auth/status'), 'admin/auth/status')).then(response => {
+  if (!response.ok) throw new Error('CMS schema initialization failed')
+})
 server.listen(port, process.env.HOST || '127.0.0.1', () => {
   console.log(`vmct ECS API listening on ${process.env.HOST || '127.0.0.1'}:${port}`)
 })
 
 async function close() {
   clearInterval(avatarRefreshTimer)
+  await vite?.close()
   server.close(async () => {
     await Promise.all([contentDb.close(), feedbackDb.close(), dictionaryDb.close()])
     if (pool) await pool.end()

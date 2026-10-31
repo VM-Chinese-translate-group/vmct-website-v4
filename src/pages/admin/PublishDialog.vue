@@ -9,7 +9,7 @@
     >
       <h2 class="m-0 text-xl">{{ batch ? `发布 ${pageCount} 个更改` : '发布前检查' }}</h2>
       <p class="text-sm text-[var(--text-2)]">
-        确认后会发布{{ batch ? '所选草稿' : '当前草稿' }}并请求站点重建。
+        确认后会发布{{ batch ? '所选草稿' : '当前草稿' }}，网站将在下次访问时显示新版内容。
       </p>
       <div
         v-if="errors.length"

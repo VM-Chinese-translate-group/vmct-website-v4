@@ -3,9 +3,12 @@ logs
 pnpm-debug.log*
 
 node_modules
+.pnpm-store/
 .DS_Store
 dist
 dist-ssr
+dist-package/
+.site-releases/
 src/generated-pages/
 content-export/
 worker/dist/

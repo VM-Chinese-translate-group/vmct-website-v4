@@ -35,6 +35,15 @@ async function checkRelease(id) {
   if (!home.trim()) throw new Error('站点首页健康检查失败')
 }
 
+async function makePublic(directory) {
+  await fs.chmod(directory, 0o755)
+  for (const entry of await fs.readdir(directory, { withFileTypes: true })) {
+    const file = path.join(directory, entry.name)
+    if (entry.isDirectory()) await makePublic(file)
+    else await fs.chmod(file, 0o644)
+  }
+}
+
 // Caller holds .vmct-deploy.lock for the complete build and publication.
 export async function publishStatic({ source, target, health = checkRelease }) {
   source = path.resolve(source)
@@ -44,6 +53,7 @@ export async function publishStatic({ source, target, health = checkRelease }) {
   const parent = path.dirname(target)
   const releases = path.join(parent, `.${path.basename(target)}-releases`)
   await fs.mkdir(releases, { recursive: true })
+  await fs.chmod(releases, 0o755)
   const existing = await fs.lstat(target).catch((e) => {
     if (e.code !== 'ENOENT') throw e
     return null
@@ -58,9 +68,19 @@ export async function publishStatic({ source, target, health = checkRelease }) {
   let switched = false
   try {
     await fs.cp(source, staging, { recursive: true, dereference: true })
+    // Keep old hashed chunks usable by tabs opened before the deployment.
+    // Source files win if a filename is already present in the new release.
+    if (existing) {
+      await fs.cp(path.join(target, 'assets'), path.join(staging, 'assets'), {
+        recursive: true, force: false,
+      }).catch(error => { if (error.code !== 'ENOENT') throw error })
+    }
     // Server rendering output is build machinery, not a public web asset.
     await fs.rm(path.join(staging, 'server'), { recursive: true, force: true })
     await fs.writeFile(path.join(staging, '.vmct-release.json'), JSON.stringify({ id }))
+    // Release artifacts must remain readable by the Nginx worker even when
+    // the operator uses a restrictive umask for database/configuration backups.
+    await makePublic(staging)
     await fs.rename(staging, release)
     await fs.symlink(path.relative(parent, release), pending)
     await fs.rename(pending, target)
