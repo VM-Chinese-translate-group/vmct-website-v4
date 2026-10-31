@@ -225,7 +225,7 @@ ${SUDO} systemctl daemon-reload
 ${SUDO} systemctl enable vmct-website-api
 # Build code once per deployment. Published content is loaded at request time,
 # so this step does not need the CMS export endpoint or a running API.
-release_id="$(git rev-parse HEAD)-$(date +%s)"
+release_id="$(git -c "safe.directory=${APP_DIR}" -C "${APP_DIR}" rev-parse HEAD)-$(date +%s)"
 site_release="${APP_DIR}/.site-releases/${release_id}"
 run_as_vmct mkdir -p "${site_release}"
 SITE_BUILD_DIR="${site_release}" NODE_OPTIONS="${NODE_OPTIONS:---max-old-space-size=768}" \
