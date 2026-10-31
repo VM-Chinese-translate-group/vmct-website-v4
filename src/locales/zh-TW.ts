@@ -207,7 +207,7 @@ export default {
     closeForm: '收起提交表單',
     formTitle: '提交新項目',
     categoryLabel: '分類',
-    typeLabel: '類型',
+    typeLabel: '類型（多選）',
     originalNameLabel: '原名',
     originalNamePlaceholder: '例如：Create: Above and Beyond',
     sourceUrlLabel: '來源連結',
