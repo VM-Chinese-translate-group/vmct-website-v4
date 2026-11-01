@@ -1,6 +1,7 @@
 <template>
   <main
     class="box-border min-h-screen w-full bg-[var(--bg-off-white)] text-[var(--text-1)] [color-scheme:light] dark:[color-scheme:dark]"
+    :inert="showForm"
   >
     <div class="mx-auto max-w-[1212px] px-4 pb-20 pt-10 lt-sm:px-3 lt-sm:pt-6">
       <section
@@ -15,265 +16,271 @@
           </p>
         </div>
         <button
+          ref="formTriggerRef"
           class="feedback-flat-control inline-flex min-h-12 cursor-pointer items-center justify-center gap-2 whitespace-nowrap rounded-lg border-0 bg-[var(--btn-primary-bg)] px-5 py-3 font-inherit font-700 text-white transition-colors hover:bg-[var(--btn-primary-hover)] focus-visible:outline-2 focus-visible:outline-[var(--info-1)] focus-visible:outline-offset-2 lt-sm:w-full disabled:cursor-wait disabled:opacity-60"
           type="button"
           :aria-expanded="showForm"
           aria-controls="translation-feedback-form"
-          @click="showForm = !showForm"
+          aria-haspopup="dialog"
+          @click="showForm = true"
         >
-          <Icon
-            class="transition-transform duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none"
-            :class="showForm ? 'rotate-180' : 'rotate-0'"
-            icon="lucide:chevron-down"
-            aria-hidden="true"
-          />
-          {{
-            showForm ? $t('translationFeedback.closeForm') : $t('translationFeedback.submitButton')
-          }}
+          <Icon class="size-6 shrink-0" icon="lucide:plus" aria-hidden="true" />
+          {{ $t('translationFeedback.submitButton') }}
         </button>
       </section>
 
-      <Transition name="feedback-form">
-        <section
-          v-if="showForm"
-          id="translation-feedback-form"
-          class="feedback-form-panel mb-6 grid scroll-mt-20 rounded-lg border border-[var(--switcher-border)] bg-[var(--bg-white)] p-6 lt-sm:p-4"
-          aria-labelledby="feedback-form-title"
-        >
-          <div class="feedback-form-content min-h-0">
-            <div class="flex items-center justify-between gap-4 lt-sm:flex-col lt-sm:items-stretch">
-              <div>
-                <h2 id="feedback-form-title" class="m-0 text-[1.35rem] text-[var(--text-dark)]">
+      <Teleport to="#vmct-overlays">
+        <Transition name="feedback-project-modal">
+          <div
+            v-if="showForm"
+            class="feedback-project-backdrop"
+            role="presentation"
+            @click.self="closeSubmissionModal"
+          >
+            <section
+              id="translation-feedback-form"
+              ref="formDialogRef"
+              class="feedback-project-dialog [color-scheme:light] dark:[color-scheme:dark]"
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="feedback-form-title"
+              tabindex="-1"
+            >
+              <header class="feedback-project-header">
+                <h2
+                  id="feedback-form-title"
+                  class="m-0 text-[1.35rem] font-700 text-[var(--text-dark)]"
+                >
                   {{ $t('translationFeedback.formTitle') }}
                 </h2>
-              </div>
-            </div>
-
-            <form class="mt-6 grid gap-6" @submit.prevent="submitForm">
-              <div
-                class="grid grid-cols-[minmax(13rem,0.7fr)_minmax(0,1.3fr)] items-start gap-5 lt-sm:grid-cols-1"
-              >
-                <label class="grid gap-1.5 text-sm font-500 text-[var(--text-dark)]">
-                  <span class="text-sm font-600 text-[var(--text-dark)]">
-                    {{ $t('translationFeedback.categoryLabel') }}
-                  </span>
-                  <SelectMenu
-                    :model-value="form.category"
-                    :options="categoryOptions"
-                    :ariaLabel="$t('translationFeedback.categoryLabel')"
-                    variant="flat"
-                    style="--select-width: 100%; --select-menu-min-width: 100%"
-                    @update:model-value="selectFormCategory"
-                  />
-                </label>
-
-                <label class="grid gap-1.5 text-sm font-500 text-[var(--text-dark)]">
-                  <span class="text-sm font-600 text-[var(--text-dark)]">
-                    {{ $t('translationFeedback.originalNameLabel') }}
-                  </span>
-                  <input
-                    v-model.trim="form.originalName"
-                    class="feedback-field"
-                    maxlength="120"
-                    required
-                    :placeholder="$t('translationFeedback.originalNamePlaceholder')"
-                    @blur="scheduleSuggestions"
-                  />
-                </label>
-
-                <fieldset class="m-0 min-w-0 border-0 p-0 sm:col-span-2">
-                  <legend class="m-0 mb-2 text-sm font-600 text-[var(--text-dark)]">
-                    {{ $t('translationFeedback.typeLabel') }}
-                  </legend>
-                  <div class="flex flex-wrap gap-2 lt-sm:grid lt-sm:grid-cols-2">
-                    <label
-                      v-for="subtype in subtypeOptions"
-                      :key="subtype"
-                      class="feedback-flat-control feedback-type-option relative box-border inline-flex min-h-11 min-w-28 cursor-pointer items-center justify-center gap-2 rounded-[10px] border border-solid border-[var(--switcher-border)] bg-[var(--bg-white)] px-3.5 py-2 text-center text-sm font-600 leading-snug text-[var(--text-2)] lt-sm:min-w-0"
-                      :data-selected="form.subtypes.includes(subtype)"
-                    >
-                      <input
-                        v-model="form.subtypes"
-                        class="absolute inset-0 z-1 m-0 size-full cursor-pointer opacity-0"
-                        type="checkbox"
-                        :value="subtype"
-                      />
-                      <span
-                        class="feedback-type-check pointer-events-none grid size-[18px] shrink-0 place-items-center rounded-[5px] border border-solid border-[var(--text-2)]"
-                        aria-hidden="true"
-                      >
-                        <Icon
-                          v-if="form.subtypes.includes(subtype)"
-                          class="size-3.5 text-white"
-                          icon="lucide:check"
-                          aria-hidden="true"
-                        />
-                      </span>
-                      <span>{{ $t(`translationFeedback.types.${form.category}.${subtype}`) }}</span>
-                    </label>
-                  </div>
-                </fieldset>
-              </div>
-
-              <div
-                v-if="suggestions.length"
-                class="grid gap-2 rounded-lg bg-[var(--info-soft)] p-3"
-                role="status"
-              >
-                <p class="m-0 mb-[0.15rem] font-700 text-[var(--info-1)]">
-                  {{ $t('translationFeedback.suggestionsTitle') }}
-                </p>
                 <button
-                  v-for="candidate in suggestions"
-                  :key="candidate.id"
-                  class="feedback-flat-control flex cursor-pointer items-center justify-between gap-4 rounded-lg border border-[var(--switcher-border)] bg-[var(--bg-alt)] px-3 py-3 text-left font-inherit text-[var(--text-dark)] transition-colors hover:border-[var(--info-1)]"
-                  :class="{
-                    'border-[var(--info-1)] bg-[var(--info-soft)]':
-                      form.selectedExistingItemId === candidate.id,
-                  }"
+                  ref="formCloseButtonRef"
+                  class="feedback-flat-control grid size-11 shrink-0 cursor-pointer place-items-center rounded-[10px] border-0 bg-transparent p-0 text-[var(--text-2)] transition-colors hover:bg-[var(--bg-soft)] hover:text-[var(--text-dark)] focus-visible:outline-2 focus-visible:outline-[var(--info-1)] focus-visible:outline-offset-2 motion-reduce:transition-none"
                   type="button"
-                  @click="selectSuggestion(candidate.id)"
+                  :aria-label="$t('translationFeedback.closeForm')"
+                  @click="closeSubmissionModal"
                 >
-                  <span class="grid gap-[0.2rem]">
-                    <strong>{{ candidate.displayName }}</strong>
-                    <small class="font-normal text-[var(--text-muted)]">
-                      {{ suggestionReason(candidate.reason) }}
-                    </small>
-                  </span>
-                  <Icon
-                    :icon="
-                      form.selectedExistingItemId === candidate.id
-                        ? 'lucide:check-circle-2'
-                        : 'lucide:circle'
-                    "
-                    aria-hidden="true"
-                  />
+                  <Icon class="size-5" icon="lucide:x" aria-hidden="true" />
                 </button>
-                <button
-                  v-if="form.selectedExistingItemId"
-                  class="feedback-flat-control inline-flex min-h-9 w-fit cursor-pointer items-center justify-center gap-2 rounded-lg border border-dashed border-[var(--switcher-border)] bg-transparent px-3 py-2 font-inherit text-sm font-600 text-[var(--info-1)] hover:border-[var(--info-1)]"
-                  type="button"
-                  @click="form.selectedExistingItemId = undefined"
-                >
-                  {{ $t('translationFeedback.createNewInstead') }}
-                </button>
-              </div>
+              </header>
 
-              <div
-                class="grid items-start gap-5 lg:grid-cols-[minmax(0,1.35fr)_minmax(18rem,0.65fr)]"
+              <form
+                class="feedback-project-form"
+                :aria-busy="submitting"
+                @submit.prevent="submitForm"
               >
-                <div class="grid gap-2 text-sm font-500 text-[var(--text-dark)]">
-                  <div
-                    class="flex items-center justify-between gap-4 lt-sm:flex-col lt-sm:items-start lt-sm:gap-1"
-                  >
+                <div class="feedback-project-fields">
+                  <label class="grid gap-1.5 text-sm font-500 text-[var(--text-dark)]">
                     <span class="text-sm font-600 text-[var(--text-dark)]">
-                      {{ $t('translationFeedback.sourceUrlLabel') }}
+                      {{ $t('translationFeedback.categoryLabel') }}
                     </span>
-                  </div>
-                  <div
-                    class="feedback-source-note flex items-start gap-2 rounded-lg px-3 py-2.5 text-sm leading-relaxed text-[var(--text-dark)]"
-                    role="note"
-                  >
-                    <Icon
-                      class="mt-[0.08rem] shrink-0 text-[1.05rem] text-[var(--info-1)]"
-                      icon="lucide:info"
-                      aria-hidden="true"
+                    <SelectMenu
+                      :model-value="form.category"
+                      :options="categoryOptions"
+                      :ariaLabel="$t('translationFeedback.categoryLabel')"
+                      variant="flat"
+                      style="--select-width: 100%; --select-menu-min-width: 100%"
+                      @update:model-value="selectFormCategory"
                     />
-                    <div class="grid gap-1">
-                      <strong>{{ $t('translationFeedback.sourceUrlHint') }}</strong>
-                      <span class="text-sm leading-relaxed text-[var(--text-dark)]">
-                        {{ $t('translationFeedback.sourceUrlContact') }}
-                      </span>
-                    </div>
+                  </label>
+
+                  <div class="grid gap-1.5">
+                    <span class="text-sm font-600 text-[var(--text-dark)]">
+                      {{ $t('translationFeedback.typeLabel') }}
+                    </span>
+                    <MultiSelectMenu
+                      v-model="form.subtypes"
+                      :options="formSubtypeOptions"
+                      :aria-label="$t('translationFeedback.typeLabel')"
+                      :placeholder="$t('translationFeedback.typePlaceholder')"
+                    />
                   </div>
-                  <div class="grid gap-2">
-                    <div v-for="(_, index) in form.urls" :key="index" class="relative min-w-0">
-                      <span
-                        class="pointer-events-none absolute inset-y-px left-px z-1 inline-flex w-11 items-center justify-center rounded-l-[9px] border-0 border-r border-solid border-[var(--switcher-border)] bg-[var(--info-soft)] text-sm font-700 text-[var(--info-1)]"
-                        aria-hidden="true"
-                      >
-                        {{ index + 1 }}
-                      </span>
-                      <input
-                        v-model.trim="form.urls[index]"
-                        class="feedback-field feedback-source-input"
-                        :class="{ 'pr-12': index > 0 }"
-                        type="url"
-                        :required="index === 0 && !form.selectedExistingItemId"
-                        :placeholder="$t('translationFeedback.sourceUrlPlaceholder')"
-                        @blur="scheduleSuggestions"
-                      />
-                      <button
-                        v-if="index > 0"
-                        class="feedback-flat-control absolute inset-y-px right-px inline-flex w-11 cursor-pointer items-center justify-center rounded-r-[9px] border-0 bg-transparent p-0 text-red-600 transition-colors hover:bg-red-50 focus-visible:outline-2 focus-visible:outline-red-500 focus-visible:outline-offset-[-2px] dark:text-red-400 dark:hover:bg-red-950/30"
-                        type="button"
-                        :aria-label="$t('translationFeedback.removeUrl')"
-                        @click="removeUrl(index)"
-                      >
-                        <Icon class="h-5 w-5" icon="lucide:trash-2" aria-hidden="true" />
-                      </button>
-                    </div>
-                  </div>
-                  <button
-                    v-if="form.urls.length < 3"
-                    class="feedback-flat-control inline-flex min-h-9 w-fit cursor-pointer items-center justify-center gap-2 rounded-md border border-dashed border-[var(--switcher-border)] bg-transparent px-3 py-2 font-inherit text-sm font-600 text-[var(--info-1)] hover:border-[var(--info-1)]"
-                    type="button"
-                    @click="form.urls.push('')"
+
+                  <label class="grid gap-1.5 text-sm font-500 text-[var(--text-dark)]">
+                    <span class="text-sm font-600 text-[var(--text-dark)]">
+                      {{ $t('translationFeedback.originalNameLabel') }}
+                    </span>
+                    <input
+                      v-model.trim="form.originalName"
+                      class="feedback-field"
+                      maxlength="120"
+                      required
+                      :placeholder="$t('translationFeedback.originalNamePlaceholder')"
+                      @blur="scheduleSuggestions"
+                    />
+                  </label>
+
+                  <div
+                    v-if="suggestions.length"
+                    class="grid gap-2 rounded-lg bg-[var(--info-soft)] p-3"
+                    role="status"
                   >
-                    <Icon icon="lucide:plus" aria-hidden="true" />
-                    {{ $t('translationFeedback.addUrl') }}
-                  </button>
+                    <p class="m-0 mb-[0.15rem] font-700 text-[var(--info-1)]">
+                      {{ $t('translationFeedback.suggestionsTitle') }}
+                    </p>
+                    <button
+                      v-for="candidate in suggestions"
+                      :key="candidate.id"
+                      class="feedback-flat-control flex cursor-pointer items-center justify-between gap-4 rounded-lg border border-[var(--switcher-border)] bg-[var(--bg-alt)] px-3 py-3 text-left font-inherit text-[var(--text-dark)] transition-colors hover:border-[var(--info-1)]"
+                      :class="{
+                        'border-[var(--info-1)] bg-[var(--info-soft)]':
+                          form.selectedExistingItemId === candidate.id,
+                      }"
+                      type="button"
+                      @click="selectSuggestion(candidate.id)"
+                    >
+                      <span class="grid gap-[0.2rem]">
+                        <strong>{{ candidate.displayName }}</strong>
+                        <small class="font-normal text-[var(--text-muted)]">
+                          {{ suggestionReason(candidate.reason) }}
+                        </small>
+                      </span>
+                      <Icon
+                        :icon="
+                          form.selectedExistingItemId === candidate.id
+                            ? 'lucide:check-circle-2'
+                            : 'lucide:circle'
+                        "
+                        aria-hidden="true"
+                      />
+                    </button>
+                    <button
+                      v-if="form.selectedExistingItemId"
+                      class="feedback-flat-control inline-flex min-h-9 w-fit cursor-pointer items-center justify-center gap-2 rounded-lg border border-dashed border-[var(--switcher-border)] bg-transparent px-3 py-2 font-inherit text-sm font-600 text-[var(--info-1)] hover:border-[var(--info-1)]"
+                      type="button"
+                      @click="form.selectedExistingItemId = undefined"
+                    >
+                      {{ $t('translationFeedback.createNewInstead') }}
+                    </button>
+                  </div>
+
+                  <div class="grid gap-2 text-sm font-500 text-[var(--text-dark)]">
+                    <div
+                      class="flex items-center justify-between gap-4 lt-sm:flex-col lt-sm:items-start lt-sm:gap-1"
+                    >
+                      <span class="text-sm font-600 text-[var(--text-dark)]">
+                        {{ $t('translationFeedback.sourceUrlLabel') }}
+                      </span>
+                    </div>
+                    <div
+                      class="feedback-source-note flex items-start gap-2 rounded-lg px-3 py-2.5 text-sm leading-relaxed text-[var(--text-dark)]"
+                      role="note"
+                    >
+                      <Icon
+                        class="mt-[0.08rem] shrink-0 text-[1.05rem] text-[var(--info-1)]"
+                        icon="lucide:info"
+                        aria-hidden="true"
+                      />
+                      <div class="grid gap-1">
+                        <span class="font-500">{{ $t('translationFeedback.sourceUrlHint') }}</span>
+                        <span class="text-sm leading-relaxed text-[var(--text-2)]">
+                          {{ $t('translationFeedback.sourceUrlContact') }}
+                        </span>
+                      </div>
+                    </div>
+                    <div class="grid gap-2">
+                      <div v-for="(_, index) in form.urls" :key="index" class="relative min-w-0">
+                        <span
+                          class="pointer-events-none absolute inset-y-px left-px z-1 inline-flex w-11 items-center justify-center rounded-l-[9px] border-0 border-r border-solid border-[var(--switcher-border)] bg-[var(--info-soft)] text-sm font-700 text-[var(--info-1)]"
+                          aria-hidden="true"
+                        >
+                          {{ index + 1 }}
+                        </span>
+                        <input
+                          v-model.trim="form.urls[index]"
+                          class="feedback-field feedback-source-input"
+                          :class="{ 'pr-12': index > 0 }"
+                          type="url"
+                          :required="index === 0 && !form.selectedExistingItemId"
+                          :placeholder="$t('translationFeedback.sourceUrlPlaceholder')"
+                          @blur="scheduleSuggestions"
+                        />
+                        <button
+                          v-if="index > 0"
+                          class="feedback-flat-control absolute inset-y-px right-px inline-flex w-11 cursor-pointer items-center justify-center rounded-r-[9px] border-0 bg-transparent p-0 text-red-600 transition-colors hover:bg-red-50 focus-visible:outline-2 focus-visible:outline-red-500 focus-visible:outline-offset-[-2px] dark:text-red-400 dark:hover:bg-red-950/30"
+                          type="button"
+                          :aria-label="$t('translationFeedback.removeUrl')"
+                          @click="removeUrl(index)"
+                        >
+                          <Icon class="h-5 w-5" icon="lucide:trash-2" aria-hidden="true" />
+                        </button>
+                      </div>
+                    </div>
+                    <button
+                      v-if="form.urls.length < 3"
+                      class="feedback-flat-control inline-flex min-h-9 w-fit cursor-pointer items-center justify-center gap-2 rounded-md border border-dashed border-[var(--switcher-border)] bg-transparent px-3 py-2 font-inherit text-sm font-600 text-[var(--info-1)] hover:border-[var(--info-1)]"
+                      type="button"
+                      @click="form.urls.push('')"
+                    >
+                      <Icon icon="lucide:plus" aria-hidden="true" />
+                      {{ $t('translationFeedback.addUrl') }}
+                    </button>
+                  </div>
+
+                  <label class="grid gap-2 text-sm font-500 text-[var(--text-dark)]">
+                    <span class="text-sm font-600 text-[var(--text-dark)]">
+                      {{ $t('translationFeedback.noteLabel') }}
+                    </span>
+                    <textarea
+                      v-model.trim="form.note"
+                      class="feedback-field feedback-note-field"
+                      maxlength="500"
+                      rows="4"
+                      :placeholder="$t('translationFeedback.notePlaceholder')"
+                    />
+                  </label>
                 </div>
+                <footer class="feedback-project-footer">
+                  <p
+                    v-if="formError"
+                    class="m-0 text-sm text-red-700 dark:text-red-400"
+                    role="alert"
+                  >
+                    {{ formError }}
+                  </p>
+                  <p v-if="formSuccess" class="m-0 text-sm text-[var(--tip-1)]" role="status">
+                    {{ formSuccess }}
+                  </p>
+                  <div class="feedback-project-actions">
+                    <button
+                      class="feedback-flat-control inline-flex min-h-11 cursor-pointer items-center justify-center rounded-[10px] border border-solid border-[var(--switcher-border)] bg-[var(--bg-white)] px-4 py-2 font-inherit text-sm font-600 text-[var(--text-2)] transition-colors hover:bg-[var(--switcher-item-hover)] hover:text-[var(--text-dark)] focus-visible:outline-2 focus-visible:outline-[var(--info-1)] focus-visible:outline-offset-2 motion-reduce:transition-none"
+                      type="button"
+                      @click="closeSubmissionModal"
+                    >
+                      {{ $t('translationFeedback.cancel') }}
+                    </button>
 
-                <label class="grid gap-2 text-sm font-500 text-[var(--text-dark)]">
-                  <span class="text-sm font-600 text-[var(--text-dark)]">
-                    {{ $t('translationFeedback.noteLabel') }}
-                  </span>
-                  <textarea
-                    v-model.trim="form.note"
-                    class="feedback-field feedback-note-field"
-                    maxlength="500"
-                    rows="4"
-                    :placeholder="$t('translationFeedback.notePlaceholder')"
-                  />
-                </label>
-              </div>
-
-              <p v-if="formError" class="m-0 text-red-700 dark:text-red-400" role="alert">
-                {{ formError }}
-              </p>
-              <p v-if="formSuccess" class="m-0 text-[var(--tip-1)]" role="status">
-                {{ formSuccess }}
-              </p>
-
-              <button
-                class="feedback-flat-control inline-flex min-h-11 w-fit min-w-40 cursor-pointer items-center justify-center gap-2 rounded-lg border-0 bg-[var(--btn-primary-bg)] px-4 py-3 font-inherit font-700 text-white transition-colors hover:bg-[var(--btn-primary-hover)] focus-visible:outline-2 focus-visible:outline-[var(--info-1)] focus-visible:outline-offset-2 lt-sm:w-full disabled:cursor-wait disabled:opacity-60"
-                type="submit"
-                :disabled="submitting"
-              >
-                <Icon
-                  :icon="
-                    submitting
-                      ? 'lucide:loader-circle'
-                      : form.selectedExistingItemId
-                        ? 'lucide:heart-plus'
-                        : 'lucide:send'
-                  "
-                  :class="{ 'animate-spin motion-reduce:animate-none': submitting }"
-                  aria-hidden="true"
-                />
-                {{
-                  submitting
-                    ? $t('translationFeedback.submitting')
-                    : form.selectedExistingItemId
-                      ? $t('translationFeedback.voteExisting')
-                      : $t('translationFeedback.submitAction')
-                }}
-              </button>
-            </form>
+                    <button
+                      class="feedback-flat-control inline-flex min-h-11 min-w-40 cursor-pointer items-center justify-center gap-2 rounded-[10px] border-0 bg-[var(--btn-primary-bg)] px-4 py-2 font-inherit text-sm font-700 text-white transition-colors hover:bg-[var(--btn-primary-hover)] focus-visible:outline-2 focus-visible:outline-[var(--info-1)] focus-visible:outline-offset-2 disabled:cursor-wait disabled:opacity-60 motion-reduce:transition-none"
+                      type="submit"
+                      :disabled="submitting"
+                    >
+                      <Icon
+                        :icon="
+                          submitting
+                            ? 'lucide:loader-circle'
+                            : form.selectedExistingItemId
+                              ? 'lucide:heart-plus'
+                              : 'lucide:send'
+                        "
+                        :class="{ 'animate-spin motion-reduce:animate-none': submitting }"
+                        aria-hidden="true"
+                      />
+                      {{
+                        submitting
+                          ? $t('translationFeedback.submitting')
+                          : form.selectedExistingItemId
+                            ? $t('translationFeedback.voteExisting')
+                            : $t('translationFeedback.submitAction')
+                      }}
+                    </button>
+                  </div>
+                </footer>
+              </form>
+            </section>
           </div>
-        </section>
-      </Transition>
+        </Transition>
+      </Teleport>
 
       <section
         class="mb-6 rounded-lg border border-[var(--switcher-border)] bg-[var(--bg-white)] p-6 lt-sm:p-4"
@@ -542,7 +549,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 
 import {
@@ -552,6 +559,8 @@ import {
   toggleFeedbackVote,
 } from '@/api/translationFeedback'
 import SelectMenu from '@/components/SelectMenu.vue'
+import MultiSelectMenu from '@/components/MultiSelectMenu.vue'
+import { usePageScrollLock } from '@/composables/usePageScrollLock'
 import type {
   FeedbackCandidate,
   FeedbackCategory,
@@ -560,6 +569,7 @@ import type {
 } from '@/types/translationFeedback'
 
 const { t } = useI18n()
+const { lock: lockFormScroll, unlock: unlockFormScroll } = usePageScrollLock()
 
 const PAGE_SIZE = 18
 const categories: FeedbackCategory[] = ['modpack', 'map', 'other']
@@ -603,6 +613,10 @@ const items = ref<FeedbackItem[]>([])
 const currentPage = ref(1)
 const suggestions = ref<FeedbackCandidate[]>([])
 const showForm = ref(false)
+const formTriggerRef = ref<HTMLButtonElement | null>(null)
+const formDialogRef = ref<HTMLElement | null>(null)
+const formCloseButtonRef = ref<HTMLButtonElement | null>(null)
+let previouslyFocusedElement: HTMLElement | null = null
 const loading = ref(false)
 const submitting = ref(false)
 const error = ref('')
@@ -632,10 +646,74 @@ const categoryOptions = computed(() =>
     value: category,
   })),
 )
+const formSubtypeOptions = computed(() =>
+  subtypeOptions.value.map((value) => ({
+    value,
+    label: t(`translationFeedback.types.${form.category}.${value}`),
+  })),
+)
 const pageCount = computed(() => Math.max(1, Math.ceil(items.value.length / PAGE_SIZE)))
 const paginatedItems = computed(() => {
   const start = (currentPage.value - 1) * PAGE_SIZE
   return items.value.slice(start, start + PAGE_SIZE)
+})
+
+function closeSubmissionModal() {
+  showForm.value = false
+}
+
+function restoreFormFocus() {
+  const element = previouslyFocusedElement
+  previouslyFocusedElement = null
+  void nextTick(() => {
+    if (!showForm.value && element?.isConnected) element.focus({ preventScroll: true })
+  })
+}
+
+function onFormDialogKeydown(event: KeyboardEvent) {
+  if (!showForm.value || event.defaultPrevented) return
+
+  if (event.key === 'Escape') {
+    event.preventDefault()
+    closeSubmissionModal()
+    return
+  }
+  if (event.key !== 'Tab') return
+
+  const elements = Array.from(
+    formDialogRef.value?.querySelectorAll<HTMLElement>(
+      'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
+    ) ?? [],
+  ).filter((element) => !element.hasAttribute('hidden') && element.getClientRects().length > 0)
+  const first = elements[0]
+  const last = elements.at(-1)
+  if (!first || !last) return
+
+  const activeElement = document.activeElement
+  const outside = !formDialogRef.value?.contains(activeElement)
+  if (event.shiftKey && (activeElement === first || outside)) {
+    event.preventDefault()
+    last.focus()
+  } else if (!event.shiftKey && (activeElement === last || outside)) {
+    event.preventDefault()
+    first.focus()
+  }
+}
+
+watch(showForm, (visible) => {
+  if (visible) {
+    previouslyFocusedElement =
+      document.activeElement instanceof HTMLElement && document.activeElement !== document.body
+        ? document.activeElement
+        : formTriggerRef.value
+    lockFormScroll()
+    void nextTick(() => {
+      if (showForm.value) formCloseButtonRef.value?.focus({ preventScroll: true })
+    })
+  } else {
+    unlockFormScroll()
+    restoreFormFocus()
+  }
 })
 
 watch([selectedCategory, selectedSubtype], () => {
@@ -655,11 +733,17 @@ watch(
   },
 )
 
-onMounted(() => void loadItems())
+onMounted(() => {
+  void loadItems()
+  window.addEventListener('keydown', onFormDialogKeydown)
+})
 onBeforeUnmount(() => {
   window.clearTimeout(suggestionTimer)
   itemsController?.abort()
   suggestionController?.abort()
+  unlockFormScroll()
+  restoreFormFocus()
+  window.removeEventListener('keydown', onFormDialogKeydown)
 })
 
 async function loadItems() {
@@ -851,28 +935,6 @@ function onCoverError(event: Event) {
 </script>
 
 <style scoped>
-.feedback-type-option:hover:not([data-selected='true']) {
-  border-color: var(--info-1);
-  background: var(--bg-soft);
-  color: var(--text-dark);
-}
-
-.feedback-type-option[data-selected='true'] {
-  border-color: var(--info-1);
-  background: var(--info-soft);
-  color: var(--info-1);
-}
-
-.feedback-type-option[data-selected='true'] .feedback-type-check {
-  border-color: var(--btn-primary-bg);
-  background: var(--btn-primary-bg);
-}
-
-.feedback-type-option:has(input:focus-visible) {
-  outline: 2px solid var(--info-1);
-  outline-offset: 2px;
-}
-
 .feedback-source-input {
   padding-inline-start: 3.5rem;
 }
@@ -996,33 +1058,114 @@ function onCoverError(event: Event) {
   }
 }
 
-.feedback-form-enter-active,
-.feedback-form-leave-active {
-  grid-template-rows: 1fr;
-  overflow: hidden;
-  opacity: 1;
-  transition:
-    grid-template-rows 280ms ease,
-    opacity 220ms ease,
-    margin-bottom 280ms ease,
-    padding 280ms ease,
-    border-width 280ms ease;
+.feedback-project-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 2100;
+  display: grid;
+  box-sizing: border-box;
+  place-items: center;
+  grid-template-columns: minmax(0, 1fr);
+  padding: 20px;
+  background: rgb(0 0 0 / 58%);
+  backdrop-filter: blur(4px);
 }
 
-.feedback-form-enter-from,
-.feedback-form-leave-to {
-  grid-template-rows: 0fr;
-  margin-bottom: 0;
-  border-width: 0;
-  padding-block: 0;
+.feedback-project-dialog {
+  display: grid;
+  box-sizing: border-box;
+  grid-template-rows: auto minmax(0, 1fr);
+  width: min(550px, 100%);
+  min-width: 0;
+  max-height: calc(100dvh - 40px);
+  overflow: hidden;
+  border: 1px solid var(--switcher-border);
+  border-radius: 16px;
+  background: var(--bg-white);
+  color: var(--text-1);
+  box-shadow: var(--card-shadow);
+}
+
+.feedback-project-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 20px 24px 16px;
+}
+
+.feedback-project-form {
+  display: grid;
+  grid-template-rows: minmax(0, 1fr) auto;
+  min-height: 0;
+  margin: 0;
+}
+
+.feedback-project-fields {
+  display: grid;
+  gap: 24px;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 0 24px 24px;
+  scroll-padding-block: 12px;
+}
+
+.feedback-project-footer {
+  display: grid;
+  gap: 12px;
+  padding: 16px 24px;
+  background: var(--bg-soft);
+}
+
+.feedback-project-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.feedback-project-modal-enter-active,
+.feedback-project-modal-leave-active {
+  transition: opacity 160ms ease;
+}
+
+.feedback-project-modal-enter-from,
+.feedback-project-modal-leave-to {
   opacity: 0;
+}
+
+@media (max-width: 600px) {
+  .feedback-project-backdrop {
+    padding: 12px;
+  }
+
+  .feedback-project-dialog {
+    max-height: calc(100dvh - 24px);
+  }
+
+  .feedback-project-header {
+    padding: 16px 20px;
+  }
+
+  .feedback-project-fields {
+    padding: 0 20px 20px;
+  }
+
+  .feedback-project-footer {
+    padding: 16px 20px;
+  }
+
+  .feedback-project-actions > button {
+    flex: 1;
+    min-width: 0;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
   .feedback-card,
   .feedback-page-button,
-  .feedback-form-enter-active,
-  .feedback-form-leave-active {
+  .feedback-project-modal-enter-active,
+  .feedback-project-modal-leave-active {
     transition: none;
   }
 

@@ -41,8 +41,6 @@ export default defineConfig({
     'feedback-note-field': 'min-h-32 resize-none leading-[1.55]',
     'feedback-source-note':
       'border border-[color-mix(in_srgb,var(--info-1)_26%,var(--switcher-border))] bg-[color-mix(in_srgb,var(--info-soft)_72%,var(--bg-white))]',
-    'feedback-type-option':
-      'transition-[color,border-color,background-color] duration-[160ms] ease-out motion-reduce:transition-none',
     'feedback-tab-group': 'box-border min-w-0 gap-2',
     'feedback-tab':
       'feedback-flat-control inline-flex min-h-11 cursor-pointer items-center justify-center rounded-lg border border-solid border-transparent bg-transparent px-3.5 py-2 text-sm font-inherit font-600 leading-snug text-[var(--text-2)] transition-colors focus-visible:outline-2 focus-visible:outline-[var(--info-1)] focus-visible:outline-offset-2 motion-reduce:transition-none',

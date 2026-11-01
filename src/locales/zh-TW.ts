@@ -204,10 +204,12 @@ export default {
     intro:
       '看看大家正在期待的項目，也可以提交你希望 VM 漢化組關注的模組包、地圖或其他 Minecraft 內容。',
     submitButton: '提交漢化建議',
-    closeForm: '收起提交表單',
+    closeForm: '關閉提交彈窗',
+    cancel: '取消',
     formTitle: '提交新項目',
     categoryLabel: '分類',
     typeLabel: '類型（多選）',
+    typePlaceholder: '選擇項目類型',
     originalNameLabel: '原名',
     originalNamePlaceholder: '例如：Create: Above and Beyond',
     sourceUrlLabel: '來源連結',
@@ -226,7 +228,7 @@ export default {
       'same-name': '同分類同類型同名',
       'similar-name': '名稱相似',
     },
-    formRequired: '請填寫原名，並至少提供一個來源連結。',
+    formRequired: '請填寫原名、選擇至少一種類型，並至少提供一個來源連結。',
     sourceUrlError:
       '來源連結必須來自 CurseForge、Modrinth、Planet Minecraft、Minecraft Maps 或 MapVerse。',
     submitting: '提交中...',

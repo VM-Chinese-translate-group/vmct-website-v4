@@ -210,10 +210,12 @@ export default {
     intro:
       'See what the community is waiting for, or submit a modpack, map, or other Minecraft project for us to consider.',
     submitButton: 'Submit a suggestion',
-    closeForm: 'Hide submission form',
+    closeForm: 'Close submission dialog',
+    cancel: 'Cancel',
     formTitle: 'Submit a new project',
     categoryLabel: 'Category',
     typeLabel: 'Types',
+    typePlaceholder: 'Select project types',
     originalNameLabel: 'Original name',
     originalNamePlaceholder: 'For example: Create: Above and Beyond',
     sourceUrlLabel: 'Source links',
@@ -233,7 +235,7 @@ export default {
       'same-name': 'Same category, type, and name',
       'similar-name': 'Similar name',
     },
-    formRequired: 'Enter an original name and at least one source link.',
+    formRequired: 'Enter an original name, select at least one type, and provide a source link.',
     sourceUrlError:
       'Source links must come from CurseForge, Modrinth, Planet Minecraft, Minecraft Maps, or MapVerse.',
     submitting: 'Submitting...',
