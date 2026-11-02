@@ -41,12 +41,9 @@ export default defineConfig({
     'feedback-note-field': 'min-h-32 resize-none leading-[1.55]',
     'feedback-source-note':
       'border border-[color-mix(in_srgb,var(--info-1)_26%,var(--switcher-border))] bg-[color-mix(in_srgb,var(--info-soft)_72%,var(--bg-white))]',
-    'feedback-type-option':
-      'transition-[color,border-color,background-color] duration-[160ms] ease-out',
-    'feedback-tab-group':
-      'inline-flex max-w-full flex-wrap gap-1 rounded-md bg-transparent p-0.5 [box-shadow:none!important] [background-image:none!important] border border-[color-mix(in_srgb,var(--switcher-border)_72%,transparent)]',
+    'feedback-tab-group': 'box-border min-w-0 gap-2',
     'feedback-tab':
-      'feedback-flat-control inline-flex min-h-9 cursor-pointer items-center justify-center rounded-md border-0 px-3 py-2 font-inherit transition-colors lt-sm:w-full lt-sm:px-2',
+      'feedback-flat-control inline-flex min-h-11 cursor-pointer items-center justify-center rounded-lg border border-solid border-transparent bg-transparent px-3.5 py-2 text-sm font-inherit font-600 leading-snug text-[var(--text-2)] transition-colors focus-visible:outline-2 focus-visible:outline-[var(--info-1)] focus-visible:outline-offset-2 motion-reduce:transition-none',
     'feedback-widget-bubble':
       'absolute right-[0.35rem] bottom-[calc(100%_+_1.2rem)] z-4 block min-h-[3.2rem] w-[min(13.5rem,calc(100vw_-_1rem))] max-w-[calc(100vw_-_1rem)] whitespace-normal break-words px-[0.6rem] pb-[0.82rem] pt-[0.48rem] text-[var(--text-dark)] text-[0.78rem] font-600 leading-[1.4] text-left pointer-events-none overflow-visible origin-bottom-right transition-[opacity,transform,visibility] duration-[180ms] ease-out motion-reduce:transition-none',
     'feedback-widget-bubble-shape':

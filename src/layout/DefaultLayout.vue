@@ -19,5 +19,4 @@ import { useSiteContent } from '@/content/store'
 
 const route = useRoute()
 const { embedded } = useSiteContent()
-
 </script>

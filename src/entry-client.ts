@@ -26,7 +26,9 @@ void syncImageLoadingLabel(clientLocale)
 startImageLoadingFrames()
 
 const contentElement = document.getElementById('vmct-content')
-const initialContent = contentElement?.textContent ? JSON.parse(contentElement.textContent) as SiteContent : undefined
+const initialContent = contentElement?.textContent
+  ? (JSON.parse(contentElement.textContent) as SiteContent)
+  : undefined
 const { app, i18n, router } = createApp({
   locale: initialContent ? 'zh-CN' : clientLocale,
   hydrate: Boolean(initialContent),

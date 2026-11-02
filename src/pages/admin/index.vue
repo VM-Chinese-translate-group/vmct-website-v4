@@ -13,7 +13,15 @@
     </Transition>
 
     <p v-if="!authChecked" role="status">正在连接内容管理…</p>
-    <AdminLogin v-else-if="!loggedIn" :needs-setup="needsSetup" :busy="busy" :sso-origin="ssoOrigin" :embedded="embedded" @submit="authenticate" @sso="requestSso" />
+    <AdminLogin
+      v-else-if="!loggedIn"
+      :needs-setup="needsSetup"
+      :busy="busy"
+      :sso-origin="ssoOrigin"
+      :embedded="embedded"
+      @submit="authenticate"
+      @sso="requestSso"
+    />
 
     <template v-else>
       <header
@@ -562,13 +570,17 @@ async function restoreRevision(revision: number) {
 }
 async function openSection() {
   if (!isSettingsPage.value && !(await editor.leaveCurrent())) return
-  await router.push({ path: isSettingsPage.value ? '/admin' : '/admin/settings', query: embedded ? { embedded: '1' } : {} })
+  await router.push({
+    path: isSettingsPage.value ? '/admin' : '/admin/settings',
+    query: embedded ? { embedded: '1' } : {},
+  })
 }
 async function logout() {
   if (!(await editor.leaveCurrent())) return
   await logoutContentAdmin().catch(() => {})
   loggedIn.value = false
-  if (ssoOrigin.value && embedded) window.parent.postMessage({ type: 'vmct-content:logout' }, ssoOrigin.value)
+  if (ssoOrigin.value && embedded)
+    window.parent.postMessage({ type: 'vmct-content:logout' }, ssoOrigin.value)
   await router.push({ path: '/admin', query: embedded ? { embedded: '1' } : {} })
 }
 const keydown = (event: KeyboardEvent) => {
@@ -583,11 +595,21 @@ function requestSso() {
   window.parent.postMessage({ type: 'vmct-content:ready', nonce: ssoNonce }, ssoOrigin.value)
 }
 function authenticated() {
-  if (ssoOrigin.value && embedded) window.parent.postMessage({ type: 'vmct-content:authenticated' }, ssoOrigin.value)
+  if (ssoOrigin.value && embedded)
+    window.parent.postMessage({ type: 'vmct-content:authenticated' }, ssoOrigin.value)
 }
 async function ssoMessage(event: MessageEvent) {
-  if (!embedded || !ssoOrigin.value || event.origin !== ssoOrigin.value || event.source !== window.parent
-    || event.data?.type !== 'vmpm-content:ticket' || !ssoNonce || event.data.nonce !== ssoNonce || typeof event.data.ticket !== 'string') return
+  if (
+    !embedded ||
+    !ssoOrigin.value ||
+    event.origin !== ssoOrigin.value ||
+    event.source !== window.parent ||
+    event.data?.type !== 'vmpm-content:ticket' ||
+    !ssoNonce ||
+    event.data.nonce !== ssoNonce ||
+    typeof event.data.ticket !== 'string'
+  )
+    return
   ssoNonce = ''
   busy.value = true
   try {
@@ -595,11 +617,17 @@ async function ssoMessage(event: MessageEvent) {
     await loadAdmin()
     loggedIn.value = true
     authenticated()
-  } catch (error) { show(error instanceof Error ? error.message : 'VMPM 登录失败', 'error') }
-  finally { busy.value = false }
+  } catch (error) {
+    show(error instanceof Error ? error.message : 'VMPM 登录失败', 'error')
+  } finally {
+    busy.value = false
+  }
 }
 function sessionExpired() {
-  if (ssoOrigin.value && loggedIn.value) { loggedIn.value = false; requestSso() }
+  if (ssoOrigin.value && loggedIn.value) {
+    loggedIn.value = false
+    requestSso()
+  }
 }
 onMounted(async () => {
   document.addEventListener('keydown', keydown)

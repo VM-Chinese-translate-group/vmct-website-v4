@@ -15,7 +15,11 @@
         修改密码后所有设备会退出。原始密码只在浏览器中派生。
       </p>
       <p v-if="managedByEnvironment" class="text-sm text-[var(--text-muted)]">
-        {{ unifiedLogin ? '登录身份与管理权限由 VMPM 统一管理。' : '当前密码由 ECS 环境变量管理，请在服务器配置中更新。' }}
+        {{
+          unifiedLogin
+            ? '登录身份与管理权限由 VMPM 统一管理。'
+            : '当前密码由 ECS 环境变量管理，请在服务器配置中更新。'
+        }}
       </p>
       <form v-else class="grid max-w-lg gap-2" @submit.prevent="submitPassword">
         <input

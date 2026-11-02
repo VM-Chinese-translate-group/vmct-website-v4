@@ -27,6 +27,24 @@ export default defineConfig(({ isSsrBuild }) => ({
       algorithms: ['gzip', ['brotliCompress', { params: { [constants.BROTLI_PARAM_QUALITY]: 6 } }]],
     }),
   ],
+
+  // Keep development requests same-origin while proxying to the public ECS API.
+  // Set FEEDBACK_API_ORIGIN to a local API when testing feedback mutations.
+  server: {
+    proxy: {
+      '/api/content': {
+        target: process.env.CONTENT_API_ORIGIN || 'https://www.vmct.top',
+        changeOrigin: true,
+        headers: { Origin: process.env.CONTENT_API_ORIGIN || 'https://www.vmct.top' },
+      },
+      '/api/translation-feedback': {
+        target: process.env.FEEDBACK_API_ORIGIN || 'https://www.vmct.top',
+        changeOrigin: true,
+        headers: { Origin: process.env.FEEDBACK_API_ORIGIN || 'https://www.vmct.top' },
+      },
+    },
+  },
+
   build: {
     outDir: path.resolve(import.meta.dirname, process.env.SITE_BUILD_DIR || 'dist', isSsrBuild ? 'server' : ''),
     ssrManifest: !isSsrBuild,

@@ -67,7 +67,11 @@ async function request<T>(path: string, init: RequestInit = {}) {
     page?: ContentPage
   } | null
   if (!response.ok) {
-    if ([401, 403].includes(response.status) && !path.startsWith('/auth/') && typeof window !== 'undefined')
+    if (
+      [401, 403].includes(response.status) &&
+      !path.startsWith('/auth/') &&
+      typeof window !== 'undefined'
+    )
       window.dispatchEvent(new Event('content-session-expired'))
     throw new ContentApiError(
       body?.error || 'HTTP ' + response.status,
@@ -80,7 +84,12 @@ async function request<T>(path: string, init: RequestInit = {}) {
 }
 
 export function getContentAuthStatus() {
-  return request<{ needsSetup: boolean; managedByEnvironment: boolean; authMode?: 'vmpm'; ssoOrigin?: string }>('/auth/status')
+  return request<{
+    needsSetup: boolean
+    managedByEnvironment: boolean
+    authMode?: 'vmpm'
+    ssoOrigin?: string
+  }>('/auth/status')
 }
 
 export function loginContentWithVmpm(ticket: string) {
@@ -286,6 +295,13 @@ export function retryContentDeployment() {
   return request<{ deployment: DeploymentResult }>('/deploy', { method: 'POST', body: '{}' })
 }
 
-export interface DownloadConfiguration { methods: import('@/components/DownloadPage/downloadMethods').DownloadMethodSource[]; version: number }
+export interface DownloadConfiguration {
+  methods: import('@/components/DownloadPage/downloadMethods').DownloadMethodSource[]
+  version: number
+}
 export const getDownloads = (id: string) => request<DownloadConfiguration>(`/pages/${id}/downloads`)
-export const saveDownloads = (id: string, data: DownloadConfiguration) => request<DownloadConfiguration>(`/pages/${id}/downloads`, { method: 'PUT', body: JSON.stringify(data) })
+export const saveDownloads = (id: string, data: DownloadConfiguration) =>
+  request<DownloadConfiguration>(`/pages/${id}/downloads`, {
+    method: 'PUT',
+    body: JSON.stringify(data),
+  })

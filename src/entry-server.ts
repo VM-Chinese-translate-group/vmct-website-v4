@@ -5,7 +5,11 @@ import { renderSeoHead, resolvePageSeo } from './plugins/seo'
 import type { AvailableLocales } from './plugins/i18n'
 import type { SiteContent } from './content/store'
 
-export async function render(url: string, content: SiteContent, locale: AvailableLocales = 'zh-CN') {
+export async function render(
+  url: string,
+  content: SiteContent,
+  locale: AvailableLocales = 'zh-CN',
+) {
   const { app, i18n, router } = createApp({ locale, ssr: true, content })
 
   await router.push(url)

@@ -299,7 +299,9 @@ watch(
       try {
         await content.load(router.currentRoute.value.path, true)
         if (props.visible && keyword.value) await performSearch()
-      } catch { /* Keep the current page's index available during a network interruption. */ }
+      } catch {
+        /* Keep the current page's index available during a network interruption. */
+      }
     } else {
       searchRequestId += 1
       clearTimeout(timer)
