@@ -1,0 +1,136 @@
+.base-dialog-overlay {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  box-sizing: border-box;
+  place-items: center;
+  grid-template-columns: minmax(0, 1fr);
+  padding: 20px;
+  background: rgb(0 0 0 / 58%);
+  backdrop-filter: blur(4px);
+}
+
+.base-dialog-panel {
+  /* Do not transform this panel: fixed-position select menus use viewport coordinates. */
+  display: grid;
+  box-sizing: border-box;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  width: min(var(--base-dialog-width), 100%);
+  min-width: 0;
+  max-height: calc(100dvh - 40px);
+  margin: 0;
+  overflow: hidden;
+  border: 1px solid var(--switcher-border);
+  border-radius: 16px;
+  background: var(--bg-white);
+  color: var(--text-1);
+  color-scheme: light;
+  box-shadow: var(--card-shadow);
+}
+
+:global(.dark) .base-dialog-panel {
+  color-scheme: dark;
+}
+
+.base-dialog-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 20px 24px 16px;
+}
+
+.base-dialog-heading {
+  min-width: 0;
+}
+.base-dialog-title {
+  margin: 0;
+  color: var(--text-dark);
+  font-size: 1.35rem;
+  font-weight: 700;
+}
+.base-dialog-description {
+  margin: 8px 0 0;
+  color: var(--text-2);
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.base-dialog-close {
+  display: grid;
+  width: 44px;
+  height: 44px;
+  flex: 0 0 auto;
+  place-items: center;
+  appearance: none;
+  border: 0;
+  border-radius: 10px;
+  padding: 0;
+  background: transparent;
+  color: var(--text-2);
+  font: inherit;
+  box-shadow: none;
+  cursor: pointer;
+  transition:
+    background-color 160ms ease,
+    color 160ms ease;
+}
+.base-dialog-close svg {
+  width: 20px;
+  height: 20px;
+}
+.base-dialog-close:hover {
+  background: var(--bg-soft);
+  color: var(--text-dark);
+}
+.base-dialog-close:focus-visible {
+  outline: 2px solid var(--info-1);
+  outline-offset: 2px;
+}
+
+.base-dialog-body {
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 0 24px 24px;
+  scroll-padding-block: 12px;
+}
+.base-dialog-footer {
+  display: grid;
+  gap: 12px;
+  padding: 16px 24px;
+  background: var(--bg-soft);
+}
+.base-dialog-enter-active,
+.base-dialog-leave-active {
+  transition: opacity 160ms ease;
+}
+.base-dialog-enter-from,
+.base-dialog-leave-to {
+  opacity: 0;
+}
+
+@media (max-width: 600px) {
+  .base-dialog-overlay {
+    padding: 12px;
+  }
+  .base-dialog-panel {
+    max-height: calc(100dvh - 24px);
+  }
+  .base-dialog-header {
+    padding: 16px 20px;
+  }
+  .base-dialog-body {
+    padding: 0 20px 20px;
+  }
+  .base-dialog-footer {
+    padding: 16px 20px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .base-dialog-close,
+  .base-dialog-enter-active,
+  .base-dialog-leave-active {
+    transition: none;
+  }
+}

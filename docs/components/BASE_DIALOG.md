@@ -54,6 +54,8 @@ const open = ref(false)
 
 框架统一负责 Teleport 到 `#vmct-overlays`、遮罩、标题栏、固定操作区、正文按需滚动、视口高度限制、滚动锁、背景 `inert` 隔离、Tab 焦点循环及关闭后的焦点恢复。多层对话框仅最顶层响应键盘和焦点，关闭下层不会解除上层的滚动锁；组件卸载也会释放资源。
 
+样式统一维护在独立 CSS 文件中：框架样式见 [`BaseDialog.css`](../../src/styles/BaseDialog.css)，提交页面样式见 [`TranslationFeedbackLayout.css`](../../src/styles/TranslationFeedbackLayout.css)，多选菜单样式见 [`MultiSelectMenu.css`](../../src/styles/MultiSelectMenu.css)。Vue 文件的 `<style scoped>` 中只保留对应的 `@import`，不直接编写 CSS 规则；调整样式时仍保留组件作用域。
+
 ## 表单与成功结果切换
 
 同一个对话框可以通过业务状态在填写界面和成功结果之间切换，无需叠加第二个弹窗。实现示例见 [`TranslationFeedbackLayout.vue`](../../src/layout/TranslationFeedbackLayout.vue) 的“提交新项目”：
@@ -62,7 +64,7 @@ const open = ref(false)
 - 成功后切换为 `as="section"`，更新标题，正文显示成功图标、已提交的项目名称，以及新建、合并或点赞对应的结果说明，不再显示表单或提交按钮。
 - “继续提交”返回填写界面，保留分类和类型，原名、来源链接和补充说明已在成功时清空，并聚焦原名输入框。
 - “完成”通过插槽的 `close()` 关闭对话框，由框架恢复入口焦点。再次打开时清除旧的成功状态；未成功提交的草稿不会因关闭而清空。
-- 该示例的两个底栏按钮始终等宽、等高；桌面宽度为 `160px`，窄屏时等分可用空间，保留主次配色。
+- 该示例的两个底栏按钮始终等宽、等高；桌面宽度为 `160px`，窄屏时等分可用空间，保留主次配色。提交按钮仅显示文字，提交中通过文字和禁用状态反馈。
 
 这些结果状态、内容重置及切换后的焦点由调用方管理；`BaseDialog` 只负责通用的容器与交互。
 

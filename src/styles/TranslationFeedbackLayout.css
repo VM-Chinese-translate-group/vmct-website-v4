@@ -1,0 +1,181 @@
+.feedback-source-input {
+  padding-inline-start: 3.5rem;
+}
+
+.feedback-category-tabs .feedback-tab:hover:not([aria-selected='true']) {
+  background: var(--bg-white);
+  color: var(--text-dark);
+}
+
+.feedback-category-tabs .feedback-tab[aria-selected='true'] {
+  background: var(--btn-primary-bg);
+  color: white;
+  font-weight: 700;
+}
+
+.feedback-subtype-tabs .feedback-tab {
+  border-color: var(--switcher-border);
+  background: var(--bg-white);
+}
+
+.feedback-subtype-tabs .feedback-tab:hover {
+  border-color: var(--info-1);
+  color: var(--info-1);
+}
+
+.feedback-subtype-tabs .feedback-tab[aria-selected='true'] {
+  border-color: var(--info-1);
+  background: var(--info-soft);
+  color: var(--info-1);
+  font-weight: 700;
+}
+
+.feedback-card {
+  box-shadow: var(--vp-shadow-1);
+  transition:
+    border-color 180ms ease,
+    box-shadow 180ms ease,
+    transform 180ms ease;
+}
+
+.feedback-card:focus-within {
+  border-color: var(--info-1);
+}
+
+.feedback-card-status {
+  color: var(--text-2);
+  background: var(--bg-soft);
+}
+
+.feedback-card-status[data-status='planned'] {
+  color: var(--info-1);
+  background: var(--info-soft);
+}
+
+.feedback-card-status[data-status='translating'] {
+  color: var(--warning-1);
+  background: var(--warning-soft);
+}
+
+.feedback-card-status[data-status='completed'] {
+  color: var(--tip-1);
+  background: var(--tip-soft);
+}
+
+.feedback-card-vote[aria-pressed='true'] {
+  border-color: var(--info-1);
+  background: var(--info-soft);
+  color: var(--info-1);
+}
+
+.feedback-page-button {
+  display: inline-flex;
+  box-sizing: border-box;
+  align-items: center;
+  justify-content: center;
+  min-width: 44px;
+  height: 44px;
+  border: 1px solid var(--switcher-border);
+  border-radius: 10px;
+  padding: 0 10px;
+  background: var(--bg-white);
+  color: var(--text-2);
+  font: inherit;
+  font-size: 0.875rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+  transition:
+    background-color 160ms ease,
+    border-color 160ms ease,
+    color 160ms ease;
+}
+
+.feedback-page-button:hover:not(:disabled):not([aria-current='page']) {
+  border-color: var(--info-1);
+  background: var(--info-soft);
+  color: var(--info-1);
+}
+
+.feedback-page-button[aria-current='page'] {
+  border-color: var(--btn-primary-bg);
+  background: var(--btn-primary-bg);
+  color: white;
+}
+
+.feedback-page-button:focus-visible {
+  outline: 2px solid var(--info-1);
+  outline-offset: 3px;
+}
+
+.feedback-page-button:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .feedback-card:hover {
+    border-color: color-mix(in srgb, var(--info-1) 45%, var(--switcher-border));
+    box-shadow: var(--card-shadow);
+    transform: translateY(-3px);
+  }
+}
+
+.feedback-project-fields {
+  display: grid;
+  gap: 24px;
+}
+
+.feedback-submission-success {
+  display: grid;
+  min-width: 0;
+  justify-items: center;
+  gap: 16px;
+  padding: 12px 8px 20px;
+  text-align: center;
+  outline: none;
+}
+
+.feedback-submission-success-icon {
+  display: grid;
+  place-items: center;
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  background: var(--tip-soft);
+  color: var(--tip-1);
+}
+
+.feedback-submission-success-name {
+  min-width: 0;
+  max-width: 100%;
+  margin: 0;
+  overflow-wrap: anywhere;
+  color: var(--text-dark);
+  font-size: 20px;
+  line-height: 1.5;
+}
+
+.feedback-project-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  width: min(100%, 328px);
+  margin-inline-start: auto;
+  gap: 8px;
+}
+
+.feedback-project-actions > button {
+  box-sizing: border-box;
+  min-width: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .feedback-card,
+  .feedback-page-button {
+    transition: none;
+  }
+
+  .feedback-card:hover {
+    transform: none;
+  }
+}
