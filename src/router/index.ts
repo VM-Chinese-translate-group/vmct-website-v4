@@ -69,7 +69,8 @@ export function createAppRouter(content: ReturnType<typeof createContentStore>, 
     await content.load(to.path)
     if (to.name === 'content-page') {
       const page = content.state.value.page
-      to.meta = page ? { ...page.meta, noindex: page.meta.noindex === true || to.path.endsWith('/secret') }
+      to.meta = page
+        ? { ...page.meta, noindex: page.meta.noindex === true || to.path.endsWith('/secret') }
         : { noindex: true, contentMissing: true }
     }
   })

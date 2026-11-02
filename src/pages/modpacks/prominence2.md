@@ -28,7 +28,7 @@ links:
     project: 13782
   - id: wiki
     text: 官方Wiki
-    link: https://rpg.prominence.wiki/ 
+    link: https://rpg.prominence.wiki/
 ---
 
 <DownloadLayout :meta="frontmatter">

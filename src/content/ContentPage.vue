@@ -15,6 +15,12 @@ import { useSiteContent } from './store'
 
 const { state } = useSiteContent()
 const page = computed(() => state.value.page)
-const layout = computed(() => page.value && /^\/(?:modpacks|map|maps)\//.test(page.value.path)
-  && !page.value.path.startsWith('/modpacks/fc5-wiki') && !page.value.path.endsWith('/secret') ? DownloadLayout : DocLayout)
+const layout = computed(() =>
+  page.value &&
+  /^\/(?:modpacks|map|maps)\//.test(page.value.path) &&
+  !page.value.path.startsWith('/modpacks/fc5-wiki') &&
+  !page.value.path.endsWith('/secret')
+    ? DownloadLayout
+    : DocLayout,
+)
 </script>

@@ -3,7 +3,7 @@ title: 王牌空战汉化下载
 originalName: 'Winged'
 icon: /imgs/maps/winged.jpg
 description: |
-    驾驶战机翱翔于卡通风格的热带天空，在空战中一决高下，争夺最强飞行员的称号！
+  驾驶战机翱翔于卡通风格的热带天空，在空战中一决高下，争夺最强飞行员的称号！
 updateDate: 2026-8-19
 status:
   type: maintaining
