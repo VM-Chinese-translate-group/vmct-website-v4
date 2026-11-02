@@ -39,7 +39,7 @@ Nginx 的内容路由回退到 Node SSR。缺失或下线的页面由服务端�
 
 ## DNS 和 HTTPS
 
-将 `www.vmct.top` 的 A 记录直接指向 ECS 公网 IP，删除 ESA 的域名绑定和路由。安全组放行 TCP 80/443。`*.vmct.top` 通配符证书可以直接用于 `www.vmct.top`；若证书不在默认路径，执行部署时传入 `TLS_CERT_FILE` 和 `TLS_KEY_FILE`。
+`www.vmct.top` 的源站为 ECS，安全组放行 TCP 80/443。直连时将 A 记录指向 ECS 公网 IP；通过 ESA 加速时，在 ESA 中配置 ECS 源站及对应回源 Host，并按下文配置更新后的全站缓存刷新。`*.vmct.top` 通配符证书可以直接用于 `www.vmct.top`；若证书不在默认路径，执行部署时传入 `TLS_CERT_FILE` 和 `TLS_KEY_FILE`。
 
 ## 内容发布
 
@@ -55,7 +55,26 @@ http://127.0.0.1:8787/internal/rebuild
 
 ## 仓库自动更新
 
-部署脚本同时安装 `vmct-website-update.timer`。它每 5 分钟检查 GitHub 的 `cn-mainland` 分支；检测到新提交后才运行完整的 `server/deploy-ecs.sh`，完成拉取、依赖安装、API 重启、前端构建和 Nginx 原子切换。更新器使用文件锁，避免手动部署和定时部署并发执行。
+部署脚本同时安装 `vmct-website-update.timer`。它每 5 分钟检查 GitHub 的 `cn-mainland` 分支；检测到新提交且有刷新额度时才运行完整的 `server/deploy-ecs.sh`，完成拉取、依赖安装、API 重启、前端构建和 Nginx 原子切换。部署及健康检查成功后，调用阿里云 CLI 刷新 ESA 全站缓存。更新检查、部署和刷新共用文件锁，避免与手动部署并发执行。
+
+全站刷新按北京时间（`Asia/Shanghai`，UTC+8）的自然日限制为最多三次。达到上限后，当天跳过后续自动部署；次日定时检查重新获取分支的最新版。积压两个或更多更新时也只部署届时的最新版、刷新一次，不逐个重放提交。
+
+更新前通过 [`GetPurgeQuota`](https://help.aliyun.com/zh/edge-security-acceleration/esa/api-esa-2024-09-10-getpurgequota) 查询全站刷新的已用量，并与本地计数取较大值，因此控制台或其他工具进行的刷新也会纳入判断；阿里云实际配额低于三次时遵守较小的上限。查询失败、配置缺失或计数文件异常时停止本次自动更新。更新成功后使用 [`PurgeCaches`](https://help.aliyun.com/zh/edge-security-acceleration/esa/api-esa-2024-09-10-purgecaches) 的 `Type=purgeall`、`Content={"PurgeAll":true}` 和 `Force=true` 提交刷新。
+
+在 ECS 安装 `aliyun` CLI，为 root 更新服务配置可用的身份认证，并授予目标站点的 `esa:GetPurgeQuota`、`esa:PurgeCaches` 权限。可复用已有 RAM 角色或 CLI profile，凭据不写入仓库。在 `/etc/vmct-website/update.env` 合并以下设置（模板见 `server/update.env.example`）：
+
+```ini
+ 目标ESA站点的数字ID
+ESA_REGION=cn-hangzhou
+# 使用非默认 CLI profile 时设置：
+# ESA_CLI_PROFILE=ecs-esa
+# CLI 已配置在 vmct 用户下，而更新服务由 root 运行时设置：
+# ESA_CLI_CONFIG_PATH=/home/vmct/.aliyun/config.json
+```
+
+`ESA_SITE_ID` 是 ESA 站点 ID，可以在控制台查看；不能使用边缘函数 ID 代替。环境文件权限设为 `600`。更新服务每次启动都会重新读取该文件。
+
+本地计数和待刷新标记分别保存在 `/var/lib/vmct-website/esa-purge-state`、`/var/lib/vmct-website/esa-purge-pending`，服务器重启后继续生效。构建失败不占用刷新次数；调用刷新前先持久化预留次数，并禁用 CLI 自动重试，避免请求超时但服务端已受理时重复占用额度。刷新失败时保留标记，下一轮只重试刷新；如果这期间又有代码更新，会部署最新版本后合并刷新。刷新调用失败或返回无效任务 ID 的请求按一次预留计数，最多三次，次日重新计数。脚本确认任务已受理，缓存清理结果可在 ESA 刷新记录中查看。
 
 查看定时器状态：
 
@@ -70,15 +89,15 @@ sudo systemctl list-timers vmct-website-update.timer
 sudo systemctl start vmct-website-update.service
 ```
 
-如果 ECS 访问 GitHub 需要本机代理，可创建 `/etc/vmct-website/update.env`，例如：
+如果 ECS 访问 GitHub 需要本机代理，在同一个 `/etc/vmct-website/update.env` 中追加代理设置，保留已有 ESA 配置：
 
-```sh
-sudo install -m 600 /dev/null /etc/vmct-website/update.env
-sudo sh -c 'printf "HTTPS_PROXY=http://127.0.0.1:7890\\nHTTP_PROXY=http://127.0.0.1:7890\\nNO_PROXY=127.0.0.1,localhost\\n" > /etc/vmct-website/update.env'
-sudo systemctl restart vmct-website-update.timer
+```ini
+HTTPS_PROXY=http://127.0.0.1:7890
+HTTP_PROXY=http://127.0.0.1:7890
+NO_PROXY=127.0.0.1,localhost
 ```
 
-代理文件由更新服务读取，不会写入仓库。
+该文件由更新服务读取，不会写入仓库。
 
 ## 词典自动更新
 
