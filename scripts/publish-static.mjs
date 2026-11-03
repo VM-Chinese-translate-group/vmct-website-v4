@@ -4,6 +4,7 @@ import { randomUUID } from 'node:crypto'
 import { pathToFileURL } from 'node:url'
 import http from 'node:http'
 import https from 'node:https'
+import { pruneVersions } from './prune-backups.mjs'
 
 function request(url) {
   return new Promise((resolve, reject) => {
@@ -102,14 +103,10 @@ export async function publishStatic({ source, target, health = checkRelease }) {
   }
   // Cleanup failure must not turn a successful publication into a failure.
   try {
-    const entries = (await fs.readdir(releases)).filter((name) =>
-      /^\d+-[0-9a-f-]+$/.test(name)).sort().reverse()
-    const protectedPaths = new Set([release,
-      previous === null ? '' : path.resolve(parent, previous)])
-    for (const name of entries.slice(5)) {
-      const item = path.join(releases, name)
-      if (!protectedPaths.has(item)) await fs.rm(item, { recursive: true, force: true })
-    }
+    await pruneVersions(releases, {
+      protectedPaths: [release, previous === null ? '' : path.resolve(parent, previous)],
+      include: name => /^\d+-[0-9a-f-]+$/.test(name),
+    })
   } catch (error) {
     console.warn('发布成功，历史版本清理失败：', error.message)
   }

@@ -60,6 +60,17 @@ test('new release keeps old hashed assets while new files take precedence', asyn
   assert.equal(await fs.readFile(path.join(target, 'assets', 'shared.js'), 'utf8'), 'new value')
 })
 
+test('successful publication retains only the current and previous release', async t => {
+  const { source, target } = await fixture(t)
+  const published = []
+  for (let i = 0; i < 4; i++) {
+    published.push(await publishStatic({ source, target, health: async () => {} }))
+    await new Promise(resolve => setTimeout(resolve, 2))
+  }
+  const releases = path.dirname(await fs.realpath(target))
+  assert.deepEqual((await fs.readdir(releases)).sort(), published.slice(-2).sort())
+})
+
 test('restrictive operator umask cannot make the public release unreadable', { skip: process.platform !== 'linux' }, async (t) => {
   const { source, target } = await fixture(t)
   await fs.chmod(source, 0o700)

@@ -269,3 +269,12 @@ test('an unchanged site does not query ESA or require configuration', async (t) 
   assert.deepEqual(await lines('events'), ['fetch'])
   await assert.rejects(fs.stat(path.join(root, 'attempts')), { code: 'ENOENT' })
 })
+
+test('an unchanged site still runs backup retention before fetching', async t => {
+  const { root, update, lines } = await fixture(t)
+  await fs.writeFile(path.join(root, 'deployed-revision'), 'aabbccdd\n')
+  await fs.writeFile(path.join(root, 'server/prune-backups.sh'), 'echo retention >>"$APP_DIR/events"\n')
+  const result = update()
+  assert.equal(result.status, 0, result.stderr)
+  assert.deepEqual(await lines('events'), ['retention', 'fetch'])
+})

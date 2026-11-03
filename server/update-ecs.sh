@@ -17,6 +17,13 @@ if ! flock -n 9; then
 fi
 
 git_cmd=(git -c "safe.directory=${APP_DIR}" -C "${APP_DIR}")
+# Retain two versions even when there is no new commit or GitHub is offline.
+if [[ -f "${APP_DIR}/server/prune-backups.sh" ]]; then
+  if ! APP_DIR="${APP_DIR}" DEPLOY_LOCK_FILE="${lock_file}" bash "${APP_DIR}/server/prune-backups.sh" --apply; then
+    echo '备份清理失败，保留现有备份并等待下一轮检查。' >&2
+  fi
+fi
+
 fetch_ok=0
 for attempt in 1 2 3; do
   if "${git_cmd[@]}" -c http.version=HTTP/1.1 fetch --quiet origin "${BRANCH}"; then

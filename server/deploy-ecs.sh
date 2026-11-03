@@ -203,6 +203,7 @@ fi
 
 ${SUDO} install -m 0644 server/vmct-website-api.service /etc/systemd/system/vmct-website-api.service
 ${SUDO} install -m 0755 server/update-ecs.sh /usr/local/sbin/vmct-website-update
+${SUDO} install -m 0755 server/prune-backups.sh /usr/local/sbin/vmct-prune-backups
 ${SUDO} install -m 0644 server/vmct-website-update.service /etc/systemd/system/vmct-website-update.service
 ${SUDO} install -m 0644 server/vmct-website-update.timer /etc/systemd/system/vmct-website-update.timer
 ${SUDO} install -m 0755 server/update-dictionary.sh /usr/local/sbin/vmct-dictionary-update
@@ -246,9 +247,13 @@ if [[ -d "${STATIC_ROOT}/assets" ]]; then
 fi
 # Node resolves the SSR import through this symlink to an immutable release.
 # Future builds therefore cannot remove the running renderer's lazy chunks.
+previous_site_release="$(readlink -f "${APP_DIR}/dist" 2>/dev/null || true)"
 if [[ -d "${APP_DIR}/dist" && ! -L "${APP_DIR}/dist" ]]; then
   run_as_vmct mv "${APP_DIR}/dist" "${APP_DIR}/.site-releases/legacy-${release_id}"
+  previous_site_release="${APP_DIR}/.site-releases/legacy-${release_id}"
 fi
+run_as_vmct node -e 'require("node:fs").writeFileSync(process.argv[1], process.argv[2] + "\n")' \
+  "${site_release}/server/.previous-release" "${previous_site_release}"
 run_as_vmct ln -s ".site-releases/${release_id}" "${APP_DIR}/.dist-next-${release_id}"
 run_as_vmct mv -Tf "${APP_DIR}/.dist-next-${release_id}" "${APP_DIR}/dist"
 ${SUDO} systemctl restart vmct-website-api
@@ -300,6 +305,12 @@ ${SUDO} mkdir -p /var/lib/vmct-website
 revision_tmp="$(${SUDO} mktemp /var/lib/vmct-website/.deployed-revision.XXXXXX)"
 git -c "safe.directory=${APP_DIR}" -C "${APP_DIR}" rev-parse HEAD | ${SUDO} tee "${revision_tmp}" >/dev/null
 ${SUDO} mv -f "${revision_tmp}" /var/lib/vmct-website/deployed-revision
+# Only a healthy completed deployment may retire its previous generations.
+if ! ${SUDO} env APP_DIR="${APP_DIR}" VMCT_DATA_DIR="${DATA_DIR}" \
+  DEPLOY_LOCK_FILE="${DEPLOY_LOCK_FILE}" PREVIOUS_SITE_RELEASE="${previous_site_release}" \
+  bash server/prune-backups.sh --apply; then
+  echo '部署成功，旧备份清理失败，等待下一轮定时检查重试。' >&2
+fi
 if [[ "${VMCT_KEEP_UPDATE_TIMERS_STOPPED:-0}" != 1 ]]; then
   ${SUDO} systemctl enable --now vmct-website-update.timer
   ${SUDO} systemctl enable --now vmct-dictionary-update.timer
