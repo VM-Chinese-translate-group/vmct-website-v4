@@ -100,8 +100,27 @@
 .base-dialog-footer {
   display: grid;
   gap: 12px;
-  padding: 16px 24px;
+  padding: 24px;
+  border-top: 1px solid var(--switcher-border);
   background: var(--bg-soft);
+}
+.base-dialog-footer :deep(.base-dialog-actions) {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(0, 160px);
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+}
+.base-dialog-footer :deep(.base-dialog-actions > button) {
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 0;
+  height: 44px;
+  min-height: 44px;
+  padding-block: 0;
 }
 .base-dialog-enter-active,
 .base-dialog-leave-active {
@@ -126,7 +145,7 @@
     padding: 0 20px 20px;
   }
   .base-dialog-footer {
-    padding: 16px 20px;
+    padding: 24px 20px;
   }
 }
 @media (prefers-reduced-motion: reduce) {

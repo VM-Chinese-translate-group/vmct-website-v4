@@ -1,50 +1,32 @@
 <template>
-  <template v-if="isDialog">
-    <Teleport to="#vmct-overlays">
-      <Transition name="download-modal-fade">
-        <div v-if="visible" class="download-modal-backdrop" role="presentation" @click.self="close">
-          <section
-            ref="dialogRef"
-            class="download-modal-dialog"
-            role="dialog"
-            aria-modal="true"
-            :aria-labelledby="titleId"
-          >
-            <header class="download-modal-header">
-              <div>
-                <h2 :id="titleId">{{ t('downloadModal.resourceTitle') }}</h2>
-                <p>{{ t('downloadModal.resourceIntro') }}</p>
-              </div>
-              <button
-                ref="closeButtonRef"
-                type="button"
-                class="download-modal-close"
-                :aria-label="t('downloadModal.close')"
-                @click="close"
-              >
-                <Icon icon="lucide:x" />
-              </button>
-            </header>
-
-            <DownloadMethodGrid :items="items || []" @select="select" />
-          </section>
-        </div>
-      </Transition>
-    </Teleport>
-  </template>
-
+  <BaseDialog
+    v-if="isDialog"
+    :open="visible === true"
+    :title="t('downloadModal.resourceTitle')"
+    :description="t('downloadModal.resourceIntro')"
+    :close-label="t('downloadModal.close')"
+    width="560px"
+    @update:open="emit('close')"
+    @closed="openSelectedDownload"
+  >
+    <DownloadMethodGrid :items="items || []" @select="select" />
+  </BaseDialog>
   <DownloadMethodGrid v-else :items="items || []" @select="activateDownload" />
+  <DownloadActionDialog
+    ref="actionDialog"
+    :questions="questions"
+    :question-loader="questionLoader"
+  />
 </template>
 
 <script setup lang="ts">
-import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
-import { Icon } from '@iconify/vue'
+import { computed, nextTick, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
+import BaseDialog from '@/components/BaseDialog.vue'
 import DownloadMethodGrid from './DownloadMethodGrid.vue'
-import { useDownloadModal } from './useDownloadModal'
+import DownloadActionDialog from './DownloadActionDialog.vue'
 import type { DownloadMethodItem } from './downloadMethods'
 import type { DownloadQuestion } from '@/types/downloadQuestion'
-import { usePageScrollLock } from '@/composables/usePageScrollLock'
 
 const props = withDefaults(
   defineProps<{
@@ -53,113 +35,31 @@ const props = withDefaults(
     questionLoader?: (() => Promise<DownloadQuestion[]>) | null
     visible?: boolean
   }>(),
-  {
-    visible: undefined,
-  },
+  { visible: undefined },
 )
-
-const emit = defineEmits<{
-  close: []
-}>()
-
-const { locale, t } = useI18n()
-const { handleDownloadMethod } = useDownloadModal({
-  locale,
-  questionLoader: props.questionLoader,
-  questions: props.questions,
-  t,
-})
-const { lock, unlock } = usePageScrollLock()
-
+const emit = defineEmits<{ close: [] }>()
+const { t } = useI18n()
 const isDialog = computed(() => props.visible !== undefined)
-const dialogRef = ref<HTMLElement | null>(null)
-const closeButtonRef = ref<HTMLButtonElement | null>(null)
-const previouslyFocusedElement = ref<HTMLElement | null>(null)
-const titleId = 'download-modal-title'
+const actionDialog = ref<InstanceType<typeof DownloadActionDialog> | null>(null)
+let selectedDownload: DownloadMethodItem | null = null
 
-const close = () => emit('close')
+const activateDownload = (item: DownloadMethodItem) => actionDialog.value?.activateDownload(item)
 
-const select = (item: DownloadMethodItem) => {
-  handleDownloadMethod(item)
-  close()
+function select(item: DownloadMethodItem) {
+  // Close the picker and restore its trigger before opening the next dialog.
+  // Direct links must still open within the click's browser activation.
+  if (actionDialog.value?.isDialogMethod(item)) selectedDownload = item
+  else activateDownload(item)
+  emit('close')
 }
 
-const getFocusableElements = () => {
-  const dialog = dialogRef.value
-  if (!dialog) return []
-
-  return Array.from(
-    dialog.querySelectorAll<HTMLElement>(
-      'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
-    ),
-  ).filter((element) => !element.hasAttribute('hidden') && element.offsetParent !== null)
+async function openSelectedDownload() {
+  const item = selectedDownload
+  selectedDownload = null
+  if (!item) return
+  await nextTick()
+  activateDownload(item)
 }
-
-const restoreFocus = () => {
-  const element = previouslyFocusedElement.value
-  previouslyFocusedElement.value = null
-  if (element?.isConnected) nextTick(() => element.focus())
-}
-
-const onKeydown = (event: KeyboardEvent) => {
-  if (!isDialog.value || !props.visible) return
-
-  if (event.key === 'Escape') {
-    event.preventDefault()
-    close()
-    return
-  }
-
-  if (event.key !== 'Tab') return
-
-  const focusableElements = getFocusableElements()
-  if (!focusableElements.length) return
-
-  const first = focusableElements[0]
-  const last = focusableElements[focusableElements.length - 1]
-  const activeElement = document.activeElement
-
-  if (event.shiftKey && (activeElement === first || !dialogRef.value?.contains(activeElement))) {
-    event.preventDefault()
-    last.focus()
-  } else if (
-    !event.shiftKey &&
-    (activeElement === last || !dialogRef.value?.contains(activeElement))
-  ) {
-    event.preventDefault()
-    first.focus()
-  }
-}
-
-watch(
-  () => props.visible,
-  (visible) => {
-    if (!isDialog.value) return
-
-    if (visible) {
-      if (typeof document !== 'undefined') {
-        previouslyFocusedElement.value =
-          document.activeElement instanceof HTMLElement ? document.activeElement : null
-      }
-      lock()
-      nextTick(() => closeButtonRef.value?.focus())
-    } else {
-      unlock()
-      restoreFocus()
-    }
-  },
-  { immediate: true },
-)
-
-onMounted(() => window.addEventListener('keydown', onKeydown))
-
-onBeforeUnmount(() => {
-  unlock()
-  restoreFocus()
-  window.removeEventListener('keydown', onKeydown)
-})
-
-const activateDownload = (item: DownloadMethodItem) => handleDownloadMethod(item)
 
 defineExpose({ activateDownload })
 </script>

@@ -36,7 +36,6 @@
     "pg": "^8.23.1",
     "pg-copy-streams": "^7.0.0",
     "qrcode": "^1.5.4",
-    "sweetalert2": "^11.26.25",
     "vue": "^3.5.44",
     "vue-easy-lightbox": "^1.19.0",
     "vue-i18n": "^11.4.16",
