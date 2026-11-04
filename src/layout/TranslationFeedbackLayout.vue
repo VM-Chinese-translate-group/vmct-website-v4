@@ -49,9 +49,7 @@
           aria-labelledby="feedback-submission-name"
           aria-describedby="feedback-submission-message"
         >
-          <span class="feedback-submission-success-icon">
-            <Icon class="size-9" icon="lucide:check" aria-hidden="true" />
-          </span>
+          <SuccessStatusIcon />
           <h3 id="feedback-submission-name" class="feedback-submission-success-name">
             {{ formSuccess.originalName }}
           </h3>
@@ -541,6 +539,7 @@ import {
 import SelectMenu from '@/components/SelectMenu.vue'
 import MultiSelectMenu from '@/components/MultiSelectMenu.vue'
 import BaseDialog from '@/components/BaseDialog.vue'
+import SuccessStatusIcon from '@/components/SuccessStatusIcon.vue'
 import type {
   FeedbackCandidate,
   FeedbackCategory,

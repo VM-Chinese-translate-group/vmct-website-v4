@@ -2,14 +2,15 @@
   <BaseDialog
     v-if="isDialog"
     :open="visible === true"
-    :title="t('downloadModal.resourceTitle')"
-    :description="t('downloadModal.resourceIntro')"
+    :title="t('downloadModal.driveTitle')"
     :close-label="t('downloadModal.close')"
-    width="560px"
+    width="640px"
+    class="download-picker-dialog"
     @update:open="emit('close')"
     @closed="openSelectedDownload"
   >
     <DownloadMethodGrid :items="items || []" @select="select" />
+    <DownloadNotice show-title :has-install-guide="hasInstallGuide" />
   </BaseDialog>
   <DownloadMethodGrid v-else :items="items || []" @select="activateDownload" />
   <DownloadActionDialog
@@ -22,9 +23,11 @@
 <script setup lang="ts">
 import { computed, nextTick, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { useRoute } from 'vue-router'
 import BaseDialog from '@/components/BaseDialog.vue'
 import DownloadMethodGrid from './DownloadMethodGrid.vue'
 import DownloadActionDialog from './DownloadActionDialog.vue'
+import DownloadNotice from './DownloadNotice.vue'
 import type { DownloadMethodItem } from './downloadMethods'
 import type { DownloadQuestion } from '@/types/downloadQuestion'
 
@@ -39,6 +42,8 @@ const props = withDefaults(
 )
 const emit = defineEmits<{ close: [] }>()
 const { t } = useI18n()
+const route = useRoute()
+const hasInstallGuide = computed(() => route.path.startsWith('/modpacks/'))
 const isDialog = computed(() => props.visible !== undefined)
 const actionDialog = ref<InstanceType<typeof DownloadActionDialog> | null>(null)
 let selectedDownload: DownloadMethodItem | null = null

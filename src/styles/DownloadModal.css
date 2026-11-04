@@ -1,33 +1,32 @@
 @import './variables.css';
 
-.lazy-text span,
-.lazy-rainbow span {
-  animation: textFlow 2s linear infinite;
-}
-.lazy-rainbow span {
-  animation-delay: calc(var(--char-index) * 0.08s);
-}
-.download-method-button {
-  font: inherit;
-  text-align: center;
-}
-@keyframes textFlow {
-  0%,
-  100% {
-    color: orangered;
-  }
-  25% {
-    color: limegreen;
-  }
-  50% {
-    color: blue;
-  }
-}
 .download-action-dialog {
   line-height: 1.75;
 }
-.download-action-intro,
+.download-picker-dialog {
+  border-radius: 24px;
+}
+.download-picker-dialog .base-dialog-header {
+  padding: 20px 24px 20px 36px;
+}
+.download-picker-dialog .base-dialog-title {
+  font-size: 24px;
+  line-height: 1.4;
+}
+.download-picker-dialog .base-dialog-close svg {
+  width: 24px;
+  height: 24px;
+}
+.download-picker-dialog .base-dialog-body {
+  padding: 0 36px 28px;
+}
+.download-picker-dialog .download-action-notice {
+  margin-top: 22px;
+  font-size: 14px;
+  line-height: 1.5;
+}
 .download-action-notice {
+  margin: 22px 0 0;
   color: var(--text-2);
 }
 .download-action-notice a {
@@ -38,16 +37,39 @@
 .download-question-content {
   white-space: pre-line;
 }
-.download-drive-options {
-  display: grid;
-  gap: 12px;
+.download-correct-dialog .base-dialog-header {
+  justify-content: center;
+  padding: 32px 24px 16px;
 }
-.download-drive-option {
-  display: block;
+.download-correct-dialog .base-dialog-title {
+  display: grid;
+  justify-items: center;
+  gap: 16px;
+  text-align: center;
+}
+.download-correct-result {
+  padding: 0 8px 20px;
+}
+.download-correct-result .download-correct-body {
+  margin: 0;
+}
+.download-options {
+  display: grid;
+  gap: 18px;
+}
+.download-option-card {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  box-sizing: border-box;
   width: 100%;
-  padding: 15px 20px;
-  border: 1px solid var(--switcher-border);
-  border-radius: 8px;
+  min-height: 88px;
+  padding: 14px 18px 14px 104px;
+  isolation: isolate;
+  overflow: hidden;
+  border: 2px solid transparent;
+  border-radius: 16px;
   background: var(--bg-soft);
   color: var(--text-1);
   font: inherit;
@@ -57,41 +79,69 @@
     border-color 160ms ease,
     box-shadow 160ms ease;
 }
-.download-drive-option:hover,
-.download-drive-option:focus-visible {
-  border-color: var(--nav-primary);
+.download-option-card:hover,
+.download-option-card:focus-visible {
+  border-color: var(--info-1);
   box-shadow: var(--card-shadow);
 }
-.download-drive-option.recommended {
-  border-left: 4px solid #e74c3c;
-}
-.download-drive-option.lanzou {
-  border-left: 4px solid #3498db;
-}
-.download-drive-option.lazy-option {
-  border-left: 4px solid #f59e0b;
-}
-.download-drive-title {
+.download-option-art {
+  position: absolute;
+  z-index: -1;
+  inset: 0 auto 0 0;
   display: flex;
   align-items: center;
-  gap: 10px;
-  margin-bottom: 6px;
+  width: 104px;
+  pointer-events: none;
+  mask-image: linear-gradient(to right, #000, transparent);
 }
-.download-drive-title > span,
-.download-drive-title img {
-  width: 28px;
-  height: 28px;
-  flex: 0 0 auto;
-  font-size: 24px;
-  line-height: 1;
-  object-fit: contain;
-  border-radius: 6px;
-}
-.download-drive-description {
+.download-option-art img,
+.download-option-icon {
   display: block;
+  width: 136px;
+  height: 136px;
+  max-width: none;
+  object-fit: cover;
+  flex: 0 0 auto;
+  transform: translate(-9px, -4px);
+}
+.quark-option .download-option-art img {
+  width: 80px;
+  height: 80px;
+  margin-left: 12px;
+  object-fit: contain;
+  transform: none;
+}
+.download-option-art img[src='/imgs/lazy.png'] {
+  width: 116px;
+  height: 116px;
+  min-height: calc(100% + 16px);
+  margin-left: 0;
+  object-fit: cover;
+  transform: translateX(-7px);
+}
+.download-option-copy {
+  flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.download-option-title {
+  display: block;
+  color: var(--text-dark);
+  font-size: 18px;
+  line-height: 1.4;
+}
+.download-option-description {
+  display: block;
+  margin-top: 4px;
   color: var(--text-2);
   font-size: 14px;
   line-height: 1.5;
+}
+.download-option-arrow {
+  width: 24px;
+  height: 24px;
+  flex: 0 0 auto;
+  color: var(--text-1);
 }
 .download-action-button {
   padding-inline: 24px;
@@ -108,12 +158,12 @@
   color: #fff;
 }
 .download-action-button:focus-visible,
-.download-drive-option:focus-visible {
+.download-option-card:focus-visible {
   outline: 2px solid var(--info-1);
   outline-offset: 2px;
 }
 .download-action-button:disabled,
-.download-drive-option:disabled {
+.download-option-card:disabled {
   opacity: 0.65;
   cursor: not-allowed;
 }
@@ -135,9 +185,72 @@
   color: var(--text-1);
   font: inherit;
 }
+@media (max-width: 600px) {
+  .download-picker-dialog {
+    border-radius: 22px;
+  }
+  .download-picker-dialog .base-dialog-header {
+    padding: 20px 18px 24px 24px;
+  }
+  .download-picker-dialog .base-dialog-title {
+    font-size: 24px;
+  }
+  .download-picker-dialog .base-dialog-close svg {
+    width: 24px;
+    height: 24px;
+  }
+  .download-picker-dialog .base-dialog-body {
+    padding: 0 24px 28px;
+  }
+  .download-picker-dialog .download-action-notice {
+    margin-top: 24px;
+    font-size: 14px;
+  }
+  .download-options {
+    gap: 14px;
+  }
+  .download-option-card {
+    min-height: 88px;
+    gap: 10px;
+    padding: 14px 12px 14px 76px;
+    border-radius: 14px;
+  }
+  .download-option-art {
+    width: 76px;
+  }
+  .download-option-art img,
+  .download-option-icon {
+    width: 110px;
+    height: 110px;
+    min-height: 100%;
+    transform: translateX(-12px);
+  }
+  .quark-option .download-option-art img {
+    width: 72px;
+    height: 72px;
+    min-height: 0;
+    transform: none;
+    margin-left: 6px;
+  }
+  .download-option-art img[src='/imgs/lazy.png'] {
+    width: 96px;
+    height: 96px;
+    min-height: calc(100% + 14px);
+    transform: translateX(-6px);
+  }
+  .download-option-title {
+    font-size: 16px;
+  }
+  .download-option-description {
+    font-size: 13px;
+  }
+  .download-option-arrow {
+    width: 22px;
+    height: 22px;
+  }
+}
 @media (prefers-reduced-motion: reduce) {
-  .lazy-text span,
-  .lazy-rainbow span {
-    animation: none;
+  .download-option-card {
+    transition: none;
   }
 }

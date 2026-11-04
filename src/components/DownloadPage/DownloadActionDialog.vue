@@ -5,100 +5,53 @@
     :close-label="t('downloadModal.close')"
     :show-close="dialog?.kind === 'drive' || dialog?.kind === 'question'"
     :role="dialog?.kind === 'wrong' || dialog?.kind === 'question-error' ? 'alertdialog' : 'dialog'"
-    width="560px"
+    :width="dialog?.kind === 'drive' ? '640px' : '560px'"
     class="download-action-dialog"
+    :class="{
+      'download-picker-dialog': dialog?.kind === 'drive',
+      'download-correct-dialog': dialog?.kind === 'correct',
+    }"
     initial-focus=".download-question-input, .download-question-choices button, .download-action-footer .primary"
     @update:open="dismiss"
   >
+    <template v-if="dialog?.kind === 'correct'" #title>
+      <SuccessStatusIcon />
+      <span>{{ title }}</span>
+    </template>
     <template v-if="dialog">
       <template v-if="dialog.kind === 'drive'">
-        <p class="download-action-intro">{{ t('downloadModal.driveIntro') }}</p>
-        <div class="download-drive-options">
-          <button
-            type="button"
-            class="download-drive-option recommended"
+        <div class="download-options">
+          <DownloadOptionCard
+            icon="/imgs/svg/lanzou.svg"
+            :title="t('downloadModal.lanzouTitle')"
+            :description="t('downloadModal.lanzouDesc')"
             :disabled="busy"
-            @click="chooseDrive('quark')"
-          >
-            <span class="download-drive-title">
-              <span aria-hidden="true">📂</span>
-              <strong>{{ t('downloadModal.quarkTitle') }}</strong>
-            </span>
-            <I18nT
-              keypath="downloadModal.quarkDesc"
-              tag="span"
-              class="download-drive-description"
-              scope="global"
-            >
-              <template #emphasis>
-                <strong>{{ t('downloadModal.quarkEmphasis') }}</strong>
-              </template>
-            </I18nT>
-          </button>
-          <button
-            type="button"
-            class="download-drive-option lanzou"
+            @select="chooseDrive('lanzou')"
+          />
+          <DownloadOptionCard
+            class="quark-option"
+            icon="/imgs/quark-drive.png"
+            :title="t('downloadModal.quarkTitle')"
+            :description="t('downloadModal.quarkDesc')"
             :disabled="busy"
-            @click="chooseDrive('lanzou')"
-          >
-            <span class="download-drive-title">
-              <span aria-hidden="true">🚀</span>
-              <strong>{{ t('downloadModal.lanzouTitle') }}</strong>
-            </span>
-            <span class="download-drive-description">{{ t('downloadModal.lanzouDesc') }}</span>
-          </button>
-          <button
+            @select="chooseDrive('quark')"
+          />
+          <DownloadOptionCard
             v-if="dialog.item.lazyLink"
-            type="button"
-            class="download-drive-option lazy-option"
+            icon="/imgs/lazy.png"
+            :title="t('downloadModal.lazyTitle')"
+            :description="t('downloadModal.lazyDesc')"
             :disabled="busy"
-            @click="chooseDrive('lazy')"
-          >
-            <span class="download-drive-title">
-              <img src="/imgs/lazydl.png" alt="" />
-              <strong class="lazy-rainbow">
-                <span
-                  v-for="(character, index) in t('downloadModal.lazyTitle')"
-                  :key="index"
-                  :style="{ '--char-index': index }"
-                >
-                  {{ character }}
-                </span>
-              </strong>
-            </span>
-            <span class="download-drive-description">{{ t('downloadModal.lazyDesc') }}</span>
-          </button>
+            @select="chooseDrive('lazy')"
+          />
         </div>
       </template>
 
-      <template v-if="dialog.kind === 'drive' || dialog.kind === 'protocol'">
-        <p class="download-action-notice">
-          <strong v-if="dialog.kind === 'drive'">{{ t('downloadModal.noticeTitle') }}</strong>
-          <I18nT keypath="downloadModal.noticeRead" scope="global">
-            <template #agreement>
-              <a href="/agreement/" target="_blank" rel="noopener noreferrer">
-                {{ t('downloadModal.agreement') }}
-              </a>
-            </template>
-          </I18nT>
-          <I18nT
-            v-if="dialog.hasInstallGuide"
-            keypath="downloadModal.installGuideJoiner"
-            scope="global"
-          >
-            <template #installGuide>
-              <a
-                href="https://docs.vmct.top/tutorial/modpack/translation.html"
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                {{ t('downloadModal.installGuide') }}
-              </a>
-            </template>
-          </I18nT>
-          <template v-else>{{ t('downloadModal.noticeEnd') }}</template>
-        </p>
-      </template>
+      <DownloadNotice
+        v-if="dialog.kind === 'drive' || dialog.kind === 'protocol'"
+        :show-title="dialog.kind === 'drive'"
+        :has-install-guide="dialog.hasInstallGuide"
+      />
 
       <form v-else-if="dialog.kind === 'question'" @submit.prevent="confirm">
         <p class="download-question-content">{{ questionContent }}</p>
@@ -119,28 +72,29 @@
           :disabled="busy"
         />
       </form>
-      <I18nT
-        v-else-if="dialog.kind === 'correct'"
-        keypath="downloadModal.correctBody"
-        tag="p"
-        class="download-action-notice download-correct-body"
-        scope="global"
-      >
-        <template #agreement>
-          <a href="/agreement/" target="_blank" rel="noopener noreferrer">
-            {{ t('downloadModal.agreement') }}
-          </a>
-        </template>
-        <template #installGuide>
-          <a
-            href="https://docs.vmct.top/tutorial/modpack/translation.html"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            {{ t('downloadModal.installGuide') }}
-          </a>
-        </template>
-      </I18nT>
+      <div v-else-if="dialog.kind === 'correct'" class="download-correct-result">
+        <I18nT
+          keypath="downloadModal.correctBody"
+          tag="p"
+          class="download-action-notice download-correct-body"
+          scope="global"
+        >
+          <template #agreement>
+            <a href="/agreement/" target="_blank" rel="noopener noreferrer">
+              {{ t('downloadModal.agreement') }}
+            </a>
+          </template>
+          <template #installGuide>
+            <a
+              href="https://docs.vmct.top/tutorial/modpack/translation.html"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              {{ t('downloadModal.installGuide') }}
+            </a>
+          </template>
+        </I18nT>
+      </div>
       <p v-else-if="dialog.kind === 'wrong'">{{ t('downloadModal.wrongText') }}</p>
       <p v-else-if="dialog.kind === 'question-error'">
         {{ t('downloadModal.questionLoadErrorText') }}
@@ -195,8 +149,11 @@
 import { computed, nextTick, ref, watch } from 'vue'
 import { I18nT, useI18n } from 'vue-i18n'
 import BaseDialog from '@/components/BaseDialog.vue'
+import SuccessStatusIcon from '@/components/SuccessStatusIcon.vue'
 import type { DownloadQuestion } from '@/types/downloadQuestion'
 import { useDownloadModal } from './useDownloadModal'
+import DownloadOptionCard from './DownloadOptionCard.vue'
+import DownloadNotice from './DownloadNotice.vue'
 
 const props = defineProps<{
   questions?: DownloadQuestion[]
