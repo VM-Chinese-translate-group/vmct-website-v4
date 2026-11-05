@@ -25,6 +25,10 @@ export default defineConfig(({ isSsrBuild }) => ({
     Markdown({
       headEnabled: false,
       markdownOptions: { html: true, linkify: true },
+      frontmatterPreprocess(frontmatter, options, _id, defaultHeadProcess) {
+        const data = { sourceButton: null, ...frontmatter }
+        return { head: defaultHeadProcess(data, options), frontmatter: data }
+      },
       markdownSetup(md) {
         const link = md.renderer.rules.link_open
         md.renderer.rules.link_open = (tokens, index, options, env, self) => {

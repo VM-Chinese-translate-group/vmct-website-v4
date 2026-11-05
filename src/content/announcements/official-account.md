@@ -1,5 +1,9 @@
 ---
 title: VM汉化组官方新账号启用说明
+sourceButton:
+  enabled: true
+  text: 查看 Bilibili 原公告
+  link: https://www.bilibili.com/opus/1251946408080048130
 ---
 
 **重要公告！请关注我们的新B站号！！**
@@ -28,8 +32,3 @@ title: VM汉化组官方新账号启用说明
 
 <p align="right">VM汉化组</p>
 <p align="right">2026年9月26日</p>
-<center>
-    <a href="https://www.bilibili.com/opus/1251946408080048130" target="_blank" rel="noopener noreferrer">
-     查看 Bilibili 原公告
-    </a>
-</center>

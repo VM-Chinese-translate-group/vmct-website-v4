@@ -12,6 +12,15 @@
     </div>
     <template #footer>
       <div class="base-dialog-actions">
+        <a
+          v-if="sourceButton && sourceButton.enabled !== false"
+          class="entry-announcement-source"
+          :href="sourceButton.link"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          {{ sourceButton.text }}
+        </a>
         <button type="button" class="entry-announcement-confirm" @click="dismissAnnouncement">
           我知道了
         </button>
@@ -27,12 +36,12 @@ import { useRoute } from 'vue-router'
 import BaseDialog from '@/components/BaseDialog.vue'
 import OfficialAccountAnnouncement, {
   title as announcementTitle,
+  sourceButton,
 } from '@/content/announcements/official-account.md'
 import { isAprilFoolsSkippedPath } from '@/utils/aprilFools'
 
 const ANNOUNCEMENT_ID = 'official-account'
 const ANNOUNCEMENT_STORAGE_KEY = `site-announcement:${ANNOUNCEMENT_ID}`
-const ANNOUNCEMENT_SOURCE = 'https://www.bilibili.com/opus/1251946408080048130'
 const route = useRoute()
 const { locale } = useI18n()
 const open = ref(false)
@@ -56,7 +65,7 @@ const dismissAnnouncement = () => {
       JSON.stringify({
         id: ANNOUNCEMENT_ID,
         dismissedAt: new Date().toISOString(),
-        source: ANNOUNCEMENT_SOURCE,
+        source: sourceButton?.link,
       }),
     )
   } catch {
@@ -107,6 +116,29 @@ watch([() => route.path, locale], showAnnouncement)
 .entry-announcement-content :deep(p:last-child) {
   margin-bottom: 0;
 }
+.entry-announcement-source {
+  display: inline-flex;
+  box-sizing: border-box;
+  align-items: center;
+  justify-content: center;
+  min-width: 0;
+  height: 44px;
+  padding-inline: 12px;
+  border: 1px solid var(--switcher-border);
+  border-radius: 8px;
+  background: var(--bg-white);
+  color: var(--text-2);
+  font: inherit;
+  font-size: 0.875rem;
+  line-height: 1.25;
+  text-align: center;
+  text-decoration: none;
+  overflow-wrap: anywhere;
+}
+.entry-announcement-source:hover {
+  background: var(--bg-soft);
+  color: var(--text-dark);
+}
 .entry-announcement-confirm {
   padding-inline: 24px;
   border-radius: 8px;
@@ -116,6 +148,7 @@ watch([() => route.path, locale], showAnnouncement)
   color: #fff;
   cursor: pointer;
 }
+.entry-announcement-source:focus-visible,
 .entry-announcement-confirm:focus-visible {
   outline: 2px solid var(--info-1);
   outline-offset: 2px;
