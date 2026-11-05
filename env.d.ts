@@ -17,6 +17,7 @@ declare module '*.vue' {
 declare module '*.md' {
   import type { ComponentOptions } from 'vue'
   const Component: ComponentOptions
+  export const title: string
   export default Component
 }
 

@@ -4,6 +4,7 @@ import { constants } from 'node:zlib'
 import vue from '@vitejs/plugin-vue'
 import Components from 'unplugin-vue-components/vite'
 import UnoCSS from 'unocss/vite'
+import Markdown from 'unplugin-vue-markdown/vite'
 import compression from 'vite-plugin-compression2'
 import { getGitBranch, getGitCommitHash, getGitEnv, getGitCommitDate } from './src/plugins/git.ts'
 
@@ -20,7 +21,22 @@ export default defineConfig(({ isSsrBuild }) => ({
   resolve: { alias: { '@': path.resolve(import.meta.dirname, 'src') } },
   plugins: [
     UnoCSS(),
-    vue(),
+    vue({ include: [/\.vue$/, /\.md$/] }),
+    Markdown({
+      headEnabled: false,
+      markdownOptions: { html: true, linkify: true },
+      markdownSetup(md) {
+        const link = md.renderer.rules.link_open
+        md.renderer.rules.link_open = (tokens, index, options, env, self) => {
+          const href = tokens[index].attrGet('href')
+          if (typeof href === 'string' && /^https?:\/\//.test(href)) {
+            tokens[index].attrSet('target', '_blank')
+            tokens[index].attrSet('rel', 'noopener noreferrer')
+          }
+          return link ? link(tokens, index, options, env, self) : self.renderToken(tokens, index, options)
+        }
+      },
+    }),
     Components({ dirs: ['src/components', 'src/layout'], extensions: ['vue'], include: [/\.vue$/], dts: false }),
     !isSsrBuild && compression({
       threshold: 10240,

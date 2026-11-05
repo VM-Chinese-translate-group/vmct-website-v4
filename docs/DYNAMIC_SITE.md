@@ -10,6 +10,8 @@
 
 只有 CMS 从未发布过内容时，运行时才读取仓库 Markdown 作为首次启动回退，保存草稿不会撤掉这些公开页面；有发布历史后以数据库为准，所有页面下线不会恢复旧仓库内容。首次启用 CMS 应先导入完整内容。原页面 ID、发布历史和下载配置保持有效。
 
+进站公告是独立的静态内容，维护在 `src/content/announcements/official-account.md`。`unplugin-vue-markdown` 在构建时将其编译为 Vue 组件，开启 `markdownOptions.html` 以支持 `<p align="right">`、`<center>` 等 HTML 排版；窗口标题读取 YAML 元数据 `title`。公告是仓库维护的可信内容，不接收用户提交；浏览器不额外加载 Markdown 解析器。修改公告后需重新构建发布，关闭记忆与显示条件不变。
+
 ## 原路由
 
 - 页面 URL、目录 `index.md` 对应的短地址及所有原业务 API 路由继续使用。
