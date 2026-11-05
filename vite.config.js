@@ -10,6 +10,7 @@ import { getGitBranch, getGitCommitHash, getGitEnv, getGitCommitDate } from './s
 
 const gitEnv = getGitEnv()
 const repoPath = gitEnv.owner && gitEnv.name ? `${gitEnv.owner}/${gitEnv.name}` : 'VM-Chinese-translate-group/vmct-website-v4'
+const announcementMarkdownRE = /(?:^|[\\/])src[\\/]content[\\/]announcements[\\/].*\.md$/
 
 export default defineConfig(({ isSsrBuild }) => ({
   define: {
@@ -21,8 +22,9 @@ export default defineConfig(({ isSsrBuild }) => ({
   resolve: { alias: { '@': path.resolve(import.meta.dirname, 'src') } },
   plugins: [
     UnoCSS(),
-    vue({ include: [/\.vue$/, /\.md$/] }),
+    vue({ include: [/\.vue$/, announcementMarkdownRE] }),
     Markdown({
+      include: [announcementMarkdownRE],
       headEnabled: false,
       markdownOptions: { html: true, linkify: true },
       frontmatterPreprocess(frontmatter, options, _id, defaultHeadProcess) {
