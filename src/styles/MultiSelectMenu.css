@@ -41,6 +41,24 @@
   box-shadow: var(--switcher-shadow);
 }
 
+.multi-select-menu-enter-active,
+.multi-select-menu-leave-active {
+  transform-origin: top;
+  transition:
+    translate 140ms ease-out,
+    opacity 120ms ease;
+}
+
+.multi-select-menu-enter-from,
+.multi-select-menu-leave-to {
+  translate: 0 -5px;
+  opacity: 0;
+}
+
+.multi-select-menu-leave-active {
+  pointer-events: none;
+}
+
 .multi-select-option {
   display: flex;
   box-sizing: border-box;
@@ -89,4 +107,11 @@
   border-color: var(--btn-primary-bg);
   background: var(--btn-primary-bg);
   color: white;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .multi-select-menu-enter-active,
+  .multi-select-menu-leave-active {
+    transition: none;
+  }
 }

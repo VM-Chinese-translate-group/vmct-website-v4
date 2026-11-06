@@ -37,33 +37,35 @@
       />
     </button>
 
-    <div
-      v-if="isOpen"
-      :id="menuId"
-      ref="menuRef"
-      class="multi-select-options"
-      :style="menuStyle"
-      role="listbox"
-      aria-multiselectable="true"
-      :aria-label="ariaLabel"
-    >
-      <button
-        v-for="(option, index) in options"
-        :key="option.value"
-        class="feedback-flat-control multi-select-option"
-        type="button"
-        role="option"
-        tabindex="-1"
-        :aria-selected="modelValue.includes(option.value)"
-        @click="toggleOption(option.value)"
-        @keydown="handleOptionKeydown($event, index)"
+    <Transition name="multi-select-menu">
+      <div
+        v-if="isOpen"
+        :id="menuId"
+        ref="menuRef"
+        class="multi-select-options"
+        :style="menuStyle"
+        role="listbox"
+        aria-multiselectable="true"
+        :aria-label="ariaLabel"
       >
-        <span class="multi-select-checkbox" aria-hidden="true">
-          <Icon v-if="modelValue.includes(option.value)" class="size-3.5" icon="lucide:check" />
-        </span>
-        <span class="min-w-0 [overflow-wrap:anywhere]">{{ option.label }}</span>
-      </button>
-    </div>
+        <button
+          v-for="(option, index) in options"
+          :key="option.value"
+          class="feedback-flat-control multi-select-option"
+          type="button"
+          role="option"
+          tabindex="-1"
+          :aria-selected="modelValue.includes(option.value)"
+          @click="toggleOption(option.value)"
+          @keydown="handleOptionKeydown($event, index)"
+        >
+          <span class="multi-select-checkbox" aria-hidden="true">
+            <Icon v-if="modelValue.includes(option.value)" class="size-3.5" icon="lucide:check" />
+          </span>
+          <span class="min-w-0 [overflow-wrap:anywhere]">{{ option.label }}</span>
+        </button>
+      </div>
+    </Transition>
   </div>
 </template>
 

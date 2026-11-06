@@ -10,12 +10,7 @@ const emit = defineEmits<{ select: [] }>()
 </script>
 
 <template>
-  <button
-    type="button"
-    class="download-option-card"
-    :disabled="disabled"
-    @click="emit('select')"
-  >
+  <button type="button" class="download-option-card" :disabled="disabled" @click="emit('select')">
     <span v-if="icon" class="download-option-art" aria-hidden="true">
       <span v-if="icon.startsWith('i')" :class="[icon, 'download-option-icon']" />
       <img v-else :src="icon" alt="" />

@@ -3,19 +3,24 @@
     :open="open"
     :title="title"
     :close-label="t('downloadModal.close')"
-    :show-close="dialog?.kind === 'drive' || dialog?.kind === 'question'"
+    :show-close="dialog?.kind !== 'correct'"
     :role="dialog?.kind === 'wrong' || dialog?.kind === 'question-error' ? 'alertdialog' : 'dialog'"
     :width="dialog?.kind === 'drive' ? '640px' : '560px'"
     class="download-action-dialog"
     :class="{
       'download-picker-dialog': dialog?.kind === 'drive',
       'download-correct-dialog': dialog?.kind === 'correct',
+      'download-wrong-dialog': dialog?.kind === 'wrong',
     }"
     initial-focus=".download-question-input, .download-question-choices button, .download-action-footer .primary"
     @update:open="dismiss"
   >
     <template v-if="dialog?.kind === 'correct'" #title>
       <SuccessStatusIcon />
+      <span>{{ title }}</span>
+    </template>
+    <template v-if="dialog?.kind === 'wrong'" #title>
+      <ErrorStatusIcon />
       <span>{{ title }}</span>
     </template>
     <template v-if="dialog">
@@ -150,6 +155,7 @@ import { computed, nextTick, ref, watch } from 'vue'
 import { I18nT, useI18n } from 'vue-i18n'
 import BaseDialog from '@/components/BaseDialog.vue'
 import SuccessStatusIcon from '@/components/SuccessStatusIcon.vue'
+import ErrorStatusIcon from '@/components/ErrorStatusIcon.vue'
 import type { DownloadQuestion } from '@/types/downloadQuestion'
 import { useDownloadModal } from './useDownloadModal'
 import DownloadOptionCard from './DownloadOptionCard.vue'

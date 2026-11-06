@@ -9,7 +9,6 @@
   grid-template-columns: minmax(0, 1fr);
   padding: 20px;
   background: rgb(0 0 0 / 58%);
-  backdrop-filter: blur(4px);
 }
 
 .base-dialog-panel {
@@ -124,11 +123,20 @@
 }
 .base-dialog-enter-active,
 .base-dialog-leave-active {
-  transition: opacity 160ms ease;
+  transition: opacity 0.18s ease;
+}
+.base-dialog-enter-active .base-dialog-panel,
+.base-dialog-leave-active .base-dialog-panel {
+  transition: transform 0.18s ease;
+  will-change: transform;
 }
 .base-dialog-enter-from,
 .base-dialog-leave-to {
   opacity: 0;
+}
+.base-dialog-enter-from .base-dialog-panel,
+.base-dialog-leave-to .base-dialog-panel {
+  transform: translateY(-10px);
 }
 
 @media (max-width: 600px) {
@@ -151,7 +159,9 @@
 @media (prefers-reduced-motion: reduce) {
   .base-dialog-close,
   .base-dialog-enter-active,
-  .base-dialog-leave-active {
+  .base-dialog-leave-active,
+  .base-dialog-enter-active .base-dialog-panel,
+  .base-dialog-leave-active .base-dialog-panel {
     transition: none;
   }
 }

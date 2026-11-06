@@ -19,11 +19,7 @@ const { t } = useI18n()
         </a>
       </template>
     </I18nT>
-    <I18nT
-      v-if="hasInstallGuide"
-      keypath="downloadModal.installGuideJoiner"
-      scope="global"
-    >
+    <I18nT v-if="hasInstallGuide" keypath="downloadModal.installGuideJoiner" scope="global">
       <template #installGuide>
         <a
           href="https://docs.vmct.top/tutorial/modpack/translation.html"

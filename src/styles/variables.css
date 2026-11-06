@@ -83,6 +83,10 @@
   --warning-1: #9f6000;
   --warning-soft: rgba(255, 193, 7, 0.18);
 
+  /* error */
+  --danger-1: #b42318;
+  --danger-soft: rgba(220, 38, 38, 0.12);
+
   --details-1: #667085;
   --details-soft: #f1f3f5;
 
@@ -197,6 +201,9 @@
 
   --warning-1: #f9b44d;
   --warning-soft: rgba(249, 180, 77, 0.18);
+
+  --danger-1: #ff7b72;
+  --danger-soft: rgba(248, 81, 73, 0.16);
 
   --status-paused-color: #b7c7d4;
   --status-paused-bg: #2b3640;

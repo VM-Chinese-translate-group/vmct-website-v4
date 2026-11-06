@@ -47,6 +47,22 @@
   gap: 16px;
   text-align: center;
 }
+.download-wrong-dialog .base-dialog-header {
+  position: relative;
+  justify-content: center;
+  padding: 32px 24px 16px;
+}
+.download-wrong-dialog .base-dialog-header .base-dialog-close {
+  position: absolute;
+  top: 16px;
+  right: 24px;
+}
+.download-wrong-dialog .base-dialog-title {
+  display: grid;
+  justify-items: center;
+  gap: 16px;
+  text-align: center;
+}
 .download-correct-result {
   padding: 0 8px 20px;
 }
@@ -75,14 +91,11 @@
   font: inherit;
   text-align: left;
   cursor: pointer;
-  transition:
-    border-color 160ms ease,
-    box-shadow 160ms ease;
+  transition: border-color 120ms ease-out;
 }
 .download-option-card:hover,
 .download-option-card:focus-visible {
   border-color: var(--info-1);
-  box-shadow: var(--card-shadow);
 }
 .download-option-art {
   position: absolute;
