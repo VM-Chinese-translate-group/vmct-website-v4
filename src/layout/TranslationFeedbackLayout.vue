@@ -49,9 +49,7 @@
           aria-labelledby="feedback-submission-name"
           aria-describedby="feedback-submission-message"
         >
-          <span class="feedback-submission-success-icon">
-            <Icon class="size-9" icon="lucide:check" aria-hidden="true" />
-          </span>
+          <SuccessStatusIcon />
           <h3 id="feedback-submission-name" class="feedback-submission-success-name">
             {{ formSuccess.originalName }}
           </h3>
@@ -228,9 +226,9 @@
           <p v-if="formError" class="m-0 text-sm text-red-700 dark:text-red-400" role="alert">
             {{ formError }}
           </p>
-          <div class="feedback-project-actions">
+          <div class="base-dialog-actions">
             <button
-              class="feedback-flat-control inline-flex min-h-11 cursor-pointer items-center justify-center rounded-[10px] border border-solid border-[var(--switcher-border)] bg-[var(--bg-white)] px-4 py-2 font-inherit text-sm font-600 text-[var(--text-2)] transition-colors hover:bg-[var(--switcher-item-hover)] hover:text-[var(--text-dark)] focus-visible:outline-2 focus-visible:outline-[var(--info-1)] focus-visible:outline-offset-2 motion-reduce:transition-none"
+              class="feedback-flat-control cursor-pointer rounded-[10px] border border-solid border-[var(--switcher-border)] bg-[var(--bg-white)] px-4 font-inherit text-sm font-600 text-[var(--text-2)] transition-colors hover:bg-[var(--switcher-item-hover)] hover:text-[var(--text-dark)] focus-visible:outline-2 focus-visible:outline-[var(--info-1)] focus-visible:outline-offset-2 motion-reduce:transition-none"
               type="button"
               :disabled="submitting && !!formSuccess"
               @click="formSuccess ? openForm() : close()"
@@ -243,7 +241,7 @@
             </button>
 
             <button
-              class="feedback-flat-control inline-flex min-h-11 cursor-pointer items-center justify-center rounded-[10px] border-0 bg-[var(--btn-primary-bg)] px-4 py-2 font-inherit text-sm font-700 text-white transition-colors hover:bg-[var(--btn-primary-hover)] focus-visible:outline-2 focus-visible:outline-[var(--info-1)] focus-visible:outline-offset-2 disabled:cursor-wait disabled:opacity-60 motion-reduce:transition-none"
+              class="feedback-flat-control cursor-pointer rounded-[10px] border-0 bg-[var(--btn-primary-bg)] px-4 font-inherit text-sm font-700 text-white transition-colors hover:bg-[var(--btn-primary-hover)] focus-visible:outline-2 focus-visible:outline-[var(--info-1)] focus-visible:outline-offset-2 disabled:cursor-wait disabled:opacity-60 motion-reduce:transition-none"
               :type="formSuccess ? 'button' : 'submit'"
               :disabled="submitting && !formSuccess"
               @click="formSuccess && close()"
@@ -541,6 +539,7 @@ import {
 import SelectMenu from '@/components/SelectMenu.vue'
 import MultiSelectMenu from '@/components/MultiSelectMenu.vue'
 import BaseDialog from '@/components/BaseDialog.vue'
+import SuccessStatusIcon from '@/components/SuccessStatusIcon.vue'
 import type {
   FeedbackCandidate,
   FeedbackCategory,

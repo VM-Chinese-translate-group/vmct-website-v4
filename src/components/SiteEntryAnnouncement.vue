@@ -1,28 +1,54 @@
 <template>
-  <span v-if="false" aria-hidden="true"></span>
+  <BaseDialog
+    :open="open"
+    :title="announcementTitle"
+    close-label="关闭公告"
+    width="720px"
+    class="entry-announcement-popup"
+    @update:open="dismissAnnouncement"
+  >
+    <div class="entry-announcement-content">
+      <OfficialAccountAnnouncement />
+    </div>
+    <template #footer>
+      <div class="base-dialog-actions">
+        <a
+          v-if="sourceButton && sourceButton.enabled !== false"
+          class="entry-announcement-source"
+          :href="sourceButton.link"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          {{ sourceButton.text }}
+        </a>
+        <button type="button" class="entry-announcement-confirm" @click="dismissAnnouncement">
+          我知道了
+        </button>
+      </div>
+    </template>
+  </BaseDialog>
 </template>
 
 <script setup lang="ts">
-import { watch } from 'vue'
+import { onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute } from 'vue-router'
-
+import BaseDialog from '@/components/BaseDialog.vue'
+import OfficialAccountAnnouncement, {
+  title as announcementTitle,
+  sourceButton,
+} from '@/content/announcements/official-account.md'
 import { isAprilFoolsSkippedPath } from '@/utils/aprilFools'
-import 'sweetalert2/dist/sweetalert2.min.css'
 
 const ANNOUNCEMENT_ID = 'official-account'
 const ANNOUNCEMENT_STORAGE_KEY = `site-announcement:${ANNOUNCEMENT_ID}`
-const ANNOUNCEMENT_SOURCE = 'https://www.bilibili.com/opus/1251946408080048130'
-
 const route = useRoute()
 const { locale } = useI18n()
-
-let isOpening = false
+const open = ref(false)
 let dismissedInMemory = false
 
 const wasDismissed = () => {
   if (dismissedInMemory) return true
-
   try {
     return window.localStorage.getItem(ANNOUNCEMENT_STORAGE_KEY) !== null
   } catch {
@@ -30,16 +56,16 @@ const wasDismissed = () => {
   }
 }
 
-const rememberDismissal = () => {
+const dismissAnnouncement = () => {
+  open.value = false
   dismissedInMemory = true
-
   try {
     window.localStorage.setItem(
       ANNOUNCEMENT_STORAGE_KEY,
       JSON.stringify({
         id: ANNOUNCEMENT_ID,
         dismissedAt: new Date().toISOString(),
-        source: ANNOUNCEMENT_SOURCE,
+        source: sourceButton?.link,
       }),
     )
   } catch {
@@ -47,141 +73,84 @@ const rememberDismissal = () => {
   }
 }
 
-const showAnnouncement = async () => {
+const showAnnouncement = () => {
   if (
     typeof window === 'undefined' ||
-    isOpening ||
+    open.value ||
     locale.value !== 'zh-CN' ||
     isAprilFoolsSkippedPath(route.path) ||
     wasDismissed()
-  ) {
+  )
     return
-  }
-
-  isOpening = true
-
-  try {
-    const { default: Swal } = await import('sweetalert2')
-
-    await Swal.fire({
-      title: 'VM汉化组官方新账号启用说明',
-      html: `
-        <div class="entry-announcement-content">
-          <p><strong>重要公告！请关注我们的新B站号！！</strong></p>
-          <p>因组内人员变动与业务调整需要，受限于此前账号所有人与实际管理人员不同，各类业务开展繁琐，现统一更换为本独立账号进行运营。</p>
-          <p>关于账号交接及近期的各项安排，说明如下：</p>
-          <h3>1. 账号唯一性与旧号状态</h3>
-          <p>即日起，新的@VM汉化组 是我们Bilibili的唯一官方发布渠道。原B站账号已彻底停更，且原账号内的历史视频后续可能会陆续进行隐藏处理。</p>
-          <h3>2. 汉化业务、下载方式与官网说明</h3>
-          <p>本次仅调整 B 站运营账号，组内各项汉化工作照常推进。<strong>所有汉化资源的获取与下载方式完全保持不变</strong>，大家无需担心。</p>
-          <h3>3. 视频重传安排</h3>
-          <p>历史视频的迁移工作正在开展中。团队会陆续补齐旧作，并优先重传以往较为重要的视频，尽量将原有的视频全部搬运至本账号，力争不影响大家的观看。</p>
-          <h3>4. QQ交流群重建通知</h3>
-          <p>汉化组的QQ群目前正在重新筹建，新群信息确认后会第一时间在本账号动态发布。需要说明的是，原有的旧QQ群自即日起已与VM汉化组无关，请大家留意甄别。</p>
-          <p>感谢大家的耐心等待与关注，期待在此与大家继续同行。</p>
-          <p class="entry-announcement-signature">VM汉化组<br>2026年9月26日</p>
-          <p class="entry-announcement-source"><a href="${ANNOUNCEMENT_SOURCE}" target="_blank" rel="noopener noreferrer">查看 Bilibili 原公告</a></p>
-        </div>
-      `,
-      confirmButtonText: '我知道了',
-      confirmButtonColor: '#277038',
-      showCloseButton: true,
-      width: 'min(720px, calc(100vw - 24px))',
-      customClass: {
-        popup: 'entry-announcement-popup',
-        htmlContainer: 'entry-announcement-html',
-      },
-    })
-
-    rememberDismissal()
-  } finally {
-    isOpening = false
-  }
+  open.value = true
 }
 
-watch([() => route.path, locale], () => void showAnnouncement(), {
-  immediate: true,
-  flush: 'post',
-})
+onMounted(showAnnouncement)
+watch([() => route.path, locale], showAnnouncement)
 </script>
 
-<style>
-.entry-announcement-popup {
-  grid-template-rows: auto minmax(0, 1fr) auto;
-  height: min(860px, calc(100dvh - 24px));
-  overflow: hidden;
-}
-
-.entry-announcement-html {
-  min-height: 0;
-  overflow-y: auto;
-  overscroll-behavior: contain;
-}
-
-.entry-announcement-popup .swal2-close {
-  position: absolute;
-  inset: 0 0 auto auto;
-}
-
+<style scoped>
 .entry-announcement-content {
-  color: var(--text-primary, #26332b);
+  color: var(--text-1);
   text-align: left;
   font-size: 0.96rem;
   line-height: 1.7;
 }
-
-.entry-announcement-content p {
+.entry-announcement-content :deep(.markdown-body) {
+  background: transparent;
+  color: inherit;
+  font: inherit;
+}
+.entry-announcement-content :deep(p) {
   margin: 0 0 0.85em;
 }
-
-.entry-announcement-content h3 {
+.entry-announcement-content :deep(h3) {
   margin: 1.15em 0 0.35em;
-  color: #277038;
+  color: var(--nav-primary);
   font-size: 1rem;
 }
-
-.entry-announcement-content a {
-  color: #277038;
+.entry-announcement-content :deep(a) {
+  color: var(--nav-primary);
   overflow-wrap: anywhere;
 }
-
-.entry-announcement-signature {
-  text-align: right;
+.entry-announcement-content :deep(p:last-child) {
+  margin-bottom: 0;
 }
-
 .entry-announcement-source {
-  margin-bottom: 0 !important;
+  display: inline-flex;
+  box-sizing: border-box;
+  align-items: center;
+  justify-content: center;
+  min-width: 0;
+  height: 44px;
+  padding-inline: 12px;
+  border: 1px solid var(--switcher-border);
+  border-radius: 8px;
+  background: var(--bg-white);
+  color: var(--text-2);
+  font: inherit;
+  font-size: 0.875rem;
+  line-height: 1.25;
   text-align: center;
-  font-size: 0.88rem;
+  text-decoration: none;
+  overflow-wrap: anywhere;
 }
-
-.dark .entry-announcement-popup {
-  background: #18201b;
-  color: #eef7f0;
+.entry-announcement-source:hover {
+  background: var(--bg-soft);
+  color: var(--text-dark);
 }
-
-.dark .entry-announcement-popup .swal2-title,
-.dark .entry-announcement-content {
-  color: #eef7f0;
+.entry-announcement-confirm {
+  padding-inline: 24px;
+  border-radius: 8px;
+  font: inherit;
+  border: 0;
+  background: var(--btn-primary-bg);
+  color: #fff;
+  cursor: pointer;
 }
-
-.dark .entry-announcement-content h3,
-.dark .entry-announcement-content a {
-  color: #89e8bd;
-}
-
-@media (max-width: 600px) {
-  .entry-announcement-popup {
-    padding: 1em 0.75em 0.8em;
-  }
-
-  .entry-announcement-popup .swal2-title {
-    padding-inline: 0.5em;
-    font-size: 1.35rem;
-  }
-
-  .entry-announcement-html {
-    margin-inline: 0.35em;
-  }
+.entry-announcement-source:focus-visible,
+.entry-announcement-confirm:focus-visible {
+  outline: 2px solid var(--info-1);
+  outline-offset: 2px;
 }
 </style>

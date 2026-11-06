@@ -4,11 +4,13 @@ import { constants } from 'node:zlib'
 import vue from '@vitejs/plugin-vue'
 import Components from 'unplugin-vue-components/vite'
 import UnoCSS from 'unocss/vite'
+import Markdown from 'unplugin-vue-markdown/vite'
 import compression from 'vite-plugin-compression2'
 import { getGitBranch, getGitCommitHash, getGitEnv, getGitCommitDate } from './src/plugins/git.ts'
 
 const gitEnv = getGitEnv()
 const repoPath = gitEnv.owner && gitEnv.name ? `${gitEnv.owner}/${gitEnv.name}` : 'VM-Chinese-translate-group/vmct-website-v4'
+const announcementMarkdownRE = /(?:^|[\\/])src[\\/]content[\\/]announcements[\\/].*\.md$/
 
 export default defineConfig(({ isSsrBuild }) => ({
   define: {
@@ -20,7 +22,27 @@ export default defineConfig(({ isSsrBuild }) => ({
   resolve: { alias: { '@': path.resolve(import.meta.dirname, 'src') } },
   plugins: [
     UnoCSS(),
-    vue(),
+    vue({ include: [/\.vue$/, announcementMarkdownRE] }),
+    Markdown({
+      include: [announcementMarkdownRE],
+      headEnabled: false,
+      markdownOptions: { html: true, linkify: true },
+      frontmatterPreprocess(frontmatter, options, _id, defaultHeadProcess) {
+        const data = { sourceButton: null, ...frontmatter }
+        return { head: defaultHeadProcess(data, options), frontmatter: data }
+      },
+      markdownSetup(md) {
+        const link = md.renderer.rules.link_open
+        md.renderer.rules.link_open = (tokens, index, options, env, self) => {
+          const href = tokens[index].attrGet('href')
+          if (typeof href === 'string' && /^https?:\/\//.test(href)) {
+            tokens[index].attrSet('target', '_blank')
+            tokens[index].attrSet('rel', 'noopener noreferrer')
+          }
+          return link ? link(tokens, index, options, env, self) : self.renderToken(tokens, index, options)
+        }
+      },
+    }),
     Components({ dirs: ['src/components', 'src/layout'], extensions: ['vue'], include: [/\.vue$/], dts: false }),
     !isSsrBuild && compression({
       threshold: 10240,

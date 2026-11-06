@@ -17,6 +17,12 @@ declare module '*.vue' {
 declare module '*.md' {
   import type { ComponentOptions } from 'vue'
   const Component: ComponentOptions
+  export const title: string
+  export const sourceButton: {
+    enabled?: boolean
+    text: string
+    link: string
+  } | null
   export default Component
 }
 

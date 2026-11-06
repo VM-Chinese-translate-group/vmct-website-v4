@@ -7,7 +7,7 @@ const downloadMethodIcons: Record<string, string> = {
   curseforge: '/imgs/svg/curseforge.svg',
   'lanzou-quark-mapdl': vmLogoIcon,
   lanzou: '/imgs/svg/lanzou.svg',
-  lazy: '/imgs/lazydl.png',
+  lazy: '/imgs/lazy.png',
   mediafire: '/imgs/svg/mediafire.svg',
   'quark-lanzou': vmLogoIcon,
 }
