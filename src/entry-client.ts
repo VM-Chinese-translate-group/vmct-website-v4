@@ -7,7 +7,7 @@ import { syncPageSeo } from './plugins/seo'
 import { isAprilFoolsDay, syncAprilFoolsBranding } from '@/utils/aprilFools'
 import { startImageLoadingFrames, syncImageLoadingLabel } from '@/utils/imageLoading'
 import { convertMarkdownContainers } from '@/utils/zhconv'
-import { applyTheme, getPreferredTheme } from '@/utils/theme'
+import { useTheme } from '@/utils/theme'
 import type { SiteContent } from '@/content/store'
 
 import '@/styles/imageLoading.css'
@@ -21,7 +21,7 @@ declare global {
 }
 
 const clientLocale = getClientLocale()
-applyTheme(getPreferredTheme(), false)
+useTheme()
 void syncImageLoadingLabel(clientLocale)
 startImageLoadingFrames()
 

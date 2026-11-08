@@ -1,7 +1,10 @@
+import { createGlobalState, useColorMode, useStorage } from '@vueuse/core'
+import { computed } from 'vue'
 import githubMarkdownDarkHref from 'github-markdown-css/github-markdown-dark.css?url'
 import githubMarkdownLightHref from 'github-markdown-css/github-markdown-light.css?url'
 
-type ThemeMode = 'light' | 'dark'
+export type ThemeMode = 'light' | 'dark'
+export type ThemePreference = ThemeMode | 'auto'
 
 const THEME_STORAGE_KEY = 'theme'
 const MARKDOWN_THEME_LINK_ID = 'github-markdown-theme'
@@ -10,22 +13,6 @@ const MARKDOWN_THEME_HREF: Record<ThemeMode, string> = {
   light: githubMarkdownLightHref,
   dark: githubMarkdownDarkHref,
 }
-
-const isThemeMode = (value: unknown): value is ThemeMode => value === 'light' || value === 'dark'
-
-const isBrowser = () => typeof window !== 'undefined' && typeof document !== 'undefined'
-
-const getStoredTheme = (): ThemeMode | null => {
-  if (typeof window === 'undefined') return null
-
-  const theme = window.localStorage.getItem(THEME_STORAGE_KEY)
-  return isThemeMode(theme) ? theme : null
-}
-
-const getSystemTheme = (): ThemeMode =>
-  typeof window !== 'undefined' && window.matchMedia('(prefers-color-scheme: dark)').matches
-    ? 'dark'
-    : 'light'
 
 const getMarkdownThemeLink = (): HTMLLinkElement => {
   const existing = document.getElementById(MARKDOWN_THEME_LINK_ID)
@@ -44,7 +31,7 @@ const getMarkdownThemeLink = (): HTMLLinkElement => {
 }
 
 const syncMarkdownTheme = (theme: ThemeMode) => {
-  if (!isBrowser()) return
+  if (typeof document === 'undefined') return
 
   const link = getMarkdownThemeLink()
   const href = MARKDOWN_THEME_HREF[theme]
@@ -54,19 +41,40 @@ const syncMarkdownTheme = (theme: ThemeMode) => {
   }
 }
 
-export const getPreferredTheme = (): ThemeMode => getStoredTheme() ?? getSystemTheme()
+export const useTheme = createGlobalState(() => {
+  // 保留旧存储键和纯文本格式；无效值回退到跟随系统。
+  const preference = useStorage<ThemePreference>(THEME_STORAGE_KEY, 'auto', undefined, {
+    serializer: {
+      read: (value) => (value === 'light' || value === 'dark' ? value : 'auto'),
+      write: (value) => value,
+    },
+    writeDefaults: false,
+  })
 
-export const applyTheme = (theme: ThemeMode, persist = true) => {
-  if (!isBrowser()) return
+  const mode = useColorMode<ThemeMode>({
+    storageRef: preference,
+    emitAuto: true,
+    modes: { light: '', dark: 'dark' },
+    onChanged(theme, defaultHandler) {
+      defaultHandler(theme)
+      if (typeof document === 'undefined') return
 
-  const root = document.documentElement
+      document.documentElement.dataset.theme = theme
+      document.documentElement.style.colorScheme = theme
+      syncMarkdownTheme(theme)
+    },
+  })
 
-  root.classList.toggle('dark', theme === 'dark')
-  root.dataset.theme = theme
-
-  syncMarkdownTheme(theme)
-
-  if (persist) {
-    window.localStorage.setItem(THEME_STORAGE_KEY, theme)
+  const isDark = computed(() => mode.state.value === 'dark')
+  const toggleTheme = () => {
+    mode.value = isDark.value ? 'light' : 'dark'
   }
+
+  return { mode, system: mode.system, theme: mode.state, isDark, toggleTheme }
+})
+
+export const getPreferredTheme = (): ThemeMode => useTheme().theme.value
+
+export const applyTheme = (theme: ThemePreference) => {
+  useTheme().mode.value = theme
 }

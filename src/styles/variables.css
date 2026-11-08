@@ -3,12 +3,12 @@
      Global / Base Colors
      =========================== */
   --bg-white: #ffffff;
-  --bg-off-white: #fafafa;
+  --bg-off-white: #f7f9fc;
   --text-white: #ffffff;
   --text-dark: #111827;
   --text-medium: #555555;
   --text-light: #666666;
-  --text-muted: #888888;
+  --text-muted: #687386;
   --text-black: #111827;
 
   /* Hero Buttons */
@@ -36,8 +36,8 @@
   /* ===========================
      NavBar Variables
      =========================== */
-  --nav-primary: #4f8cff;
-  --nav-text: #000;
+  --nav-primary: #3451b2;
+  --nav-text: #202b3a;
   --nav-bg: #f7faf9;
   --nav-menu-bg: rgba(247, 250, 249, 0.86);
   --nav-shadow: rgba(38, 64, 49, 0.1);
@@ -56,6 +56,7 @@
   --switcher-item-active: #e0e0e0;
   --switcher-border: #ddd;
   --switcher-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  --appearance-selected-border: #d7dfef;
 
   /* ===========================
      Markdown / VP Theme
@@ -120,7 +121,7 @@
   --link-bg-hover: #ececef;
 
   --link-title: var(--info-1);
-  --link-desc: #8c8c92;
+  --link-desc: #67676c;
 
   --link-radius: 8px;
 
@@ -161,8 +162,8 @@
   --text-white: #15161a;
   --text-dark: #f2f5ff;
   --text-medium: rgba(226, 232, 240, 0.82);
-  --text-light: rgba(203, 213, 225, 0.72);
-  --text-muted: rgba(148, 163, 184, 0.72);
+  --text-light: #b2bdd0;
+  --text-muted: #9aa8be;
   --text-black: #f2f5ff;
 
   /* --- Switcher Component --- */
@@ -171,8 +172,10 @@
   --switcher-item-active: #303138;
   --switcher-border: #353640;
   --switcher-shadow: 0 12px 30px rgba(0, 0, 0, 0.38);
+  --appearance-selected-border: #4c6089;
 
   /* --- NavBar --- */
+  --nav-primary: #9db7ff;
   --nav-bg: #121417;
   --nav-menu-bg: rgba(24, 25, 29, 0.84);
   --nav-text: #ebebf5;
@@ -188,8 +191,8 @@
   --info-bg-gradient: linear-gradient(172.23deg, rgba(30, 41, 59, 1) 0%, rgba(15, 23, 42, 1) 100%);
 
   /* --- Markdown / VP Theme --- */
-  --bg-soft: #27282f;
-  --bg-alt: #1e1f24;
+  --bg-soft: #20232b;
+  --bg-alt: #252932;
   --text-1: #edf2ff;
   --text-2: #a8b3c7;
 
@@ -227,7 +230,7 @@
   --loader-vanilla-icon-filter: brightness(0) saturate(100%) invert(87%) sepia(25%) saturate(785%)
     hue-rotate(81deg) brightness(99%) contrast(91%);
 
-  --details-1: #9ca3af;
+  --details-1: #b3bed0;
   --details-soft: #1f2937;
 
   /* ===========================

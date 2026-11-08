@@ -1,14 +1,13 @@
 <template>
   <div
     class="flex h-80% items-center gap-1 max-[860px]:h-auto max-[860px]:w-full max-[860px]:flex-col max-[860px]:items-stretch max-[860px]:gap-0"
-    @mousedown.prevent
   >
     <div
       class="relative flex h-full items-center max-[860px]:h-auto max-[860px]:flex-col max-[860px]:items-stretch"
     >
       <button
         type="button"
-        class="flex h-10 cursor-pointer items-center gap-2 border-none rounded-2 bg-transparent px-3 text-[var(--nav-text)] transition-colors duration-200 hover:bg-[var(--nav-hover-bg)] max-[860px]:h-12.5 max-[860px]:w-full max-[860px]:justify-between max-[860px]:border-b max-[860px]:border-b-[rgba(0,0,0,0.05)] max-[860px]:px-0"
+        class="flex h-10 cursor-pointer items-center gap-2 border-none rounded-2 bg-transparent px-3 text-[var(--nav-text)] transition-colors duration-200 hover:bg-[var(--nav-hover-bg)] max-[860px]:h-12.5 max-[860px]:w-full max-[860px]:justify-between max-[860px]:border-b max-[860px]:border-b-[var(--switcher-border)] max-[860px]:px-0"
         aria-haspopup="listbox"
         :aria-expanded="isDropdownOpen"
         @click.stop="toggleDropdown"
@@ -23,7 +22,7 @@
       </button>
 
       <ul
-        class="absolute right-0 top-[calc(100%+8px)] m-0 min-w-40 list-none rounded-3 border border-[rgba(0,0,0,0.1)] bg-[var(--nav-menu-bg,#fff)] p-1.5 shadow-[0_10px_25px_rgba(0,0,0,0.1)] transition-all duration-200 ease-[cubic-bezier(0.4,0,0.2,1)] max-[860px]:static max-[860px]:w-full max-[860px]:border-none max-[860px]:bg-transparent max-[860px]:p-0 max-[860px]:shadow-none"
+        class="absolute right-0 top-[calc(100%+8px)] m-0 min-w-40 list-none rounded-3 border border-[var(--switcher-border)] bg-[var(--bg-alt)] p-1.5 shadow-[var(--switcher-shadow)] transition-all duration-200 ease-[cubic-bezier(0.4,0,0.2,1)] max-[860px]:static max-[860px]:w-full max-[860px]:border-none max-[860px]:bg-transparent max-[860px]:p-0 max-[860px]:shadow-none"
         :class="
           isDropdownOpen
             ? 'visible translate-y-0 opacity-100 max-[860px]:mb-2.5 max-[860px]:block'
@@ -58,25 +57,7 @@
       </ul>
     </div>
 
-    <button
-      class="flex h-10 w-10 cursor-pointer items-center justify-center overflow-visible border-none rounded-2 bg-transparent p-0 text-[var(--nav-text)] transition-colors duration-200 hover:bg-[var(--nav-hover-bg)] max-[860px]:w-full max-[860px]:justify-start max-[860px]:gap-3 max-[860px]:py-3"
-      :aria-label="isDark ? 'Switch to light mode' : 'Switch to dark mode'"
-      @click="toggleTheme"
-    >
-      <div class="relative flex h-5.5 w-5.5 items-center justify-center">
-        <Icon
-          icon="lucide:sun"
-          class="absolute left-0 top-0 h-full w-full transition-all duration-400 ease-[cubic-bezier(0.4,0,0.2,1)]"
-          :class="isDark ? 'scale-0 rotate-45 opacity-0' : 'scale-100 rotate-0 opacity-100'"
-        />
-        <Icon
-          icon="lucide:moon"
-          class="absolute left-0 top-0 h-full w-full transition-all duration-400 ease-[cubic-bezier(0.4,0,0.2,1)]"
-          :class="isDark ? 'scale-100 rotate-0 opacity-100' : 'scale-0 -rotate-45 opacity-0'"
-        />
-      </div>
-      <span class="hidden text-4 max-[860px]:inline">{{ $t('navbar.appearance') }}</span>
-    </button>
+    <AppearanceControl />
   </div>
 </template>
 
@@ -84,7 +65,7 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { Icon } from '@iconify/vue'
-import { applyTheme, getPreferredTheme } from '@/utils/theme'
+import AppearanceControl from './AppearanceControl.vue'
 
 type LocaleCode = 'zh-CN' | 'zh-TW' | 'en-US'
 
@@ -101,8 +82,6 @@ const AVAILABLE_LANGUAGES: LanguageOption[] = [
 
 const { locale } = useI18n<{ locale: LocaleCode }>()
 const isDropdownOpen = ref(false)
-const isDark = ref(false)
-
 const currentLangName = computed((): string => {
   return AVAILABLE_LANGUAGES.find((l) => l.code === locale.value)?.name ?? 'Language'
 })
@@ -116,16 +95,8 @@ const selectLanguage = (code: LocaleCode) => {
   isDropdownOpen.value = false
 }
 
-const toggleTheme = () => {
-  isDark.value = !isDark.value
-  applyTheme(isDark.value ? 'dark' : 'light')
-}
-
 onMounted(() => {
   window.addEventListener('click', closeDropdown)
-
-  isDark.value = getPreferredTheme() === 'dark'
-  applyTheme(isDark.value ? 'dark' : 'light', false)
 })
 
 onUnmounted(() => {
