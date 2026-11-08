@@ -2,7 +2,7 @@
   <div
     v-if="widgetVisible"
     ref="widgetElement"
-    class="group fixed right-[max(1.15rem,env(safe-area-inset-right))] bottom-[max(1.05rem,env(safe-area-inset-bottom))] z-[1100] flex h-36 w-24 items-end justify-center overflow-visible cursor-grab touch-none select-none opacity-90 transition-opacity duration-[180ms] ease-out hover:opacity-100 focus-within:opacity-100 max-[640px]:right-[max(0.7rem,env(safe-area-inset-right))] max-[640px]:bottom-[max(0.75rem,env(safe-area-inset-bottom))] max-[640px]:h-32 max-[640px]:w-22 motion-reduce:transition-none"
+    class="group fixed right-[max(1.15rem,env(safe-area-inset-right))] bottom-[max(1.05rem,env(safe-area-inset-bottom))] z-[1100] flex h-36 w-24 items-end justify-center overflow-visible cursor-grab touch-none select-none opacity-90 transition-opacity duration-[180ms] ease-out hover:opacity-100 focus-within:opacity-100 max-[860px]:hidden motion-reduce:transition-none"
     :class="{ 'cursor-grabbing opacity-80': dragging, 'opacity-100': bubbleVisible }"
     :style="widgetStyle"
     @pointerdown="startDrag"
@@ -37,7 +37,7 @@
 
   <button
     v-else-if="visible"
-    class="feedback-widget-restore"
+    class="feedback-widget-restore max-[860px]:hidden"
     type="button"
     :aria-label="$t('translationFeedback.widgetRestore')"
     @click="restoreWidget"
@@ -48,6 +48,7 @@
 </template>
 
 <script setup lang="ts">
+import { useMediaQuery } from '@vueuse/core'
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
@@ -78,8 +79,11 @@ const ACTIVITY_DURATION: Record<Exclude<WidgetActivity, 'idle'>, number> = {
 const { t, locale } = useI18n()
 const route = useRoute()
 const router = useRouter()
+const isMobile = useMediaQuery('(max-width: 860px)')
 const isFeedbackPage = computed(() => route.path === '/translation-feedback')
-const visible = computed(() => !isAprilFoolsSkippedPath(route.path) && !isFeedbackPage.value)
+const visible = computed(
+  () => !isMobile.value && !isAprilFoolsSkippedPath(route.path) && !isFeedbackPage.value,
+)
 const dismissed = ref(false)
 const widgetVisible = computed(() => visible.value && !dismissed.value)
 const widgetElement = ref<HTMLElement | null>(null)
