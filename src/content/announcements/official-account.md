@@ -1,8 +1,9 @@
 ---
 title: VM汉化组官方新账号启用说明
+publishedAt: '2026-09-26'
+pinned: true
 sourceButton:
-  enabled: true
-  text: 查看 Bilibili 原公告
+  text: 查看原公告
   link: https://www.bilibili.com/opus/1251946408080048130
 ---
 
