@@ -104,10 +104,36 @@
             </span>
           </button>
           <Switcher />
+          <button
+            type="button"
+            class="navbar-announcements-button"
+            :aria-label="announcementButtonLabel"
+            :title="announcementButtonLabel"
+            aria-haspopup="dialog"
+            :aria-expanded="isAnnouncementsOpen"
+            aria-controls="site-announcements-list"
+            @click="openAnnouncements"
+          >
+            <Icon icon="lucide:megaphone" class="navbar-announcements-icon" aria-hidden="true" />
+            <span v-if="hasUnreadAnnouncements" class="navbar-announcement-dot" aria-hidden="true"></span>
+          </button>
         </div>
       </div>
 
       <div class="navbar-mobile-actions">
+        <button
+          type="button"
+          class="mobile-announcements-btn"
+          :aria-label="announcementButtonLabel"
+          :title="announcementButtonLabel"
+          aria-haspopup="dialog"
+          :aria-expanded="isAnnouncementsOpen"
+          aria-controls="site-announcements-list"
+          @click="openAnnouncements"
+        >
+          <Icon icon="lucide:megaphone" class="navbar-announcements-icon" aria-hidden="true" />
+          <span v-if="hasUnreadAnnouncements" class="navbar-announcement-dot" aria-hidden="true"></span>
+        </button>
         <button
           type="button"
           class="mobile-search-btn"
@@ -135,17 +161,26 @@
 </template>
 
 <script setup lang="ts">
-import { computed, nextTick, ref, onMounted, onUnmounted, watch } from 'vue'
+import { computed, inject, nextTick, ref, onMounted, onUnmounted, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { Icon } from '@iconify/vue'
 import { navItems } from '@/data/navigation'
+import { announcementPanelKey } from '@/data/announcements'
 import { getAprilFoolsLogoPath } from '@/utils/aprilFools'
 import { usePageScrollLock } from '@/composables/usePageScrollLock'
 import Switcher from './Switcher.vue'
 import SearchOverlay from './SearchOverlay.vue'
 
-const { locale } = useI18n()
+const { locale, t } = useI18n()
+const {
+  isOpen: isAnnouncementsOpen,
+  hasUnread: hasUnreadAnnouncements,
+  toggle: toggleAnnouncements,
+} = inject(announcementPanelKey)!
+const announcementButtonLabel = computed(() =>
+  t(hasUnreadAnnouncements.value ? 'navbar.unreadAnnouncements' : 'navbar.announcements'),
+)
 
 const router = useRouter()
 const route = useRoute()
@@ -213,6 +248,11 @@ watch(
 const openSearch = () => {
   isSearchOpen.value = true
   closeMenu()
+}
+
+const openAnnouncements = (event: MouseEvent) => {
+  closeMenu()
+  toggleAnnouncements(event.currentTarget as HTMLElement)
 }
 
 const handleKeyDown = (e: KeyboardEvent) => {

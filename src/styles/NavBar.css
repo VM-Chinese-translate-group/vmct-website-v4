@@ -46,6 +46,9 @@
 }
 
 .navbar-title {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
   color: var(--text-dark);
   font-weight: 600;
   font-size: 1rem;
@@ -111,6 +114,8 @@
 .navbar-item a:focus-visible,
 .navbar-more-button:focus-visible,
 .search-box-trigger:focus-visible,
+.navbar-announcements-button:focus-visible,
+.mobile-announcements-btn:focus-visible,
 .mobile-search-btn:focus-visible,
 .hamburger:focus-visible {
   outline: 2px solid var(--nav-primary);
@@ -130,6 +135,56 @@
   align-items: center;
   gap: 0.5rem;
   flex: 0 0 auto;
+}
+
+.navbar-announcements-button,
+.mobile-announcements-btn {
+  position: relative;
+}
+
+.navbar-announcement-dot {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  box-sizing: content-box;
+  width: 7px;
+  height: 7px;
+  border: 2px solid var(--nav-bg);
+  border-radius: 50%;
+  background: var(--danger-1);
+  pointer-events: none;
+}
+
+.navbar-announcements-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  flex: 0 0 auto;
+  padding: 0;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--nav-text);
+  cursor: pointer;
+}
+
+.navbar-announcements-button:hover,
+.mobile-announcements-btn:hover {
+  background: var(--nav-hover-bg, #ffffff);
+  color: var(--nav-primary);
+}
+
+.navbar-announcements-icon {
+  width: 17px;
+  height: 17px;
+  flex: 0 0 auto;
+}
+
+.navbar-announcements-button .navbar-announcements-icon {
+  width: 22px;
+  height: 22px;
 }
 
 .search-box-trigger {
@@ -198,6 +253,7 @@
   flex: 0 0 auto;
 }
 
+.mobile-announcements-btn,
 .mobile-search-btn {
   background: transparent;
   border: none;
@@ -359,7 +415,8 @@
   }
 
   .navbar-divider,
-  .desktop-search {
+  .desktop-search,
+  .navbar-announcements-button {
     display: none;
   }
 

@@ -11,6 +11,18 @@ export default {
     more: 'More',
     menu: 'Main menu',
     feedbackCta: 'Give us a task',
+    announcements: 'Announcements',
+    unreadAnnouncements: 'Announcements (unread)',
+  },
+  announcements: {
+    title: 'Announcements',
+    closeLabel: 'Close announcements',
+    close: 'Close',
+    confirm: 'Got it',
+    backToList: 'Back to announcement list',
+    publishedAt: 'Published on',
+    pinned: 'Pinned',
+    empty: 'No announcements yet.',
   },
   search: {
     placeholder: 'Search...',

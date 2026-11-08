@@ -11,6 +11,18 @@ export default {
     more: '更多',
     menu: '主選單',
     feedbackCta: '給漢化組找事',
+    announcements: '公告',
+    unreadAnnouncements: '公告（有未查看公告）',
+  },
+  announcements: {
+    title: '公告列表',
+    closeLabel: '關閉公告',
+    close: '關閉',
+    confirm: '我知道了',
+    backToList: '返回公告列表',
+    publishedAt: '發布日期',
+    pinned: '置頂',
+    empty: '暫無公告。',
   },
   search: {
     placeholder: '搜尋...',
