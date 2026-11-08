@@ -80,9 +80,14 @@ const { t, locale } = useI18n()
 const route = useRoute()
 const router = useRouter()
 const isMobile = useMediaQuery('(max-width: 860px)')
+const storageReady = ref(false)
 const isFeedbackPage = computed(() => route.path === '/translation-feedback')
 const visible = computed(
-  () => !isMobile.value && !isAprilFoolsSkippedPath(route.path) && !isFeedbackPage.value,
+  () =>
+    storageReady.value &&
+    !isMobile.value &&
+    !isAprilFoolsSkippedPath(route.path) &&
+    !isFeedbackPage.value,
 )
 const dismissed = ref(false)
 const widgetVisible = computed(() => visible.value && !dismissed.value)
@@ -132,11 +137,7 @@ onMounted(() => {
   document.addEventListener('visibilitychange', handleVisibilityChange)
 
   dismissed.value = readDismissedState()
-
-  if (widgetVisible.value) {
-    showBubble()
-    resetIdleTimer()
-  }
+  storageReady.value = true
 })
 
 onBeforeUnmount(() => {
