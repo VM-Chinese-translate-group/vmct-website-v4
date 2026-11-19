@@ -28,7 +28,7 @@ export default defineConfig(({ isSsrBuild }) => ({
       headEnabled: false,
       markdownOptions: { html: true, linkify: true },
       frontmatterPreprocess(frontmatter, options, _id, defaultHeadProcess) {
-        const data = { sourceButton: null, ...frontmatter }
+        const data = { sourceButton: null, publishedAt: null, pinned: false, icon: null, ...frontmatter }
         return { head: defaultHeadProcess(data, options), frontmatter: data }
       },
       markdownSetup(md) {

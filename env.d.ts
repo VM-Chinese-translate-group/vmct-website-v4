@@ -18,8 +18,10 @@ declare module '*.md' {
   import type { ComponentOptions } from 'vue'
   const Component: ComponentOptions
   export const title: string
+  export const publishedAt: string | null
+  export const pinned: boolean
+  export const icon: string | null
   export const sourceButton: {
-    enabled?: boolean
     text: string
     link: string
   } | null

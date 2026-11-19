@@ -24,6 +24,7 @@
           tabindex="-1"
         >
           <header class="base-dialog-header">
+            <slot name="header-start" />
             <div class="base-dialog-heading">
               <h2 :id="titleId" class="base-dialog-title">
                 <slot name="title">{{ title }}</slot>
