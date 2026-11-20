@@ -1,5 +1,6 @@
 import { defineConfig } from 'vite'
 import path from 'node:path'
+import { pathToFileURL } from 'node:url'
 import { constants } from 'node:zlib'
 import vue from '@vitejs/plugin-vue'
 import Components from 'unplugin-vue-components/vite'
@@ -12,7 +13,8 @@ const gitEnv = getGitEnv()
 const repoPath = gitEnv.owner && gitEnv.name ? `${gitEnv.owner}/${gitEnv.name}` : 'VM-Chinese-translate-group/vmct-website-v4'
 const announcementMarkdownRE = /(?:^|[\\/])src[\\/]content[\\/]announcements[\\/].*\.md$/
 
-export default defineConfig(({ isSsrBuild }) => ({
+export default defineConfig(({ command, isPreview, isSsrBuild }) => ({
+  appType: command === 'serve' && !isPreview ? 'custom' : 'spa',
   define: {
     'import.meta.env.VITE_GIT_COMMIT': JSON.stringify(getGitCommitHash()),
     'import.meta.env.VITE_GIT_BRANCH': JSON.stringify(getGitBranch()),
@@ -21,6 +23,20 @@ export default defineConfig(({ isSsrBuild }) => ({
   },
   resolve: { alias: { '@': path.resolve(import.meta.dirname, 'src') } },
   plugins: [
+    {
+      name: 'vmct-development-server',
+      apply: 'serve',
+      async configureServer(vite) {
+        const { createApplication } = await import(
+          pathToFileURL(path.resolve(import.meta.dirname, 'server/index.mjs')).href
+        )
+        const app = await createApplication({ vite })
+        vite.httpServer.once('close', () => {
+          void app.close().catch((error) => vite.config.logger.error(String(error)))
+        })
+        return () => vite.middlewares.use(app.handle)
+      },
+    },
     UnoCSS(),
     vue({ include: [/\.vue$/, announcementMarkdownRE] }),
     Markdown({
@@ -53,6 +69,8 @@ export default defineConfig(({ isSsrBuild }) => ({
   // Keep development requests same-origin while proxying to the public ECS API.
   // Set FEEDBACK_API_ORIGIN to a local API when testing feedback mutations.
   server: {
+    host: process.env.HOST || '127.0.0.1',
+    port: Number(process.env.PORT || 5173),
     proxy: {
       '/api/content': {
         target: process.env.CONTENT_API_ORIGIN || 'https://www.vmct.top',

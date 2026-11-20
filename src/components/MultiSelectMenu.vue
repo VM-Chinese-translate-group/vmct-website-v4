@@ -9,7 +9,7 @@
     <button
       ref="triggerRef"
       type="button"
-      class="feedback-select-trigger multi-select-trigger box-border flex w-full cursor-pointer items-center gap-2 border border-solid text-left font-inherit text-sm text-[var(--text-dark)]"
+      class="feedback-select-trigger multi-select-trigger h-[auto]! min-h-[44px] py-[6px]! box-border flex w-full cursor-pointer items-center gap-2 border border-solid text-left font-inherit text-sm text-[var(--text-dark)]"
       :class="isOpen ? 'border-[var(--info-1)]!' : ''"
       aria-haspopup="listbox"
       :aria-expanded="isOpen"
@@ -21,8 +21,12 @@
       @keydown.up.prevent="openMenu(true)"
     >
       <span :id="summaryId" class="sr-only">{{ summary }}</span>
-      <span class="multi-select-tags" aria-hidden="true">
-        <span v-for="option in selectedOptions" :key="option.value" class="multi-select-tag">
+      <span class="multi-select-tags flex min-w-0 flex-1 flex-wrap gap-[6px]" aria-hidden="true">
+        <span
+          v-for="option in selectedOptions"
+          :key="option.value"
+          class="multi-select-tag box-border max-w-full rounded-md p-[3px_8px] [background:var(--info-soft)] text-[var(--info-1)] text-[12px] font-600 leading-[18px] [overflow-wrap:anywhere]"
+        >
           {{ option.label }}
         </span>
         <span v-if="!selectedOptions.length" class="text-[var(--text-muted)]">
@@ -42,7 +46,7 @@
         v-if="isOpen"
         :id="menuId"
         ref="menuRef"
-        class="multi-select-options"
+        class="multi-select-options fixed z-[30] box-border overflow-y-auto overscroll-contain p-1 [border:1px_solid_var(--switcher-border)] rounded-[10px] [background:var(--bg-white)] [box-shadow:var(--switcher-shadow)]"
         :style="menuStyle"
         role="listbox"
         aria-multiselectable="true"
@@ -51,7 +55,7 @@
         <button
           v-for="(option, index) in options"
           :key="option.value"
-          class="feedback-flat-control multi-select-option"
+          class="feedback-flat-control multi-select-option flex box-border items-center gap-[10px] w-full min-h-[44px] border-0 rounded-md p-[8px_10px] [background:transparent] text-[var(--text-1)] font-inherit [font-weight:inherit] [line-height:inherit] text-[14px] text-left cursor-pointer hover:[background:var(--bg-soft)] focus-visible:[outline:2px_solid_var(--info-1)] focus-visible:[outline-offset:-2px] [&[aria-selected='true']]:[background:var(--info-soft)] [&[aria-selected='true']]:text-[var(--info-1)] [&[aria-selected='true']]:font-600"
           type="button"
           role="option"
           tabindex="-1"
@@ -59,7 +63,10 @@
           @click="toggleOption(option.value)"
           @keydown="handleOptionKeydown($event, index)"
         >
-          <span class="multi-select-checkbox" aria-hidden="true">
+          <span
+            class="multi-select-checkbox grid box-border w-[18px] h-[18px] flex-none place-items-center [border:1px_solid_var(--text-2)] rounded [[aria-selected='true']_&]:border-[var(--btn-primary-bg)] [[aria-selected='true']_&]:[background:var(--btn-primary-bg)] [[aria-selected='true']_&]:text-[white]"
+            aria-hidden="true"
+          >
             <Icon v-if="modelValue.includes(option.value)" class="size-3.5" icon="lucide:check" />
           </span>
           <span class="min-w-0 [overflow-wrap:anywhere]">{{ option.label }}</span>
@@ -225,7 +232,3 @@ onUnmounted(() => {
   window.removeEventListener('scroll', handleScroll, true)
 })
 </script>
-
-<style scoped>
-@import '@/styles/MultiSelectMenu.css';
-</style>

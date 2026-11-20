@@ -106,7 +106,7 @@
         :open="group.type.value !== 'document' && Boolean(group.pages.length)"
       >
         <summary
-          class="cms-category-summary flex cursor-pointer list-none items-center gap-2 rounded-lg px-3 py-2 font-700 hover:bg-[var(--bg-alt)]"
+          class="cms-category-summary [&::marker]:hidden flex cursor-pointer list-none items-center gap-2 rounded-lg px-3 py-2 font-700 hover:bg-[var(--bg-alt)]"
         >
           <span class="w-4 shrink-0 text-center transition-transform group-open/category:rotate-90">
             ›
@@ -220,9 +220,3 @@ const stateClass = (page: ContentPageSummary) => {
   return 'text-emerald-700 dark:text-emerald-300'
 }
 </script>
-
-<style scoped>
-.cms-category-summary::marker {
-  display: none;
-}
-</style>

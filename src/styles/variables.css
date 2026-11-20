@@ -258,3 +258,66 @@
   --search-highlight: #634b00;
   --brand-primary: var(--info-1);
 }
+
+.home-shell {
+  --home-bg: #eef3f2;
+  --home-surface: rgba(255, 255, 255, 0.72);
+  --home-surface-solid: #ffffff;
+  --home-border: rgba(38, 64, 49, 0.12);
+  --home-text: #111827;
+  --home-muted: #66747d;
+  --home-accent: #2e7d32;
+  --home-accent-soft: rgba(46, 125, 50, 0.12);
+  --home-tabs-bg: rgba(255, 255, 255, 0.55);
+  --home-tabs-active-bg: rgba(46, 125, 50, 0.1);
+  --home-button-bg: rgba(255, 255, 255, 0.52);
+}
+
+.dark .home-shell {
+  --home-bg: #101417;
+  --home-surface: rgba(24, 30, 34, 0.78);
+  --home-surface-solid: #181e22;
+  --home-border: rgba(231, 239, 244, 0.1);
+  --home-text: #edf5f8;
+  --home-muted: #a8b5bb;
+  --home-accent: #7bd88f;
+  --home-accent-soft: rgba(123, 216, 143, 0.13);
+  --home-tabs-bg: rgba(255, 255, 255, 0.07);
+  --home-tabs-active-bg: rgba(123, 216, 143, 0.16);
+  --home-button-bg: rgba(255, 255, 255, 0.08);
+}
+
+:root {
+  --image-loading-label: '图片加载中…';
+  --image-loading-bg: rgba(46, 125, 50, 0.07);
+  --image-loading-color: #55755e;
+  --image-loading-shimmer: rgba(255, 255, 255, 0.42);
+}
+
+.dark {
+  --image-loading-bg: rgba(123, 216, 143, 0.07);
+  --image-loading-color: #9ebda6;
+  --image-loading-shimmer: rgba(255, 255, 255, 0.08);
+}
+
+/* Keep prose colors linked to the active theme instead of fixed preset colors. */
+.markdown-body.vm-prose {
+  --un-prose-body: var(--text-1);
+  --un-prose-headings: var(--text-dark);
+  --un-prose-lead: var(--text-2);
+  --un-prose-links: var(--nav-primary);
+  --un-prose-bold: var(--text-dark);
+  --un-prose-counters: var(--text-2);
+  --un-prose-bullets: var(--text-muted);
+  --un-prose-hr: var(--switcher-border);
+  --un-prose-quotes: var(--text-1);
+  --un-prose-quote-borders: var(--switcher-border);
+  --un-prose-captions: var(--text-2);
+  --un-prose-kbd: var(--text-dark);
+  --un-prose-kbd-shadows: var(--switcher-border);
+  --un-prose-code: var(--text-dark);
+  --un-prose-pre-code: var(--text-1);
+  --un-prose-pre-bg: var(--bg-soft);
+  --un-prose-th-borders: var(--switcher-border);
+  --un-prose-td-borders: var(--switcher-border);
+}

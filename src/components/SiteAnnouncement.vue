@@ -1,22 +1,31 @@
 <template>
   <section
     v-if="announcementConfig.enabled"
-    class="site-announcement"
+    class="site-announcement box-border w-full p-[18px_20px_0] [background:var(--bg-off-white)] overflow-hidden [&_p]:flex [&_p]:flex-wrap [&_p]:gap-2 [&_p]:min-w-0 [&_p]:flex-1 [&_p]:m-0 [&_p]:text-[0.92rem] [&_p]:font-700 [&_p]:leading-[1.35] max-[720px]:p-[10px_10px_0] max-[720px]:[&_p]:block max-[720px]:[&_p]:text-[0.84rem] max-[720px]:[&_p]:leading-[1.4]"
     :class="{
-      'is-home': isHomePage,
-      'is-doc-surface': isDocSurface,
-      'is-plain-surface': isPlainSurface,
+      'is-home [.site-announcement&]:p-[12px_0_0] [.site-announcement&]:[background:radial-gradient(circle_at_12%_0%,_rgba(57,_132,_68,_0.1),_transparent_26%),_#eef3f2] [.dark_.site-announcement&]:[background:#101417] max-[720px]:[.site-announcement&]:p-[10px_0_0]':
+        isHomePage,
+      'is-doc-surface [.site-announcement&]:[background:var(--bg-alt)]': isDocSurface,
+      'is-plain-surface [.site-announcement&]:[background:var(--bg-white)]': isPlainSurface,
     }"
     :aria-label="announcement.label"
   >
-    <div class="site-announcement-inner">
-      <span class="site-announcement-icon" aria-hidden="true">
+    <div
+      class="site-announcement-inner flex items-center gap-3 box-border w-[min(1440px,_100%)] min-h-[44px] m-[0_auto] p-[7px_12px] [border:1px_solid_rgba(39,_112,_56,_0.12)] rounded-lg [background:rgba(255,_255,_255,_0.5)] text-[#277038] [.site-announcement.is-home_&]:w-[min(1320px,_calc(100%_-_40px))] dark:[background:rgba(24,_30,_34,_0.78)] dark:text-[#89e8bd] max-[720px]:grid max-[720px]:grid-cols-[auto_minmax(0,_1fr)_auto] max-[720px]:items-center max-[720px]:w-[calc(100%_-_20px)] max-[720px]:min-h-[52px] max-[720px]:gap-2 max-[720px]:p-[7px_9px]"
+    >
+      <span
+        class="site-announcement-icon grid place-items-center w-7 h-7 flex-none rounded-lg [background:rgba(49,_130,_65,_0.1)] text-[1rem]"
+        aria-hidden="true"
+      >
         <Icon icon="lucide:megaphone" />
       </span>
       <p>
         <span>{{ announcement.body }}</span>
       </p>
-      <RouterLink class="site-announcement-link" :to="announcementConfig.link">
+      <RouterLink
+        class="site-announcement-link inline-flex items-center justify-center min-h-[30px] p-[5px_12px] [border:1px_solid_rgba(39,_112,_56,_0.18)] rounded-lg [background:rgba(46,_125,_50,_0.1)] text-[#277038] text-[0.86rem] font-800 no-underline whitespace-nowrap dark:text-[#89e8bd] max-[720px]:w-[auto] max-[720px]:min-h-[32px] max-[720px]:p-[5px_10px] max-[720px]:text-[0.82rem]"
+        :to="announcementConfig.link"
+      >
         {{ announcement.action }}
       </RouterLink>
     </div>
@@ -76,130 +85,3 @@ const docSurfacePaths = new Set([
 const isDocSurface = computed(() => route.meta.layout === 'doc' || docSurfacePaths.has(route.path))
 const isPlainSurface = computed(() => route.name === 'not-found')
 </script>
-
-<style scoped>
-.site-announcement {
-  box-sizing: border-box;
-  width: 100%;
-  padding: 18px 20px 0;
-  background: var(--bg-off-white);
-  overflow: hidden;
-}
-
-.site-announcement.is-doc-surface {
-  background: var(--bg-alt);
-}
-
-.site-announcement.is-plain-surface {
-  background: var(--bg-white);
-}
-
-.site-announcement.is-home {
-  padding: 12px 0 0;
-  background: radial-gradient(circle at 12% 0%, rgba(57, 132, 68, 0.1), transparent 26%), #eef3f2;
-}
-
-.site-announcement-inner {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  box-sizing: border-box;
-  width: min(1440px, 100%);
-  min-height: 44px;
-  margin: 0 auto;
-  padding: 7px 12px;
-  border: 1px solid rgba(39, 112, 56, 0.12);
-  border-radius: 8px;
-  background: rgba(255, 255, 255, 0.5);
-  color: #277038;
-}
-
-.site-announcement.is-home .site-announcement-inner {
-  width: min(1320px, calc(100% - 40px));
-}
-
-.site-announcement-icon {
-  display: grid;
-  place-items: center;
-  width: 28px;
-  height: 28px;
-  flex: 0 0 auto;
-  border-radius: 8px;
-  background: rgba(49, 130, 65, 0.1);
-  font-size: 1rem;
-}
-
-.site-announcement p {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  min-width: 0;
-  flex: 1;
-  margin: 0;
-  font-size: 0.92rem;
-  font-weight: 700;
-  line-height: 1.35;
-}
-
-.site-announcement-link {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 30px;
-  padding: 5px 12px;
-  border: 1px solid rgba(39, 112, 56, 0.18);
-  border-radius: 8px;
-  background: rgba(46, 125, 50, 0.1);
-  color: #277038;
-  font-size: 0.86rem;
-  font-weight: 800;
-  text-decoration: none;
-  white-space: nowrap;
-}
-
-.dark .site-announcement-inner {
-  background: rgba(24, 30, 34, 0.78);
-  color: #89e8bd;
-}
-
-.dark .site-announcement.is-home {
-  background: #101417;
-}
-
-.dark .site-announcement-link {
-  color: #89e8bd;
-}
-
-@media (max-width: 720px) {
-  .site-announcement {
-    padding: 10px 10px 0;
-  }
-
-  .site-announcement.is-home {
-    padding: 10px 0 0;
-  }
-
-  .site-announcement-inner {
-    display: grid;
-    grid-template-columns: auto minmax(0, 1fr) auto;
-    align-items: center;
-    width: calc(100% - 20px);
-    min-height: 52px;
-    gap: 8px;
-    padding: 7px 9px;
-  }
-
-  .site-announcement p {
-    display: block;
-    font-size: 0.84rem;
-    line-height: 1.4;
-  }
-
-  .site-announcement-link {
-    width: auto;
-    min-height: 32px;
-    padding: 5px 10px;
-    font-size: 0.82rem;
-  }
-}
-</style>

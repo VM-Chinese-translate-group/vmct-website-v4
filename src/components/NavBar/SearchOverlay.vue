@@ -7,7 +7,7 @@
         @click.self="close"
       >
         <div
-          class="search-panel flex max-h-[70vh] w-160 max-w-[95%] flex-col overflow-hidden border border-[var(--search-border)] rounded-3 bg-[var(--bg-white)] shadow-[var(--card-shadow)]"
+          class="search-panel [.search-fade-enter-active_&]:[transition:transform_0.18s_ease] [.search-fade-enter-active_&]:[will-change:transform] [.search-fade-leave-active_&]:[transition:transform_0.18s_ease] [.search-fade-leave-active_&]:[will-change:transform] [.search-fade-enter-from_&]:[transform:translateY(-10px)] [.search-fade-leave-to_&]:[transform:translateY(-10px)] motion-reduce:[.search-fade-enter-active_&]:[transition:none] motion-reduce:[.search-fade-leave-active_&]:[transition:none] flex max-h-[70vh] w-160 max-w-[95%] flex-col overflow-hidden border border-[var(--search-border)] rounded-3 bg-[var(--bg-white)] shadow-[var(--card-shadow)]"
         >
           <div class="flex items-center border-b border-b-[var(--search-border)] px-5">
             <div>
@@ -24,7 +24,10 @@
               role="combobox"
               @input="onInput"
             />
-            <kbd class="search-shortcut" aria-hidden="true">
+            <kbd
+              class="search-shortcut box-border inline-flex items-center justify-center min-w-[36px] h-6 flex-none p-[0_7px] appearance-none [border:1px_solid_var(--search-border)] rounded-md [background:var(--bg-soft)] [box-shadow:0_1px_1px_rgba(0,_0,_0,_0.08)] text-[var(--text-muted)] [font-family:inherit] text-[11px] font-600 tracking-[0.03em] leading-[1] select-none"
+              aria-hidden="true"
+            >
               {{ $t('search.esc') }}
             </kbd>
           </div>
@@ -32,7 +35,7 @@
           <div
             id="site-search-results"
             ref="resultsAreaRef"
-            class="results-area overflow-y-auto overscroll-contain p-2"
+            class="results-area [&::-webkit-scrollbar]:w-[6px] [&::-webkit-scrollbar-thumb]:[background:var(--switcher-border)] [&::-webkit-scrollbar-thumb]:rounded-[10px] overflow-y-auto overscroll-contain p-2"
             role="listbox"
           >
             <div v-if="results.length" class="results-list">
@@ -42,7 +45,7 @@
                 :data-result-index="index"
                 :class="[
                   'group mb-0.5 flex cursor-pointer items-center rounded-2 px-4 py-[0.85rem] transition-colors duration-150 hover:bg-[var(--search-row-hover)]',
-                  index === activeIndex ? 'is-active' : '',
+                  index === activeIndex ? 'is-active vm-search-is-active' : '',
                 ]"
                 role="option"
                 :aria-selected="index === activeIndex"
@@ -67,7 +70,7 @@
                 </div>
                 <div
                   :class="[
-                    'result-arrow -translate-x-1.25 text-[1.2rem] text-[var(--brand-primary)] opacity-50 transition-all duration-200 group-hover:translate-x-0 group-hover:opacity-100',
+                    'result-arrow vm-search-result-arrow -translate-x-1.25 text-[1.2rem] text-[var(--brand-primary)] opacity-50 transition-all duration-200 group-hover:translate-x-0 group-hover:opacity-100',
                   ]"
                 >
                   <Icon icon="lucide:chevron-right" />
@@ -325,84 +328,3 @@ onUnmounted(() => {
   clearTimeout(timer)
 })
 </script>
-
-<style scoped>
-.search-shortcut {
-  box-sizing: border-box;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 36px;
-  height: 24px;
-  flex: 0 0 auto;
-  padding: 0 7px;
-  appearance: none;
-  border: 1px solid var(--search-border);
-  border-radius: 6px;
-  background: var(--bg-soft);
-  box-shadow: 0 1px 1px rgba(0, 0, 0, 0.08);
-  color: var(--text-muted);
-  font-family: inherit;
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 0.03em;
-  line-height: 1;
-  user-select: none;
-}
-
-.search-fade-enter-active,
-.search-fade-leave-active {
-  transition: opacity 0.18s ease;
-}
-
-.search-fade-enter-active .search-panel,
-.search-fade-leave-active .search-panel {
-  transition: transform 0.18s ease;
-  will-change: transform;
-}
-
-.search-fade-enter-from,
-.search-fade-leave-to {
-  opacity: 0;
-}
-
-.search-fade-enter-from .search-panel,
-.search-fade-leave-to .search-panel {
-  transform: translateY(-10px);
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .search-fade-enter-active,
-  .search-fade-leave-active,
-  .search-fade-enter-active .search-panel,
-  .search-fade-leave-active .search-panel {
-    transition: none;
-  }
-}
-
-:deep(mark) {
-  background: var(--search-highlight);
-  color: inherit;
-  border-radius: 2px;
-  padding: 0 1px;
-}
-
-.results-area::-webkit-scrollbar {
-  width: 6px;
-}
-
-.results-area::-webkit-scrollbar-thumb {
-  background: var(--switcher-border);
-  border-radius: 10px;
-}
-
-.results-list [role='option'].is-active {
-  background: var(--search-row-hover);
-}
-
-.results-list [role='option'].is-active .result-arrow {
-  color: var(--brand-primary);
-  opacity: 1;
-  transform: translateX(0);
-}
-</style>

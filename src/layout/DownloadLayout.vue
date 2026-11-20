@@ -56,7 +56,7 @@
     </header>
 
     <main class="pack-main">
-      <section class="pack-content-body markdown-body" ref="contentRef">
+      <section class="pack-content-body markdown-body vm-prose" ref="contentRef">
         <slot />
       </section>
 

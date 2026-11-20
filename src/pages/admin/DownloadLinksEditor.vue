@@ -1,14 +1,26 @@
 <template>
-  <section class="download-editor" aria-labelledby="download-editor-title">
-    <header class="download-editor-header">
+  <section
+    class="download-editor grid gap-3 p-4 [border:1px_solid_var(--switcher-border)] rounded-xl [background:var(--bg-alt)]"
+    aria-labelledby="download-editor-title"
+  >
+    <header
+      class="download-editor-header flex items-center justify-between gap-4 [&_h3]:flex [&_h3]:items-center [&_h3]:gap-2 [&_h3]:m-0 [&_h3]:text-[16px] [&_h3]:text-[var(--text-1)] [&_p]:m-[5px_0_0] [&_p]:text-[13px] [&_p]:text-[var(--text-muted)] max-[640px]:items-start max-[640px]:flex-col max-[640px]:gap-3"
+    >
       <div>
         <h3 id="download-editor-title">
           下载链接
-          <span class="download-count">{{ config.methods.length }}</span>
+          <span
+            class="download-count p-[1px_7px] rounded-md [background:var(--bg-soft)] text-[var(--text-muted)] text-[12px] font-500"
+          >
+            {{ config.methods.length }}
+          </span>
         </h3>
         <p>配置页面上的下载入口，保存后立即生效。</p>
       </div>
-      <div v-if="pageId" class="download-actions">
+      <div
+        v-if="pageId"
+        class="download-actions flex gap-2 shrink-0 [&_svg]:mr-[6px] [&_svg]:w-4 [&_svg]:h-4 max-[640px]:w-full max-[640px]:[&_button]:flex-1"
+      >
         <button class="cms-button" type="button" :disabled="busy || !loaded" @click="addMethod">
           <Icon icon="lucide:plus" />
           添加方式
@@ -27,45 +39,64 @@
         </button>
       </div>
     </header>
-    <p v-if="!pageId" class="download-empty">先保存页面，即可添加下载链接。</p>
+    <p v-if="!pageId" class="download-empty vm-admin-downloads-download-empty">
+      先保存页面，即可添加下载链接。
+    </p>
     <template v-else>
-      <div v-if="error" class="download-error" role="alert">
+      <div
+        v-if="error"
+        class="download-error flex items-center gap-2 text-[13px] text-[#dc2626] [&_button]:ml-auto"
+        role="alert"
+      >
         <Icon icon="lucide:circle-alert" />
         {{ error }}
         <button class="cms-button" type="button" :disabled="busy" @click="load">重新加载</button>
       </div>
-      <p v-if="busy && !loaded" class="download-empty" role="status">正在加载下载链接…</p>
-      <div v-else-if="loaded && !config.methods.length" class="download-empty">
+      <p
+        v-if="busy && !loaded"
+        class="download-empty vm-admin-downloads-download-empty"
+        role="status"
+      >
+        正在加载下载链接…
+      </p>
+      <div
+        v-else-if="loaded && !config.methods.length"
+        class="download-empty vm-admin-downloads-download-empty"
+      >
         <Icon icon="lucide:link" />
         尚未添加下载方式，点击右上角「添加方式」。
       </div>
       <fieldset
         v-for="(method, index) in config.methods"
         :key="index"
-        class="download-card"
+        class="download-card grid gap-3 min-w-0 m-0 p-[14px] [border:1px_solid_var(--switcher-border)] rounded-[10px] [background:var(--bg-soft)]"
         :disabled="busy"
       >
-        <div class="download-card-top">
-          <div class="download-platform">
+        <div
+          class="download-card-top grid grid-cols-[190px_minmax(0,_1fr)_34px] gap-3 [align-items:end] max-[640px]:grid-cols-[minmax(0,_1fr)_34px]"
+        >
+          <div class="download-platform max-[640px]:col-[1]">
             <SelectMenu
               :model-value="platform(method)"
               :options="platforms"
               :ariaLabel="`下载方式 ${index + 1}`"
               variant="flat"
-              style="--select-width: 100%; --select-menu-min-width: 100%"
+              class="[--select-width:100%] [--select-menu-min-width:100%]"
               @update:model-value="changePlatform(method, String($event))"
             />
           </div>
-          <label class="cms-label download-caption">
+          <label
+            class="cms-label vm-admin-downloads-cms-label download-caption max-[640px]:col-[1_/_-1]"
+          >
             按钮文字
             <input
               v-model="method.text"
-              class="cms-field"
+              class="cms-field vm-admin-downloads-cms-field"
               :placeholder="platform(method) === 'lazy' ? '懒汉下载' : '例如：下载汉化'"
             />
           </label>
           <button
-            class="download-remove"
+            class="download-remove grid place-items-center w-[34px] h-[38px] border-0 rounded-lg [background:transparent] text-[var(--text-muted)] cursor-pointer hover:[background:#dc262611] hover:text-[#dc2626] [&_svg]:w-4 [&_svg]:h-4 max-[640px]:col-[2] max-[640px]:[grid-row:1]"
             type="button"
             :aria-label="`删除下载方式 ${index + 1}`"
             title="删除此方式"
@@ -74,31 +105,42 @@
             <Icon icon="lucide:trash-2" />
           </button>
         </div>
-        <div v-if="platform(method) === 'drive'" class="download-urls">
-          <label class="cms-label">
+        <div
+          v-if="platform(method) === 'drive'"
+          class="download-urls grid grid-cols-[repeat(2,_minmax(0,_1fr))] gap-3 max-[640px]:grid-cols-[minmax(0,_1fr)]"
+        >
+          <label class="cms-label vm-admin-downloads-cms-label">
             蓝奏云链接
             <input
               v-model="method.lanzouLink"
-              class="cms-field"
+              class="cms-field vm-admin-downloads-cms-field"
               type="url"
               placeholder="https://…"
             />
           </label>
-          <label class="cms-label">
+          <label class="cms-label vm-admin-downloads-cms-label">
             夸克网盘链接
             <input
               v-model="method.quarkLink"
-              class="cms-field"
+              class="cms-field vm-admin-downloads-cms-field"
               type="url"
               placeholder="https://pan.quark.cn/s/…"
             />
           </label>
         </div>
-        <label v-else class="cms-label">
+        <label v-else class="cms-label vm-admin-downloads-cms-label">
           {{ platform(method) === 'lazy' ? '原有懒汉下载链接' : '下载地址' }}
-          <input v-model="method.link" class="cms-field" type="url" placeholder="https://…" />
+          <input
+            v-model="method.link"
+            class="cms-field vm-admin-downloads-cms-field"
+            type="url"
+            placeholder="https://…"
+          />
         </label>
-        <div v-if="platform(method) === 'lazy'" class="download-resource-note">
+        <div
+          v-if="platform(method) === 'lazy'"
+          class="download-resource-note flex items-center gap-[7px] text-[12px] leading-[1.6] text-[var(--text-muted)] [&_>_svg]:shrink-0 [&_>_svg]:w-[15px] [&_>_svg]:h-[15px] [&_a]:inline-flex [&_a]:items-center [&_a]:gap-[3px] [&_a]:ml-auto [&_a]:whitespace-nowrap [&_a]:text-[var(--info-1)] [&_a]:no-underline max-[640px]:items-start max-[640px]:flex-wrap"
+        >
           <Icon icon="lucide:folder-open" />
           <span>项目目录和最新文件在资源管理中选择，配置后会替代这里的链接。</span>
           <a href="https://vmpm.vmct.top/resources" target="_blank" rel="noopener">
@@ -106,49 +148,83 @@
             <Icon icon="lucide:arrow-up-right" />
           </a>
         </div>
-        <details class="download-advanced">
+        <details
+          class="download-advanced [&_summary]:flex [&_summary]:items-center [&_summary]:gap-1 [&_summary]:w-[fit-content] [&_summary]:cursor-pointer [&_summary]:[list-style:none] [&_summary]:text-[12px] [&_summary]:text-[var(--text-muted)] [&_summary::-webkit-details-marker]:hidden [&_summary_svg]:w-[14px] [&_summary_svg]:h-[14px] [&_summary_svg]:[transition:transform_0.15s] [&[open]_summary_svg]:[transform:rotate(90deg)]"
+        >
           <summary>
             <Icon icon="lucide:chevron-right" />
             高级设置
           </summary>
-          <div class="download-advanced-fields">
-            <label v-if="platform(method) === '__custom__'" class="cms-label">
+          <div
+            class="download-advanced-fields grid grid-cols-[repeat(2,_minmax(0,_1fr))] gap-3 pt-3 max-[640px]:grid-cols-[minmax(0,_1fr)]"
+          >
+            <label
+              v-if="platform(method) === '__custom__'"
+              class="cms-label vm-admin-downloads-cms-label"
+            >
               方式标识
-              <input v-model="method.id" class="cms-field" placeholder="例如：download-1" />
+              <input
+                v-model="method.id"
+                class="cms-field vm-admin-downloads-cms-field"
+                placeholder="例如：download-1"
+              />
             </label>
-            <label class="cms-label">
+            <label class="cms-label vm-admin-downloads-cms-label">
               补充说明
               <input
                 v-model="method.subText"
-                class="cms-field"
+                class="cms-field vm-admin-downloads-cms-field"
                 placeholder="可选，显示在按钮下方"
               />
             </label>
-            <label class="cms-label">
+            <label class="cms-label vm-admin-downloads-cms-label">
               自定义图标
-              <input v-model="method.icon" class="cms-field" placeholder="可选，留空使用默认图标" />
+              <input
+                v-model="method.icon"
+                class="cms-field vm-admin-downloads-cms-field"
+                placeholder="可选，留空使用默认图标"
+              />
             </label>
             <template v-if="platform(method) === 'drive'">
-              <label class="cms-label">
+              <label class="cms-label vm-admin-downloads-cms-label">
                 备用下载地址
-                <input v-model="method.link" class="cms-field" placeholder="可选" />
+                <input
+                  v-model="method.link"
+                  class="cms-field vm-admin-downloads-cms-field"
+                  placeholder="可选"
+                />
               </label>
-              <label class="cms-label">
+              <label class="cms-label vm-admin-downloads-cms-label">
                 内嵌懒汉链接
-                <input v-model="method.lazyLink" class="cms-field" placeholder="可选" />
+                <input
+                  v-model="method.lazyLink"
+                  class="cms-field vm-admin-downloads-cms-field"
+                  placeholder="可选"
+                />
               </label>
             </template>
           </div>
         </details>
       </fieldset>
-      <footer v-if="loaded" class="download-editor-footer">
-        <span class="download-hint">
+      <footer
+        v-if="loaded"
+        class="download-editor-footer flex items-center justify-between flex-wrap gap-2 text-[12px] text-[var(--text-muted)]"
+      >
+        <span
+          class="download-hint inline-flex items-center gap-[5px] [&_svg]:w-[14px] [&_svg]:h-[14px] [&_code]:text-[11px] [&_code]:p-[2px_5px] [&_code]:rounded [&_code]:[background:var(--bg-soft)]"
+        >
           <Icon icon="lucide:code" />
           正文只需
           <code>&lt;DownloadLinks/&gt;</code>
         </span>
-        <span v-if="dirty" class="download-unsaved" role="status">有未保存的链接修改</span>
-        <span v-else-if="saved" class="download-saved" role="status">
+        <span v-if="dirty" class="download-unsaved text-[var(--info-1)]" role="status">
+          有未保存的链接修改
+        </span>
+        <span
+          v-else-if="saved"
+          class="download-saved inline-flex items-center gap-[5px] text-[#059669] [&_svg]:w-[14px] [&_svg]:h-[14px]"
+          role="status"
+        >
           <Icon icon="lucide:circle-check" />
           已保存
         </span>
@@ -234,235 +310,3 @@ async function save() {
 }
 onMounted(load)
 </script>
-
-<style scoped>
-.download-editor {
-  display: grid;
-  gap: 12px;
-  padding: 16px;
-  border: 1px solid var(--switcher-border);
-  border-radius: 12px;
-  background: var(--bg-alt);
-}
-.download-editor-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-}
-.download-editor-header h3 {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin: 0;
-  font-size: 16px;
-  color: var(--text-1);
-}
-.download-editor-header p {
-  margin: 5px 0 0;
-  font-size: 13px;
-  color: var(--text-muted);
-}
-.download-count {
-  padding: 1px 7px;
-  border-radius: 6px;
-  background: var(--bg-soft);
-  color: var(--text-muted);
-  font-size: 12px;
-  font-weight: 500;
-}
-.download-actions {
-  display: flex;
-  gap: 8px;
-  flex-shrink: 0;
-}
-.download-actions svg {
-  margin-right: 6px;
-  width: 16px;
-  height: 16px;
-}
-.download-card {
-  display: grid;
-  gap: 12px;
-  min-width: 0;
-  margin: 0;
-  padding: 14px;
-  border: 1px solid var(--switcher-border);
-  border-radius: 10px;
-  background: var(--bg-soft);
-}
-.download-card-top {
-  display: grid;
-  grid-template-columns: 190px minmax(0, 1fr) 34px;
-  gap: 12px;
-  align-items: end;
-}
-.download-urls,
-.download-advanced-fields {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 12px;
-}
-.download-editor :deep(.cms-field) {
-  min-height: 38px;
-  font-size: 14px;
-  padding-top: 7px;
-  padding-bottom: 7px;
-}
-.download-editor :deep(.cms-label) {
-  font-size: 12px;
-  color: var(--text-muted);
-}
-.download-remove {
-  display: grid;
-  place-items: center;
-  width: 34px;
-  height: 38px;
-  border: 0;
-  border-radius: 8px;
-  background: transparent;
-  color: var(--text-muted);
-  cursor: pointer;
-}
-.download-remove:hover {
-  background: #dc262611;
-  color: #dc2626;
-}
-.download-remove svg {
-  width: 16px;
-  height: 16px;
-}
-.download-resource-note {
-  display: flex;
-  align-items: center;
-  gap: 7px;
-  font-size: 12px;
-  line-height: 1.6;
-  color: var(--text-muted);
-}
-.download-resource-note > svg {
-  flex-shrink: 0;
-  width: 15px;
-  height: 15px;
-}
-.download-resource-note a {
-  display: inline-flex;
-  align-items: center;
-  gap: 3px;
-  margin-left: auto;
-  white-space: nowrap;
-  color: var(--info-1);
-  text-decoration: none;
-}
-.download-advanced summary {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  width: fit-content;
-  cursor: pointer;
-  list-style: none;
-  font-size: 12px;
-  color: var(--text-muted);
-}
-.download-advanced summary::-webkit-details-marker {
-  display: none;
-}
-.download-advanced summary svg {
-  width: 14px;
-  height: 14px;
-  transition: transform 0.15s;
-}
-.download-advanced[open] summary svg {
-  transform: rotate(90deg);
-}
-.download-advanced-fields {
-  padding-top: 12px;
-}
-.download-editor-footer {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  flex-wrap: wrap;
-  gap: 8px;
-  font-size: 12px;
-  color: var(--text-muted);
-}
-.download-hint,
-.download-saved {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-}
-.download-hint svg,
-.download-saved svg {
-  width: 14px;
-  height: 14px;
-}
-.download-hint code {
-  font-size: 11px;
-  padding: 2px 5px;
-  border-radius: 4px;
-  background: var(--bg-soft);
-}
-.download-saved {
-  color: #059669;
-}
-.download-unsaved {
-  color: var(--info-1);
-}
-.download-empty {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 16px;
-  margin: 0;
-  border: 1px dashed var(--switcher-border);
-  border-radius: 10px;
-  font-size: 13px;
-  color: var(--text-muted);
-}
-.download-error {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 13px;
-  color: #dc2626;
-}
-.download-error button {
-  margin-left: auto;
-}
-@media (max-width: 640px) {
-  .download-editor-header {
-    align-items: flex-start;
-    flex-direction: column;
-    gap: 12px;
-  }
-  .download-actions {
-    width: 100%;
-  }
-  .download-actions button {
-    flex: 1;
-  }
-  .download-card-top {
-    grid-template-columns: minmax(0, 1fr) 34px;
-  }
-  .download-platform {
-    grid-column: 1;
-  }
-  .download-remove {
-    grid-column: 2;
-    grid-row: 1;
-  }
-  .download-caption {
-    grid-column: 1 / -1;
-  }
-  .download-urls,
-  .download-advanced-fields {
-    grid-template-columns: minmax(0, 1fr);
-  }
-  .download-resource-note {
-    align-items: flex-start;
-    flex-wrap: wrap;
-  }
-}
-</style>

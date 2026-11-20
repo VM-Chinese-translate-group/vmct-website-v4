@@ -1,5 +1,7 @@
-import { defineConfig } from 'unocss'
+import { defineConfig, presetTypography } from 'unocss'
 import { presetWind3 } from 'unocss/preset-wind3'
+import { siteShortcuts } from './src/theme/index.ts'
+import { keyframes } from './src/theme/animations.ts'
 
 export default defineConfig({
   content: {
@@ -7,8 +9,20 @@ export default defineConfig({
       include: ['index.html', 'src/**/*.{vue,md}'],
     },
   },
-  presets: [presetWind3()],
+  presets: [presetWind3(), presetTypography()],
+  theme: {
+    animation: {
+      keyframes,
+      properties: { whirling: { animation: '4s whirling linear infinite alternate' } },
+    },
+  },
+  safelist: Object.keys(keyframes).map((name) => `keyframes-${name}`),
   shortcuts: {
+    ...siteShortcuts,
+    'vm-prose': [
+      'prose max-w-none! min-w-0 break-words leading-7',
+      'prose-pre:overflow-x-auto prose-pre:border prose-pre:border-solid prose-pre:border-[var(--switcher-border)] prose-table:block prose-table:overflow-x-auto prose-blockquote:border-solid prose-blockquote:font-normal prose-blockquote:not-italic [&_blockquote_p::before]:content-none [&_blockquote_p::after]:content-none',
+    ],
     'cms-label': 'grid gap-1.5 text-sm font-600 text-[var(--text-2)]',
     'cms-field':
       'box-border min-h-11 w-full rounded-lg border border-solid border-[var(--switcher-border)] bg-[var(--bg-alt)] px-3 py-2 text-[var(--text-1)] outline-none transition-colors placeholder:text-[var(--text-muted)] hover:border-[color-mix(in_srgb,var(--info-1)_55%,var(--switcher-border))] focus-visible:border-[var(--info-1)] focus-visible:ring-3 focus-visible:ring-[color-mix(in_srgb,var(--info-1)_16%,transparent)]',
@@ -54,19 +68,4 @@ export default defineConfig({
     'feedback-widget-restore':
       'appearance-none! [box-shadow:none!important] [background-image:none!important] fixed right-[max(1.15rem,env(safe-area-inset-right))] bottom-[max(1.05rem,env(safe-area-inset-bottom))] z-30 inline-flex min-h-8 items-center gap-1.5 rounded-md border border-[var(--switcher-border)] bg-[var(--bg-soft)] px-2.5 py-1.5 text-xs font-600 text-[var(--text-medium)] opacity-[0.5] transition-[opacity,color,background-color,border-color] duration-[180ms] ease-out hover:border-[var(--info-1)] hover:bg-[var(--info-soft)] hover:text-[var(--info-1)] hover:opacity-100 focus-visible:opacity-100 focus-visible:outline-2 focus-visible:outline-[var(--info-1)] focus-visible:outline-offset-2 max-[640px]:right-[max(0.7rem,env(safe-area-inset-right))] max-[640px]:bottom-[max(0.75rem,env(safe-area-inset-bottom))] motion-reduce:transition-none',
   },
-  rules: [['animate-whirling', { animation: '4s whirling linear infinite alternate' }]],
-  preflights: [
-    {
-      getCSS: () => `
-@keyframes whirling {
-  from {
-    transform: rotate3d(0, 1, 0, -90deg) scale(0.9);
-  }
-  to {
-    transform: rotate3d(0, 1, 0, 90deg) scale(1);
-  }
-}
-`,
-    },
-  ],
 })

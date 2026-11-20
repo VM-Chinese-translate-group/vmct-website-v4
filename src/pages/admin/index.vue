@@ -59,7 +59,10 @@
         @retry-deploy="retryDeploy"
       />
 
-      <div v-else class="grid grid-cols-[17rem_minmax(0,1fr)] items-start gap-4 max-lg:grid-cols-1">
+      <div
+        v-else
+        class="grid vm-admin-grid grid-cols-[17rem_minmax(0,1fr)] items-start gap-4 max-lg:grid-cols-1"
+      >
         <ContentLibrary
           :pages="libraryPages"
           :selected-id="editor.draft.id"
@@ -162,11 +165,14 @@
             </button>
           </nav>
 
-          <div class="grid gap-5 p-5 max-sm:p-3">
-            <section :class="{ 'max-lg:hidden': activeTab !== 'metadata' }" class="grid gap-4">
-              <div class="grid gap-2">
+          <div class="grid vm-admin-grid gap-5 p-5 max-sm:p-3">
+            <section
+              :class="{ 'max-lg:hidden': activeTab !== 'metadata' }"
+              class="grid vm-admin-grid gap-4"
+            >
+              <div class="grid vm-admin-grid gap-2">
                 <span class="cms-label">页面类型</span>
-                <div class="grid grid-cols-3 gap-2 max-sm:grid-cols-1">
+                <div class="grid vm-admin-grid grid-cols-3 gap-2 max-sm:grid-cols-1">
                   <button
                     v-for="type in PAGE_TYPES"
                     :key="type.value"
@@ -213,7 +219,7 @@
 
             <section
               :class="{ 'max-lg:hidden': activeTab !== 'content' }"
-              class="grid content-start gap-2"
+              class="grid vm-admin-grid content-start gap-2"
             >
               <div class="flex items-center justify-between">
                 <h3 class="m-0 text-lg">Markdown 正文</h3>
@@ -235,7 +241,7 @@
               class="rounded-xl border border-[var(--switcher-border)] bg-[var(--bg-alt)] p-4"
             >
               <h3 class="m-0 text-base">内容检查</h3>
-              <ul class="mb-0 mt-2 grid gap-1 pl-5 text-sm">
+              <ul class="mb-0 mt-2 grid vm-admin-grid gap-1 pl-5 text-sm">
                 <li
                   v-for="issue in editor.issues.value"
                   :key="issue.field + issue.message"
@@ -659,28 +665,3 @@ onBeforeUnmount(() => {
   if (noticeTimer) clearTimeout(noticeTimer)
 })
 </script>
-
-<style scoped>
-.cms-toast-enter-active,
-.cms-toast-leave-active {
-  transition:
-    opacity 0.18s ease,
-    transform 0.18s ease;
-}
-.cms-toast-enter-from,
-.cms-toast-leave-to {
-  opacity: 0;
-  transform: translate(-50%, -0.5rem);
-}
-@media (min-width: 1025px) {
-  .cms-library + section > div.grid {
-    grid-template-columns: minmax(0, 1fr) minmax(24rem, 0.92fr);
-  }
-  .cms-library + section > div.grid > section:first-child {
-    grid-column: 1/-1;
-  }
-  .cms-library + section > div.grid > section:nth-child(4) {
-    grid-column: 1/-1;
-  }
-}
-</style>

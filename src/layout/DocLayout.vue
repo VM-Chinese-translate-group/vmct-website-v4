@@ -6,7 +6,7 @@
     </header>
 
     <main class="doc-main">
-      <section class="doc-content markdown-body" ref="contentRef">
+      <section class="doc-content markdown-body vm-prose" ref="contentRef">
         <slot />
       </section>
 

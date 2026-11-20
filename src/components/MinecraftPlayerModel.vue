@@ -1,28 +1,37 @@
 <template>
   <span
-    class="minecraft-player-model"
+    class="minecraft-player-model [--skin-pixel:3.35px] block w-[6rem] h-[8.8rem] pointer-events-none [filter:drop-shadow(1px_1.5px_0_rgb(15_23_42_/_0.18))_drop-shadow(0_0_1px_rgb(15_23_42_/_0.14))] max-[640px]:[--skin-pixel:2.95px] max-[640px]:w-[5.5rem] max-[640px]:h-[8rem]"
     :class="{
       'is-idle': props.activity === 'idle',
-      'is-wave': props.activity === 'wave',
-      'is-walk': props.activity === 'walk',
+      'is-wave [.minecraft-player-model&_.minecraft-player-model\_\_part--left-arm]:[--limb-start:rotateZ(8deg)] [.minecraft-player-model&_.minecraft-player-model\_\_part--left-arm]:[--limb-end:rotateZ(140deg)] [.minecraft-player-model&_.minecraft-player-model\_\_part--left-arm]:[animation:minecraft-player-limb_1.35s_ease-in-out_1_both]':
+        props.activity === 'wave',
+      'is-walk [.minecraft-player-model&_.minecraft-player-model\_\_part--right-arm]:[--limb-start:rotateX(26deg)_rotateZ(18deg)] [.minecraft-player-model&_.minecraft-player-model\_\_part--right-arm]:[--limb-end:rotateX(-26deg)_rotateZ(-18deg)] [.minecraft-player-model&_.minecraft-player-model\_\_part--right-arm]:[animation:minecraft-player-limb_0.65s_linear_4_both] [.minecraft-player-model&_.minecraft-player-model\_\_part--left-leg]:[--limb-start:rotateX(26deg)_rotateZ(18deg)] [.minecraft-player-model&_.minecraft-player-model\_\_part--left-leg]:[--limb-end:rotateX(-26deg)_rotateZ(-18deg)] [.minecraft-player-model&_.minecraft-player-model\_\_part--left-leg]:[animation:minecraft-player-limb_0.65s_linear_4_both] [.minecraft-player-model&_.minecraft-player-model\_\_part--left-arm]:[--limb-start:rotateX(-26deg)_rotateZ(-18deg)] [.minecraft-player-model&_.minecraft-player-model\_\_part--left-arm]:[--limb-end:rotateX(26deg)_rotateZ(18deg)] [.minecraft-player-model&_.minecraft-player-model\_\_part--left-arm]:[animation:minecraft-player-limb_0.65s_linear_4_both] [.minecraft-player-model&_.minecraft-player-model\_\_part--right-leg]:[--limb-start:rotateX(-26deg)_rotateZ(-18deg)] [.minecraft-player-model&_.minecraft-player-model\_\_part--right-leg]:[--limb-end:rotateX(26deg)_rotateZ(18deg)] [.minecraft-player-model&_.minecraft-player-model\_\_part--right-leg]:[animation:minecraft-player-limb_0.65s_linear_4_both]':
+        props.activity === 'walk',
       'is-jump': props.activity === 'jump',
-      'is-cheer': props.activity === 'cheer',
-      'is-point': props.activity === 'point',
+      'is-cheer [.minecraft-player-model&_.minecraft-player-model\_\_part--right-arm]:[--limb-start:rotateZ(-8deg)] [.minecraft-player-model&_.minecraft-player-model\_\_part--right-arm]:[--limb-end:rotateZ(-132deg)] [.minecraft-player-model&_.minecraft-player-model\_\_part--right-arm]:[animation:minecraft-player-limb_1.2s_ease-in-out_1_both] [.minecraft-player-model&_.minecraft-player-model\_\_part--left-arm]:[--limb-start:rotateZ(8deg)] [.minecraft-player-model&_.minecraft-player-model\_\_part--left-arm]:[--limb-end:rotateZ(132deg)] [.minecraft-player-model&_.minecraft-player-model\_\_part--left-arm]:[animation:minecraft-player-limb_1.2s_ease-in-out_1_both]':
+        props.activity === 'cheer',
+      'is-point [.minecraft-player-model&_.minecraft-player-model\_\_part--right-arm]:[--limb-start:rotateZ(-8deg)] [.minecraft-player-model&_.minecraft-player-model\_\_part--right-arm]:[--limb-end:rotateZ(-78deg)] [.minecraft-player-model&_.minecraft-player-model\_\_part--right-arm]:[animation:minecraft-player-limb_1.5s_ease-in-out_1_both]':
+        props.activity === 'point',
     }"
     aria-hidden="true"
   >
-    <span class="minecraft-player-model__stage">
+    <span
+      class="minecraft-player-model__stage relative block w-full h-full [perspective:360px] [transform-style:preserve-3d] [&::before]:absolute [&::before]:[inset:0.7rem_0.25rem_0.45rem] [&::before]:[content:''] [&::before]:[background:radial-gradient(ellipse,_rgb(15_23_42_/_0.23),_transparent_68%)] [&::before]:[filter:blur(3px)] [&::before]:opacity-[0.62] [&::before]:[transform:translateY(1.2rem)_rotateX(70deg)] [.minecraft-player-model.is-idle_&]:[--bob-y:-1px] [.minecraft-player-model.is-idle_&]:[--bob-yaw:-12deg] [.minecraft-player-model.is-idle_&]:[animation:minecraft-player-bob_1.2s_ease-in-out_1_both] [.minecraft-player-model.is-idle_&]:[animation-iteration-count:infinite] [.minecraft-player-model.is-idle_&]:[animation-duration:3.6s] [.minecraft-player-model.is-walk_&]:[--bob-y:-2px] [.minecraft-player-model.is-walk_&]:[--bob-yaw:-14deg] [.minecraft-player-model.is-walk_&]:[animation:minecraft-player-bob_1.2s_ease-in-out_1_both] [.minecraft-player-model.is-walk_&]:[animation-duration:2.6s] [.minecraft-player-model.is-jump_&]:[--bob-y:-7px] [.minecraft-player-model.is-jump_&]:[--bob-yaw:8deg] [.minecraft-player-model.is-jump_&]:[animation:minecraft-player-bob_1.2s_ease-in-out_1_both] [.minecraft-player-model.is-cheer_&]:[--bob-y:-3px] [.minecraft-player-model.is-cheer_&]:[--bob-yaw:5deg] [.minecraft-player-model.is-cheer_&]:[animation:minecraft-player-bob_1.2s_ease-in-out_1_both] motion-reduce:[animation:none]!"
+    >
       <span
         v-for="part in playerParts"
         :key="`${part.key}-${part.layer ? 'outer' : 'base'}`"
-        class="minecraft-player-model__part"
-        :class="[`minecraft-player-model__part--${part.key}`, { 'is-outer-layer': part.layer }]"
+        class="minecraft-player-model__part absolute [top:0] [left:50%] block w-[calc(var(--part-width)_*_var(--skin-pixel))] h-[calc(var(--part-height)_*_var(--skin-pixel))] mt-[calc(var(--part-height)_*_var(--skin-pixel)_*_-0.5)] ml-[calc(var(--part-width)_*_var(--skin-pixel)_*_-0.5)] [--part-transform:translate3d(_calc(var(--part-x)_*_var(--skin-pixel)),_calc((var(--part-y)_+_var(--part-height)_/_2)_*_var(--skin-pixel)),_calc(var(--part-z)_*_var(--skin-pixel))_)] [transform:var(--part-transform)] [transform-origin:center_top] [transform-style:preserve-3d] motion-reduce:[animation:none]!"
+        :class="[
+          `minecraft-player-model__part--${part.key}`,
+          { 'is-outer-layer [.minecraft-player-model\_\_&:is(part)]:z-[2]': part.layer },
+        ]"
         :style="partStyle(part)"
       >
         <span
           v-for="face in part.faces"
           :key="face.name"
-          class="minecraft-player-model__face"
+          class="minecraft-player-model__face absolute block w-[calc(var(--face-width)_*_var(--skin-pixel))] h-[calc(var(--face-height)_*_var(--skin-pixel))] [background-image:url('/imgs/wulian233.png')] [background-repeat:no-repeat] [background-size:calc(64_*_var(--skin-pixel))_calc(64_*_var(--skin-pixel))] [background-position:calc(var(--uv-x)_*_var(--skin-pixel)_*_-1)_calc(var(--uv-y)_*_var(--skin-pixel)_*_-1)] [image-rendering:pixelated] [backface-visibility:hidden]"
           :class="`minecraft-player-model__face--${face.name}`"
           :style="faceStyle(part, face)"
         ></span>
@@ -316,223 +325,3 @@ function faceStyle(part: SkinPart, skinFace: SkinFace): CSSProperties {
   } as CSSProperties
 }
 </script>
-
-<style scoped>
-.minecraft-player-model {
-  --skin-pixel: 3.35px;
-  display: block;
-  width: 6rem;
-  height: 8.8rem;
-  pointer-events: none;
-  filter: drop-shadow(1px 1.5px 0 rgb(15 23 42 / 0.18)) drop-shadow(0 0 1px rgb(15 23 42 / 0.14));
-}
-
-.minecraft-player-model__stage {
-  position: relative;
-  display: block;
-  width: 100%;
-  height: 100%;
-  perspective: 360px;
-  transform-style: preserve-3d;
-}
-
-.minecraft-player-model__stage::before {
-  position: absolute;
-  inset: 0.7rem 0.25rem 0.45rem;
-  content: '';
-  background: radial-gradient(ellipse, rgb(15 23 42 / 0.23), transparent 68%);
-  filter: blur(3px);
-  opacity: 0.62;
-  transform: translateY(1.2rem) rotateX(70deg);
-}
-
-.minecraft-player-model__part {
-  position: absolute;
-  top: 0;
-  left: 50%;
-  display: block;
-  width: calc(var(--part-width) * var(--skin-pixel));
-  height: calc(var(--part-height) * var(--skin-pixel));
-  margin-top: calc(var(--part-height) * var(--skin-pixel) * -0.5);
-  margin-left: calc(var(--part-width) * var(--skin-pixel) * -0.5);
-  --part-transform: translate3d(
-    calc(var(--part-x) * var(--skin-pixel)),
-    calc((var(--part-y) + var(--part-height) / 2) * var(--skin-pixel)),
-    calc(var(--part-z) * var(--skin-pixel))
-  );
-  transform: var(--part-transform);
-  transform-origin: center top;
-  transform-style: preserve-3d;
-}
-
-.minecraft-player-model__part.is-outer-layer {
-  z-index: 2;
-}
-
-.minecraft-player-model__face {
-  position: absolute;
-  display: block;
-  width: calc(var(--face-width) * var(--skin-pixel));
-  height: calc(var(--face-height) * var(--skin-pixel));
-  background-image: url('/imgs/wulian233.png');
-  background-repeat: no-repeat;
-  background-size: calc(64 * var(--skin-pixel)) calc(64 * var(--skin-pixel));
-  background-position: calc(var(--uv-x) * var(--skin-pixel) * -1)
-    calc(var(--uv-y) * var(--skin-pixel) * -1);
-  image-rendering: pixelated;
-  backface-visibility: hidden;
-}
-
-.minecraft-player-model__face--front,
-.minecraft-player-model__face--back {
-  top: 50%;
-  left: 50%;
-  margin-top: calc(var(--face-height) * var(--skin-pixel) * -0.5);
-  margin-left: calc(var(--face-width) * var(--skin-pixel) * -0.5);
-}
-
-.minecraft-player-model__face--front {
-  transform: translateZ(calc(var(--part-depth) * var(--skin-pixel) / 2));
-}
-
-.minecraft-player-model__face--back {
-  transform: rotateY(180deg) translateZ(calc(var(--part-depth) * var(--skin-pixel) / 2));
-}
-
-.minecraft-player-model__face--right,
-.minecraft-player-model__face--left {
-  top: 50%;
-  left: 50%;
-  margin-top: calc(var(--face-height) * var(--skin-pixel) * -0.5);
-  margin-left: calc(var(--face-width) * var(--skin-pixel) * -0.5);
-}
-
-.minecraft-player-model__face--right {
-  transform: rotateY(90deg) translateZ(calc(var(--part-width) * var(--skin-pixel) / 2));
-}
-
-.minecraft-player-model__face--left {
-  transform: rotateY(-90deg) translateZ(calc(var(--part-width) * var(--skin-pixel) / 2));
-}
-
-.minecraft-player-model__face--top,
-.minecraft-player-model__face--bottom {
-  top: 50%;
-  left: 50%;
-  margin-top: calc(var(--face-height) * var(--skin-pixel) * -0.5);
-  margin-left: calc(var(--face-width) * var(--skin-pixel) * -0.5);
-}
-
-.minecraft-player-model__face--top {
-  transform: rotateX(90deg) translateZ(calc(var(--part-height) * var(--skin-pixel) / 2));
-}
-
-.minecraft-player-model__face--bottom {
-  transform: rotateX(-90deg) translateZ(calc(var(--part-height) * var(--skin-pixel) / 2));
-}
-
-.minecraft-player-model.is-idle .minecraft-player-model__stage,
-.minecraft-player-model.is-walk .minecraft-player-model__stage,
-.minecraft-player-model.is-jump .minecraft-player-model__stage,
-.minecraft-player-model.is-cheer .minecraft-player-model__stage {
-  --bob-y: -1px;
-  --bob-yaw: -12deg;
-  animation: minecraft-player-bob 1.2s ease-in-out 1 both;
-}
-
-.minecraft-player-model.is-idle .minecraft-player-model__stage {
-  animation-iteration-count: infinite;
-  animation-duration: 3.6s;
-}
-
-.minecraft-player-model.is-walk .minecraft-player-model__stage {
-  --bob-y: -2px;
-  --bob-yaw: -14deg;
-  animation-duration: 2.6s;
-}
-
-.minecraft-player-model.is-jump .minecraft-player-model__stage {
-  --bob-y: -7px;
-  --bob-yaw: 8deg;
-}
-
-.minecraft-player-model.is-cheer .minecraft-player-model__stage {
-  --bob-y: -3px;
-  --bob-yaw: 5deg;
-}
-
-.minecraft-player-model.is-wave .minecraft-player-model__part--left-arm {
-  --limb-start: rotateZ(8deg);
-  --limb-end: rotateZ(140deg);
-  animation: minecraft-player-limb 1.35s ease-in-out 1 both;
-}
-
-.minecraft-player-model.is-walk .minecraft-player-model__part--right-arm,
-.minecraft-player-model.is-walk .minecraft-player-model__part--left-leg {
-  --limb-start: rotateX(26deg) rotateZ(18deg);
-  --limb-end: rotateX(-26deg) rotateZ(-18deg);
-  animation: minecraft-player-limb 0.65s linear 4 both;
-}
-
-.minecraft-player-model.is-walk .minecraft-player-model__part--left-arm,
-.minecraft-player-model.is-walk .minecraft-player-model__part--right-leg {
-  --limb-start: rotateX(-26deg) rotateZ(-18deg);
-  --limb-end: rotateX(26deg) rotateZ(18deg);
-  animation: minecraft-player-limb 0.65s linear 4 both;
-}
-
-.minecraft-player-model.is-point .minecraft-player-model__part--right-arm {
-  --limb-start: rotateZ(-8deg);
-  --limb-end: rotateZ(-78deg);
-  animation: minecraft-player-limb 1.5s ease-in-out 1 both;
-}
-
-.minecraft-player-model.is-cheer .minecraft-player-model__part--right-arm {
-  --limb-start: rotateZ(-8deg);
-  --limb-end: rotateZ(-132deg);
-  animation: minecraft-player-limb 1.2s ease-in-out 1 both;
-}
-
-.minecraft-player-model.is-cheer .minecraft-player-model__part--left-arm {
-  --limb-start: rotateZ(8deg);
-  --limb-end: rotateZ(132deg);
-  animation: minecraft-player-limb 1.2s ease-in-out 1 both;
-}
-
-@keyframes minecraft-player-bob {
-  0%,
-  100% {
-    transform: translateY(0) rotateY(-12deg) rotateX(1deg);
-  }
-
-  50% {
-    transform: translateY(var(--bob-y)) rotateY(var(--bob-yaw)) rotateX(1deg);
-  }
-}
-
-@keyframes minecraft-player-limb {
-  0%,
-  100% {
-    transform: var(--part-transform) var(--limb-start);
-  }
-
-  50% {
-    transform: var(--part-transform) var(--limb-end);
-  }
-}
-
-@media (max-width: 640px) {
-  .minecraft-player-model {
-    --skin-pixel: 2.95px;
-    width: 5.5rem;
-    height: 8rem;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .minecraft-player-model__stage,
-  .minecraft-player-model__part {
-    animation: none !important;
-  }
-}
-</style>

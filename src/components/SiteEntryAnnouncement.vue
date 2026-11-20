@@ -7,21 +7,27 @@
     class="entry-announcement-popup"
     @update:open="dismissAnnouncement"
   >
-    <div class="entry-announcement-content">
+    <div
+      class="entry-announcement-content text-[var(--text-1)] text-left text-[0.96rem] leading-[1.7] [&_.markdown-body]:[background:transparent] [&_.markdown-body]:text-[inherit] [&_.markdown-body]:font-inherit [&_.markdown-body]:[font-size:inherit] [&_.markdown-body]:[font-weight:inherit] [&_.markdown-body]:[line-height:inherit] [&_p]:m-[0_0_0.85em] [&_h3]:m-[1.15em_0_0.35em] [&_h3]:text-[var(--nav-primary)] [&_h3]:text-[1rem] [&_a]:text-[var(--nav-primary)] [&_a]:[overflow-wrap:anywhere] [&_p:last-child]:mb-0"
+    >
       <OfficialAccountAnnouncement />
     </div>
     <template #footer>
       <div class="base-dialog-actions">
         <a
           v-if="sourceButton && sourceButton.enabled !== false"
-          class="entry-announcement-source"
+          class="entry-announcement-source inline-flex box-border items-center justify-center min-w-0 h-11 px-3 [border:1px_solid_var(--switcher-border)] rounded-lg [background:var(--bg-white)] text-[var(--text-2)] font-inherit [font-weight:inherit] text-[0.875rem] leading-[1.25] text-center no-underline [overflow-wrap:anywhere] hover:[background:var(--bg-soft)] hover:text-[var(--text-dark)] focus-visible:[outline:2px_solid_var(--info-1)] focus-visible:[outline-offset:2px]"
           :href="sourceButton.link"
           target="_blank"
           rel="noopener noreferrer"
         >
           {{ sourceButton.text }}
         </a>
-        <button type="button" class="entry-announcement-confirm" @click="dismissAnnouncement">
+        <button
+          type="button"
+          class="entry-announcement-confirm px-6 rounded-lg font-inherit [font-size:inherit] [font-weight:inherit] [line-height:inherit] border-0 [background:var(--btn-primary-bg)] text-[#fff] cursor-pointer focus-visible:[outline:2px_solid_var(--info-1)] focus-visible:[outline-offset:2px]"
+          @click="dismissAnnouncement"
+        >
           我知道了
         </button>
       </div>
@@ -88,69 +94,3 @@ const showAnnouncement = () => {
 onMounted(showAnnouncement)
 watch([() => route.path, locale], showAnnouncement)
 </script>
-
-<style scoped>
-.entry-announcement-content {
-  color: var(--text-1);
-  text-align: left;
-  font-size: 0.96rem;
-  line-height: 1.7;
-}
-.entry-announcement-content :deep(.markdown-body) {
-  background: transparent;
-  color: inherit;
-  font: inherit;
-}
-.entry-announcement-content :deep(p) {
-  margin: 0 0 0.85em;
-}
-.entry-announcement-content :deep(h3) {
-  margin: 1.15em 0 0.35em;
-  color: var(--nav-primary);
-  font-size: 1rem;
-}
-.entry-announcement-content :deep(a) {
-  color: var(--nav-primary);
-  overflow-wrap: anywhere;
-}
-.entry-announcement-content :deep(p:last-child) {
-  margin-bottom: 0;
-}
-.entry-announcement-source {
-  display: inline-flex;
-  box-sizing: border-box;
-  align-items: center;
-  justify-content: center;
-  min-width: 0;
-  height: 44px;
-  padding-inline: 12px;
-  border: 1px solid var(--switcher-border);
-  border-radius: 8px;
-  background: var(--bg-white);
-  color: var(--text-2);
-  font: inherit;
-  font-size: 0.875rem;
-  line-height: 1.25;
-  text-align: center;
-  text-decoration: none;
-  overflow-wrap: anywhere;
-}
-.entry-announcement-source:hover {
-  background: var(--bg-soft);
-  color: var(--text-dark);
-}
-.entry-announcement-confirm {
-  padding-inline: 24px;
-  border-radius: 8px;
-  font: inherit;
-  border: 0;
-  background: var(--btn-primary-bg);
-  color: #fff;
-  cursor: pointer;
-}
-.entry-announcement-source:focus-visible,
-.entry-announcement-confirm:focus-visible {
-  outline: 2px solid var(--info-1);
-  outline-offset: 2px;
-}
-</style>

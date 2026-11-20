@@ -5,7 +5,7 @@
     :title="t('downloadModal.driveTitle')"
     :close-label="t('downloadModal.close')"
     width="640px"
-    class="download-picker-dialog"
+    class="download-picker-dialog rounded-[24px] [&_.base-dialog-header]:p-[20px_24px_20px_36px] [&_.base-dialog-title]:text-[24px] [&_.base-dialog-title]:leading-[1.4] [&_.base-dialog-close_svg]:w-6 [&_.base-dialog-close_svg]:h-6 [&_.base-dialog-body]:p-[0_36px_28px] [&_.download-action-notice]:mt-[22px] [&_.download-action-notice]:text-[14px] [&_.download-action-notice]:leading-[1.5] max-[600px]:rounded-[22px] max-[600px]:[&_.base-dialog-header]:p-[20px_18px_24px_24px] max-[600px]:[&_.base-dialog-title]:text-[24px] max-[600px]:[&_.base-dialog-close_svg]:w-6 max-[600px]:[&_.base-dialog-close_svg]:h-6 max-[600px]:[&_.base-dialog-body]:p-[0_24px_28px] max-[600px]:[&_.download-action-notice]:mt-6 max-[600px]:[&_.download-action-notice]:text-[14px]"
     @update:open="emit('close')"
     @closed="openSelectedDownload"
   >
@@ -68,7 +68,3 @@ async function openSelectedDownload() {
 
 defineExpose({ activateDownload })
 </script>
-
-<style>
-@import '@/styles/DownloadModal.css';
-</style>

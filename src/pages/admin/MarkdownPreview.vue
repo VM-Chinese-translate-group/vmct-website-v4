@@ -13,12 +13,20 @@
       </span>
     </div>
 
-    <div class="admin-preview-viewport">
+    <div
+      class="admin-preview-viewport max-h-[42rem] overflow-auto [background:var(--bg-off-white)] [&_.pack-page-container]:min-h-0 [&_.pack-page-container]:p-[1.25rem] [&_.doc-page-container]:min-h-0 [&_.doc-page-container]:p-[1.25rem] [&_.doc-main]:block [&_.doc-sidebar]:hidden [&_.pack-header]:mb-[1.25rem] [&_.pack-header]:pb-[1.25rem] [&_.header-content]:gap-[1.25rem] [&_.pack-icon]:w-[5rem] [&_.pack-icon]:h-[5rem] [&_.pack-icon]:rounded-[0.875rem] [&_.pack-icon-placeholder]:w-[5rem] [&_.pack-icon-placeholder]:h-[5rem] [&_.pack-icon-placeholder]:rounded-[0.875rem] [&_.title-row_h1]:text-[1.65rem] [&_.pack-main]:grid-cols-[minmax(0,_1fr)] [&_.pack-main_>_aside]:hidden [&_.pack-content-body]:p-[1.5rem] max-[640px]:[&_.pack-page-container]:p-[1rem] max-[640px]:[&_.header-content]:items-start max-[640px]:[&_.header-content]:flex-row max-[640px]:[&_.header-content]:text-left max-[640px]:[&_.title-row]:items-start max-[640px]:[&_.title-row]:flex-col max-[640px]:[&_.author-row]:items-start max-[640px]:[&_.author-row]:justify-start max-[640px]:[&_.download-button-wrapper]:items-start max-[640px]:[&_.download-button-wrapper]:justify-start"
+    >
       <DocLayout v-if="pageKind === 'document'" :meta="previewMeta">
-        <article class="admin-preview-content" v-html="rendered" />
+        <article
+          class="admin-preview-content [&_img]:max-w-full [&_img]:h-[auto]"
+          v-html="rendered"
+        />
       </DocLayout>
       <DownloadLayout v-else :meta="previewMeta">
-        <article class="admin-preview-content" v-html="rendered" />
+        <article
+          class="admin-preview-content [&_img]:max-w-full [&_img]:h-[auto]"
+          v-html="rendered"
+        />
       </DownloadLayout>
     </div>
   </section>
@@ -115,89 +123,3 @@ function previewSource(body: string) {
 
 const rendered = computed(() => md.render(previewSource(props.body)))
 </script>
-
-<style scoped>
-.admin-preview-viewport {
-  max-height: 42rem;
-  overflow: auto;
-  background: var(--bg-off-white);
-}
-
-.admin-preview-viewport :deep(.pack-page-container) {
-  min-height: 0;
-  padding: 1.25rem;
-}
-
-.admin-preview-viewport :deep(.doc-page-container) {
-  min-height: 0;
-  padding: 1.25rem;
-}
-
-.admin-preview-viewport :deep(.doc-main) {
-  display: block;
-}
-
-.admin-preview-viewport :deep(.doc-sidebar) {
-  display: none;
-}
-
-.admin-preview-viewport :deep(.pack-header) {
-  margin-bottom: 1.25rem;
-  padding-bottom: 1.25rem;
-}
-
-.admin-preview-viewport :deep(.header-content) {
-  gap: 1.25rem;
-}
-
-.admin-preview-viewport :deep(.pack-icon),
-.admin-preview-viewport :deep(.pack-icon-placeholder) {
-  width: 5rem;
-  height: 5rem;
-  border-radius: 0.875rem;
-}
-
-.admin-preview-viewport :deep(.title-row h1) {
-  font-size: 1.65rem;
-}
-
-.admin-preview-viewport :deep(.pack-main) {
-  grid-template-columns: minmax(0, 1fr);
-}
-
-.admin-preview-viewport :deep(.pack-main > aside) {
-  display: none;
-}
-
-.admin-preview-viewport :deep(.pack-content-body) {
-  padding: 1.5rem;
-}
-
-.admin-preview-content :deep(img) {
-  max-width: 100%;
-  height: auto;
-}
-
-@media (max-width: 640px) {
-  .admin-preview-viewport :deep(.pack-page-container) {
-    padding: 1rem;
-  }
-
-  .admin-preview-viewport :deep(.header-content) {
-    align-items: flex-start;
-    flex-direction: row;
-    text-align: left;
-  }
-
-  .admin-preview-viewport :deep(.title-row) {
-    align-items: flex-start;
-    flex-direction: column;
-  }
-
-  .admin-preview-viewport :deep(.author-row),
-  .admin-preview-viewport :deep(.download-button-wrapper) {
-    align-items: flex-start;
-    justify-content: flex-start;
-  }
-}
-</style>

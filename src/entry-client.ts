@@ -10,8 +10,7 @@ import { convertMarkdownContainers } from '@/utils/zhconv'
 import { useTheme } from '@/utils/theme'
 import type { SiteContent } from '@/content/store'
 
-import '@/styles/imageLoading.css'
-import '@/styles/markdown.css'
+import '@/styles/variables.css'
 import 'virtual:uno.css'
 
 declare global {

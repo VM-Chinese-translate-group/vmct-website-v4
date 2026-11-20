@@ -3,7 +3,7 @@
     <Transition name="base-dialog" @after-enter="emit('opened')" @after-leave="afterLeave">
       <div
         v-if="open"
-        class="base-dialog-overlay"
+        class="base-dialog-overlay fixed [inset:0] grid box-border place-items-center grid-cols-[minmax(0,_1fr)] p-5 [background:rgb(0_0_0_/_58%)] max-[600px]:p-3"
         :style="{ '--base-dialog-width': width, zIndex }"
         :inert="inactive"
         :aria-hidden="inactive ? true : undefined"
@@ -16,22 +16,27 @@
           v-bind="$attrs"
           :id="dialogId"
           ref="panelRef"
-          class="base-dialog-panel"
+          class="base-dialog-panel grid box-border grid-rows-[auto_minmax(0,_1fr)_auto] w-[min(var(--base-dialog-width),_100%)] min-w-0 max-h-[calc(100dvh_-_40px)] m-0 overflow-hidden [border:1px_solid_var(--switcher-border)] rounded-2xl [background:var(--bg-white)] text-[var(--text-1)] [color-scheme:light] [box-shadow:var(--card-shadow)] dark:[color-scheme:dark] [.base-dialog-enter-active_&]:[transition:transform_0.18s_ease] [.base-dialog-enter-active_&]:[will-change:transform] [.base-dialog-leave-active_&]:[transition:transform_0.18s_ease] [.base-dialog-leave-active_&]:[will-change:transform] [.base-dialog-enter-from_&]:[transform:translateY(-10px)] [.base-dialog-leave-to_&]:[transform:translateY(-10px)] max-[600px]:max-h-[calc(100dvh_-_24px)] motion-reduce:[.base-dialog-enter-active_&]:[transition:none] motion-reduce:[.base-dialog-leave-active_&]:[transition:none]"
           :role="role"
           aria-modal="true"
           :aria-labelledby="titleId"
           :aria-describedby="description || slots.description ? descriptionId : undefined"
           tabindex="-1"
         >
-          <header class="base-dialog-header">
-            <div class="base-dialog-heading">
-              <h2 :id="titleId" class="base-dialog-title">
+          <header
+            class="base-dialog-header flex items-center justify-between gap-4 p-[20px_24px_16px] max-[600px]:p-[16px_20px]"
+          >
+            <div class="base-dialog-heading min-w-0">
+              <h2
+                :id="titleId"
+                class="base-dialog-title m-0 text-[var(--text-dark)] text-[1.35rem] font-700"
+              >
                 <slot name="title">{{ title }}</slot>
               </h2>
               <p
                 v-if="description || slots.description"
                 :id="descriptionId"
-                class="base-dialog-description"
+                class="base-dialog-description m-[8px_0_0] text-[var(--text-2)] text-[14px] leading-[1.6]"
               >
                 <slot name="description">{{ description }}</slot>
               </p>
@@ -39,7 +44,7 @@
             <button
               v-if="showClose"
               ref="closeButtonRef"
-              class="base-dialog-close"
+              class="base-dialog-close grid w-11 h-11 flex-none place-items-center appearance-none border-0 rounded-[10px] p-0 [background:transparent] text-[var(--text-2)] font-inherit [font-weight:inherit] [line-height:inherit] [box-shadow:none] cursor-pointer [transition:background-color_160ms_ease,_color_160ms_ease] [&_svg]:w-5 [&_svg]:h-5 hover:[background:var(--bg-soft)] hover:text-[var(--text-dark)] focus-visible:[outline:2px_solid_var(--info-1)] focus-visible:[outline-offset:2px] motion-reduce:[transition:none]"
               type="button"
               :aria-label="closeLabel"
               @click="requestClose('close-button')"
@@ -48,10 +53,15 @@
             </button>
           </header>
 
-          <div class="base-dialog-body">
+          <div
+            class="base-dialog-body min-h-0 overflow-y-auto overscroll-contain p-[0_24px_24px] [scroll-padding-block:12px] max-[600px]:p-[0_20px_20px]"
+          >
             <slot :close="close" />
           </div>
-          <footer v-if="slots.footer" class="base-dialog-footer">
+          <footer
+            v-if="slots.footer"
+            class="base-dialog-footer grid gap-3 p-6 [border-top:1px_solid_var(--switcher-border)] [background:var(--bg-soft)] [&_.base-dialog-actions]:grid [&_.base-dialog-actions]:[grid-auto-flow:column] [&_.base-dialog-actions]:[grid-auto-columns:minmax(0,_160px)] [&_.base-dialog-actions]:justify-center [&_.base-dialog-actions]:gap-2 [&_.base-dialog-actions]:w-full [&_.base-dialog-actions_>_button]:box-border [&_.base-dialog-actions_>_button]:inline-flex [&_.base-dialog-actions_>_button]:items-center [&_.base-dialog-actions_>_button]:justify-center [&_.base-dialog-actions_>_button]:min-w-0 [&_.base-dialog-actions_>_button]:h-11 [&_.base-dialog-actions_>_button]:min-h-[44px] [&_.base-dialog-actions_>_button]:py-0 max-[600px]:p-[24px_20px]"
+          >
             <slot name="footer" :close="close" />
           </footer>
         </component>
@@ -262,7 +272,3 @@ onBeforeUnmount(() => {
   restoreAfterClose()
 })
 </script>
-
-<style scoped>
-@import '@/styles/BaseDialog.css';
-</style>

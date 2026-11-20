@@ -3,56 +3,13 @@ import { Icon } from '@iconify/vue'
 </script>
 
 <template>
-  <span class="success-status-icon" aria-hidden="true">
-    <Icon class="success-status-check" icon="lucide:check" />
+  <span
+    class="success-status-icon grid place-items-center w-18 h-18 rounded-[50%] [background:var(--tip-soft)] text-[var(--tip-1)] [animation:success-status-pop_320ms_cubic-bezier(0.2,_0.8,_0.2,_1)_both] motion-reduce:[animation:none] motion-reduce:[stroke-dashoffset:0]"
+    aria-hidden="true"
+  >
+    <Icon
+      class="success-status-check w-9 h-9 [&_path]:[stroke-dasharray:24] [&_path]:[stroke-dashoffset:-24] [&_path]:[animation:success-status-draw_260ms_ease-out_120ms_forwards] motion-reduce:[&_path]:[animation:none] motion-reduce:[&_path]:[stroke-dashoffset:0]"
+      icon="lucide:check"
+    />
   </span>
 </template>
-
-<style scoped>
-.success-status-icon {
-  display: grid;
-  place-items: center;
-  width: 72px;
-  height: 72px;
-  border-radius: 50%;
-  background: var(--tip-soft);
-  color: var(--tip-1);
-  animation: success-status-pop 320ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
-}
-
-.success-status-check {
-  width: 36px;
-  height: 36px;
-}
-
-.success-status-check :deep(path) {
-  stroke-dasharray: 24;
-  stroke-dashoffset: -24;
-  animation: success-status-draw 260ms ease-out 120ms forwards;
-}
-
-@keyframes success-status-pop {
-  from {
-    scale: 0.65;
-    opacity: 0;
-  }
-  to {
-    scale: 1;
-    opacity: 1;
-  }
-}
-
-@keyframes success-status-draw {
-  to {
-    stroke-dashoffset: 0;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .success-status-icon,
-  .success-status-check :deep(path) {
-    animation: none;
-    stroke-dashoffset: 0;
-  }
-}
-</style>

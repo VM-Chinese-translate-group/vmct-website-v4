@@ -8,25 +8,45 @@
     </div>
     <div class="grid grid-cols-4 gap-x-3 gap-y-2.5 max-xl:grid-cols-2 max-md:grid-cols-1">
       <label
-        class="cms-label max-md:col-span-1"
+        class="cms-label vm-admin-metadata-cms-label max-md:col-span-1"
         :class="pageKind === 'document' ? 'col-span-4 max-xl:col-span-2' : 'col-span-2'"
       >
         标题
-        <input v-model="model.title" class="cms-field" placeholder="XXX 汉化下载" />
+        <input
+          v-model="model.title"
+          class="cms-field vm-admin-metadata-cms-field"
+          placeholder="XXX 汉化下载"
+        />
       </label>
-      <label v-if="pageKind !== 'document'" class="cms-label col-span-2 max-md:col-span-1">
+      <label
+        v-if="pageKind !== 'document'"
+        class="cms-label vm-admin-metadata-cms-label col-span-2 max-md:col-span-1"
+      >
         英文名
-        <input v-model="model.originalName" class="cms-field" placeholder="填写整合包英文原名" />
+        <input
+          v-model="model.originalName"
+          class="cms-field vm-admin-metadata-cms-field"
+          placeholder="填写整合包英文原名"
+        />
       </label>
-      <label v-if="pageKind !== 'document'" class="cms-label col-span-2 max-md:col-span-1">
+      <label
+        v-if="pageKind !== 'document'"
+        class="cms-label vm-admin-metadata-cms-label col-span-2 max-md:col-span-1"
+      >
         封面 / 图标 URL
-        <input v-model="model.icon" class="cms-field" placeholder="/imgs/... 或 https://..." />
+        <input
+          v-model="model.icon"
+          class="cms-field vm-admin-metadata-cms-field"
+          placeholder="/imgs/... 或 https://..."
+        />
       </label>
-      <div v-if="pageKind !== 'document'" class="cms-label">
+      <div v-if="pageKind !== 'document'" class="cms-label vm-admin-metadata-cms-label">
         <span>更新日期</span>
         <div class="flex gap-2">
           <label class="relative min-w-0 flex-1 cursor-pointer">
-            <span class="cms-field flex items-center justify-between gap-2">
+            <span
+              class="cms-field vm-admin-metadata-cms-field flex items-center justify-between gap-2"
+            >
               <span :class="datePending ? 'text-[var(--text-muted)]' : ''">{{ dateDisplay }}</span>
               <Icon icon="lucide:calendar-days" class="shrink-0 text-[var(--text-muted)]" />
             </span>
@@ -40,7 +60,7 @@
           </label>
           <button
             v-if="!datePending"
-            class="cms-button shrink-0 px-2.5"
+            class="cms-button vm-admin-metadata-cms-button shrink-0 px-2.5"
             type="button"
             title="将更新日期设为待定"
             @click="setDatePending"
@@ -49,51 +69,63 @@
           </button>
         </div>
       </div>
-      <label v-if="pageKind !== 'document'" class="cms-label">
+      <label v-if="pageKind !== 'document'" class="cms-label vm-admin-metadata-cms-label">
         发布状态
         <SelectMenu
           :model-value="model.statusType"
           :options="statusOptions"
           ariaLabel="发布状态"
           variant="flat"
-          style="--select-width: 100%; --select-menu-min-width: 100%"
+          class="[--select-width:100%] [--select-menu-min-width:100%]"
           @update:model-value="model.statusType = $event"
         />
       </label>
-      <label v-if="pageKind !== 'document'" class="cms-label">
+      <label v-if="pageKind !== 'document'" class="cms-label vm-admin-metadata-cms-label">
         加载器
         <SelectMenu
           :model-value="model.loader"
           :options="loaderOptions"
           ariaLabel="加载器"
           variant="flat"
-          style="--select-width: 100%; --select-menu-min-width: 100%"
+          class="[--select-width:100%] [--select-menu-min-width:100%]"
           @update:model-value="model.loader = $event"
         />
       </label>
-      <label v-if="pageKind !== 'document'" class="cms-label">
+      <label v-if="pageKind !== 'document'" class="cms-label vm-admin-metadata-cms-label">
         Minecraft 版本
-        <input v-model="model.minecraft" class="cms-field" placeholder="例如 1.21.1" />
+        <input
+          v-model="model.minecraft"
+          class="cms-field vm-admin-metadata-cms-field"
+          placeholder="例如 1.21.1"
+        />
       </label>
-      <label v-if="pageKind !== 'document'" class="cms-label">
+      <label v-if="pageKind !== 'document'" class="cms-label vm-admin-metadata-cms-label">
         整合包版本
-        <input v-model="model.pack" class="cms-field" placeholder="例如 2.3.1" />
+        <input
+          v-model="model.pack"
+          class="cms-field vm-admin-metadata-cms-field"
+          placeholder="例如 2.3.1"
+        />
       </label>
     </div>
-    <label class="cms-label">
+    <label class="cms-label vm-admin-metadata-cms-label">
       简介
-      <textarea v-model="model.description" class="cms-field" rows="2" />
+      <textarea
+        v-model="model.description"
+        class="cms-field vm-admin-metadata-cms-field"
+        rows="2"
+      />
     </label>
     <div class="flex flex-wrap gap-2">
-      <label class="cms-check">
+      <label class="cms-check vm-admin-metadata-cms-check">
         <input v-model="model.featured" type="checkbox" />
         推荐显示
       </label>
-      <label class="cms-check">
+      <label class="cms-check vm-admin-metadata-cms-check">
         <input v-model="model.search" type="checkbox" />
         搜索收录
       </label>
-      <label v-if="pageKind === 'document'" class="cms-check">
+      <label v-if="pageKind === 'document'" class="cms-check vm-admin-metadata-cms-check">
         <input v-model="model.sidebar" type="checkbox" />
         侧栏显示
       </label>
@@ -113,7 +145,7 @@
         </small>
       </summary>
       <div class="grid gap-3 border-t border-[var(--switcher-border)] p-3">
-        <label class="cms-label">
+        <label class="cms-label vm-admin-metadata-cms-label">
           作者
           <div class="flex flex-wrap gap-2">
             <div
@@ -121,9 +153,13 @@
               :key="index"
               class="flex min-w-48 flex-1 gap-1"
             >
-              <input v-model="model.authors[index]" class="cms-field" placeholder="作者名称" />
+              <input
+                v-model="model.authors[index]"
+                class="cms-field vm-admin-metadata-cms-field"
+                placeholder="作者名称"
+              />
               <button
-                class="cms-icon-button"
+                class="cms-icon-button [.metadata-compact_&]:min-h-[38px] [.metadata-compact_&]:pt-[0.4rem] [.metadata-compact_&]:pb-[0.4rem]"
                 type="button"
                 title="删除作者"
                 @click="model.authors.splice(index, 1)"
@@ -131,7 +167,11 @@
                 ×
               </button>
             </div>
-            <button class="cms-button" type="button" @click="model.authors.push('')">
+            <button
+              class="cms-button vm-admin-metadata-cms-button"
+              type="button"
+              @click="model.authors.push('')"
+            >
               ＋ 添加作者
             </button>
           </div>
@@ -139,7 +179,11 @@
         <div class="grid gap-3 border-t border-[var(--switcher-border)] pt-3">
           <div class="flex flex-wrap items-center justify-between gap-3">
             <strong>相关链接</strong>
-            <button class="cms-button" type="button" @click="model.links.push(newLink())">
+            <button
+              class="cms-button vm-admin-metadata-cms-button"
+              type="button"
+              @click="model.links.push(newLink())"
+            >
               ＋ 添加链接
             </button>
           </div>
@@ -154,13 +198,13 @@
                 :options="linkOptions"
                 ariaLabel="链接平台"
                 variant="flat"
-                style="--select-width: 100%; --select-menu-min-width: 100%"
+                class="[--select-width:100%] [--select-menu-min-width:100%]"
                 @update:model-value="updateLinkPlatform(link, $event)"
               />
               <input
                 v-if="selectedLinkPlatform(link.id) === '__custom__'"
                 v-model="link.id"
-                class="cms-field"
+                class="cms-field vm-admin-metadata-cms-field"
                 placeholder="自定义平台标识"
               />
             </div>
@@ -172,27 +216,40 @@
             </div>
             <label
               v-else-if="link.id === 'paratranz'"
-              class="cms-label col-span-2 max-lg:col-span-1"
+              class="cms-label vm-admin-metadata-cms-label col-span-2 max-lg:col-span-1"
             >
               项目 ID
               <input
                 v-model="link.project"
-                class="cms-field"
+                class="cms-field vm-admin-metadata-cms-field"
                 inputmode="numeric"
                 placeholder="例如 1234"
               />
             </label>
             <template v-else>
-              <label class="cms-label">
+              <label class="cms-label vm-admin-metadata-cms-label">
                 显示文字
-                <input v-model="link.text" class="cms-field" placeholder="一般不需添加" />
+                <input
+                  v-model="link.text"
+                  class="cms-field vm-admin-metadata-cms-field"
+                  placeholder="一般不需添加"
+                />
               </label>
-              <label class="cms-label">
+              <label class="cms-label vm-admin-metadata-cms-label">
                 链接地址
-                <input v-model="link.link" class="cms-field" type="url" placeholder="https://..." />
+                <input
+                  v-model="link.link"
+                  class="cms-field vm-admin-metadata-cms-field"
+                  type="url"
+                  placeholder="https://..."
+                />
               </label>
             </template>
-            <button class="cms-danger-button" type="button" @click="model.links.splice(index, 1)">
+            <button
+              class="cms-danger-button [.metadata-compact_&]:min-h-[38px] [.metadata-compact_&]:pt-[0.4rem] [.metadata-compact_&]:pb-[0.4rem]"
+              type="button"
+              @click="model.links.splice(index, 1)"
+            >
               删除
             </button>
           </div>
@@ -264,31 +321,3 @@ function newLink(): ContentLink {
   return { id: 'curseforge', text: '', link: '', icon: '', project: '' }
 }
 </script>
-
-<style scoped>
-.metadata-compact :deep(.cms-field) {
-  min-height: 38px;
-  padding-top: 0.4rem;
-  padding-bottom: 0.4rem;
-}
-
-.metadata-compact :deep(.cms-label) {
-  gap: 0.25rem;
-}
-
-.metadata-compact :deep(.cms-button),
-.metadata-compact :deep(.cms-icon-button),
-.metadata-compact :deep(.cms-danger-button) {
-  min-height: 38px;
-  padding-top: 0.4rem;
-  padding-bottom: 0.4rem;
-}
-
-.metadata-compact :deep(.cms-check) {
-  padding: 0.4rem 0.65rem;
-}
-
-summary::marker {
-  display: none;
-}
-</style>

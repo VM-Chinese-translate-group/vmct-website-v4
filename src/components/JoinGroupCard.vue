@@ -8,7 +8,7 @@
       </h2>
 
       <a
-        class="inline-flex h-10 flex-shrink-0 items-center justify-center rounded-[9px] bg-[var(--btn-primary-bg)]! px-[18px] text-[0.95rem] text-white! font-bold no-underline! transition-[background,transform,box-shadow] duration-150 ease-[ease] hover:-translate-y-px hover:bg-[var(--btn-primary-hover)]!"
+        class="inline-flex h-10 flex-shrink-0 items-center justify-center rounded-[9px] bg-[var(--btn-primary-bg)]! px-[18px] text-[0.95rem] text-white! font-bold no-underline! [transition-property:background,transform,box-shadow] duration-150 ease-[ease] hover:-translate-y-px hover:bg-[var(--btn-primary-hover)]!"
         :href="applyLink"
         target="_blank"
         rel="noopener"
