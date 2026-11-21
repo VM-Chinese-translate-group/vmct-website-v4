@@ -20,6 +20,8 @@ export default {
     placeholder: '搜索...',
     empty: '未找到关于 "{query}" 的结果',
     startSearch: '输入关键词开始搜索...',
+    loading: '正在加载搜索结果…',
+    loadFailed: '搜索加载失败。请修改关键词重试。',
     esc: 'ESC',
   },
   seo: {

@@ -20,6 +20,8 @@ export default {
     placeholder: '搜尋...',
     empty: '未找到關於 "{query}" 的結果',
     startSearch: '輸入關鍵字開始搜尋...',
+    loading: '正在載入搜尋結果…',
+    loadFailed: '搜尋載入失敗。請修改關鍵字再試一次。',
     esc: 'ESC',
   },
   seo: {

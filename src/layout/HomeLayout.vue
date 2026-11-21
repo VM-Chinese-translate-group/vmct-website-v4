@@ -298,43 +298,33 @@ import type { ResourceItem, ResourceStatusType } from '@/types/resource'
 import SearchOverlay from '@/components/NavBar/SearchOverlay.vue'
 
 const { locale, t } = useI18n()
-const { maps, modpacks } = useSiteContent()
+const { home } = useSiteContent()
 const isSearchOpen = ref(false)
 const activeResourceTab = ref<'hot' | 'updated'>('hot')
 const heroCarouselIndex = ref(0)
 const isCarouselPaused = ref(false)
 let carouselTimer: ReturnType<typeof setInterval> | undefined
 
-const sortedModpacks = computed(() =>
-  modpacks.value.slice().sort((a, b) => (b.date || 0) - (a.date || 0)),
-)
-
-const featuredMaps = computed(() => maps.value.slice(0, 4))
-const heroCarouselItems = computed<ResourceItem[]>(() =>
-  [...modpacks.value, ...maps.value].sort((a, b) => (b.date || 0) - (a.date || 0)).slice(0, 6),
-)
+const featuredMaps = computed(() => home.value?.maps || [])
+const heroCarouselItems = computed(() => home.value?.carousel || [])
 const heroCarouselItem = computed(() => heroCarouselItems.value[heroCarouselIndex.value])
-const resourceCards = computed(() => {
-  if (activeResourceTab.value === 'updated') return sortedModpacks.value.slice(0, 6)
-
-  const featured = sortedModpacks.value.filter((item) => item.featured)
-  const fallback = sortedModpacks.value.filter((item) => !item.featured)
-  return [...featured, ...fallback].slice(0, 6)
-})
+const resourceCards = computed(() => home.value?.[activeResourceTab.value] || [])
 const statItems = computed(() => [
   {
     label: t('main.homeHub.totalResources'),
-    value: t('main.homeHub.countValue', { count: modpacks.value.length + maps.value.length }),
+    value: t('main.homeHub.countValue', {
+      count: (home.value?.modpackCount || 0) + (home.value?.mapCount || 0),
+    }),
     icon: 'lucide:boxes',
   },
   {
     label: t('main.homeHub.totalModpacks'),
-    value: t('main.homeHub.countValue', { count: modpacks.value.length }),
+    value: t('main.homeHub.countValue', { count: home.value?.modpackCount || 0 }),
     icon: 'lucide:package',
   },
   {
     label: t('main.homeHub.mapTranslations'),
-    value: t('main.homeHub.countValue', { count: maps.value.length }),
+    value: t('main.homeHub.countValue', { count: home.value?.mapCount || 0 }),
     icon: 'lucide:map',
   },
   {

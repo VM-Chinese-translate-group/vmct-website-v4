@@ -7,5 +7,5 @@
 <script setup lang="ts">
 import DownloadCards from '@/layout/DownloadCards.vue'
 import { useSiteContent } from '@/content/store'
-const { modpacks } = useSiteContent()
+const { resources: modpacks } = useSiteContent()
 </script>

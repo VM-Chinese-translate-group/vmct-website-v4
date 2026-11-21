@@ -38,7 +38,14 @@
             class="results-area [&::-webkit-scrollbar]:w-[6px] [&::-webkit-scrollbar-thumb]:[background:var(--switcher-border)] [&::-webkit-scrollbar-thumb]:rounded-[10px] overflow-y-auto overscroll-contain p-2"
             role="listbox"
           >
-            <div v-if="results.length" class="results-list">
+            <div
+              v-if="keyword && (searching || searchFailed)"
+              class="px-4 py-16 text-center text-[var(--text-muted)]"
+              role="status"
+            >
+              {{ $t(searching ? 'search.loading' : 'search.loadFailed') }}
+            </div>
+            <div v-else-if="results.length" class="results-list">
               <div
                 v-for="(item, index) in results"
                 :key="item.url"
@@ -130,10 +137,24 @@ const results = ref<SearchResult[]>([])
 const inputRef = ref<HTMLInputElement | null>(null)
 const resultsAreaRef = ref<HTMLElement | null>(null)
 const activeIndex = ref(-1)
+const searching = ref(false)
+const searchFailed = ref(false)
 let timer: ReturnType<typeof setTimeout> | undefined
 let searchRequestId = 0
+let indexRequest: ReturnType<typeof content.loadSearchIndex> | undefined
 
 const currentLocale = computed(() => locale.value)
+
+function loadIndex() {
+  if (!indexRequest) {
+    const pending = content.loadSearchIndex()
+    indexRequest = pending
+    void pending.catch(() => {
+      if (indexRequest === pending) indexRequest = undefined
+    })
+  }
+  return indexRequest
+}
 
 const performSearch = async () => {
   const query = keyword.value.trim()
@@ -141,41 +162,42 @@ const performSearch = async () => {
   const targetLocale = currentLocale.value
   const requestId = ++searchRequestId
 
-  if (!normalizedQuery) {
-    results.value = []
-    activeIndex.value = -1
-    return
+  results.value = []
+  activeIndex.value = -1
+  searchFailed.value = false
+  searching.value = Boolean(normalizedQuery && props.visible)
+  if (!searching.value) return
+
+  const isCurrent = () =>
+    props.visible &&
+    requestId === searchRequestId &&
+    normalizedQuery === normalizeSearchText(keyword.value) &&
+    targetLocale === currentLocale.value
+  try {
+    const index = await loadIndex()
+    if (!isCurrent()) return
+    const rankedResults = rankSearchIndex(index, query, targetLocale)
+    const translatedResults = await Promise.all(
+      rankedResults.map(async ({ item }) => {
+        const [displayTitle, displayText] = await Promise.all([
+          convertInlineText(item.title, targetLocale),
+          convertInlineText(item.text, targetLocale),
+        ])
+        return {
+          url: item.url,
+          title: formatResultTitle(displayTitle || 'Untitled', item.originalName, targetLocale),
+          snippet: createSearchSnippet(displayText, query),
+        }
+      }),
+    )
+    if (!isCurrent()) return
+    results.value = translatedResults
+    activeIndex.value = translatedResults.length ? 0 : -1
+  } catch {
+    if (isCurrent()) searchFailed.value = true
+  } finally {
+    if (requestId === searchRequestId) searching.value = false
   }
-
-  if (requestId !== searchRequestId || !props.visible) return
-  const rankedResults = rankSearchIndex(content.searchIndex.value, query, targetLocale)
-
-  const translatedResults = await Promise.all(
-    rankedResults.map(async ({ item }) => {
-      const [displayTitle, displayText] = await Promise.all([
-        convertInlineText(item.title, targetLocale),
-        convertInlineText(item.text, targetLocale),
-      ])
-      const title = formatResultTitle(displayTitle || 'Untitled', item.originalName, targetLocale)
-
-      return {
-        url: item.url,
-        title,
-        snippet: createSearchSnippet(displayText, query),
-      }
-    }),
-  )
-
-  if (
-    requestId !== searchRequestId ||
-    normalizedQuery !== normalizeSearchText(keyword.value) ||
-    targetLocale !== currentLocale.value
-  ) {
-    return
-  }
-
-  results.value = translatedResults
-  activeIndex.value = translatedResults.length ? 0 : -1
 }
 
 const onInput = () => {
@@ -296,16 +318,15 @@ const onKeyDown = (e: KeyboardEvent) => {
 
 watch(
   () => props.visible,
-  async (newVal) => {
+  (newVal) => {
     if (newVal) {
       lockBodyScroll()
-      try {
-        await content.load(router.currentRoute.value.path, true)
-        if (props.visible && keyword.value) await performSearch()
-      } catch {
-        /* Keep the current page's index available during a network interruption. */
-      }
+      loadIndex()
+      if (keyword.value) void performSearch()
     } else {
+      indexRequest = undefined
+      searching.value = false
+      searchFailed.value = false
       searchRequestId += 1
       clearTimeout(timer)
     }

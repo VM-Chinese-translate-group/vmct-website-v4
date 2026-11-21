@@ -69,6 +69,8 @@ export async function createApplication({ vite = null } = {}) {
     SITE_REBUILD_SECRET: process.env.SITE_REBUILD_SECRET,
     CONTENT_CHANGED: site.invalidate,
     CONTENT_SITE_DATA: siteContent.forPath,
+    CONTENT_ROUTE_DATA: siteContent.forRoute,
+    CONTENT_SEARCH_INDEX: siteContent.searchIndex,
     async VALIDATE_CONTENT(page) { pageMetadata(page.frontmatter); await renderContent(page) },
     VMPM_SSO_ORIGIN: vmpmOrigin,
     VMPM_AUTH: vmpmOrigin ? createVmpmAuth(process.env.VMPM_API_ORIGIN || 'http://127.0.0.1:8080') : undefined,

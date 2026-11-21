@@ -76,6 +76,12 @@ export default defineConfig(({ command, isPreview, isSsrBuild }) => ({
         target: process.env.CONTENT_API_ORIGIN || 'https://www.vmct.top',
         changeOrigin: true,
         headers: { Origin: process.env.CONTENT_API_ORIGIN || 'https://www.vmct.top' },
+      bypass(req) {
+        const url = new URL(req.url || '/', 'http://localhost')
+        const view = url.searchParams.get('view')
+        if (url.pathname === '/api/content/internal/export' && (view === 'route' || view === 'search'))
+          return req.url
+      },
       },
       '/api/translation-feedback': {
         target: process.env.FEEDBACK_API_ORIGIN || 'https://www.vmct.top',
@@ -95,7 +101,6 @@ export default defineConfig(({ command, isPreview, isSsrBuild }) => ({
         manualChunks(id) {
           if (id.includes('/node_modules/vue/')) return 'vue'
           if (id.includes('markdown-it')) return 'markdown'
-          if (id.includes('opencc')) return 'opencc'
         },
       },
     },

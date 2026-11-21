@@ -20,6 +20,8 @@ export default {
     placeholder: 'Search...',
     empty: 'No results found for "{query}"',
     startSearch: 'Type keywords to start searching...',
+    loading: 'Loading search results…',
+    loadFailed: 'Search could not load. Edit your query to try again.',
     esc: 'ESC',
   },
   seo: {

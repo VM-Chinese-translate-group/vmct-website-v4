@@ -13,6 +13,11 @@ export const announcementConfig = {
       body: '8月最新成果！卓越 II 汉化现已发布！',
       action: '查看',
     },
+    'zh-TW': {
+      label: '站點公告',
+      body: '8月最新成果！卓越 II 漢化現已釋出！',
+      action: '檢視',
+    },
     'en-US': {
       label: 'Site announcement',
       body: 'Latest August release: Prominence II localization is now available!',
@@ -22,5 +27,5 @@ export const announcementConfig = {
 } satisfies {
   enabled: boolean
   link: string
-  messages: Record<'zh-CN' | 'en-US', AnnouncementMessage>
+  messages: Record<'zh-CN' | 'zh-TW' | 'en-US', AnnouncementMessage>
 }

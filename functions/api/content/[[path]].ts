@@ -6,6 +6,8 @@ interface Env {
   SITE_REBUILD_SECRET?: string
   CONTENT_CHANGED?: () => void
   CONTENT_SITE_DATA?: (path: string) => Promise<unknown>
+  CONTENT_ROUTE_DATA?: (path: string) => Promise<unknown>
+  CONTENT_SEARCH_INDEX?: () => Promise<{ version: string; items: unknown[] }>
   VALIDATE_CONTENT?: (page: { frontmatter: string; body: string }) => Promise<void>
   VMPM_SSO_ORIGIN?: string
   VMPM_AUTH?: (action: string, credential: string) => Promise<any>
@@ -825,9 +827,21 @@ async function restoreRevision(context: any, id: string, revisionNumber: string)
 
 async function exportContent(context: any) {
   const url = new URL(context.request.url)
-  if (url.searchParams.get('view') === 'site') {
-    if (!context.env.CONTENT_SITE_DATA) throw new ApiError(503, '动态内容服务尚未启动')
-    return json(await context.env.CONTENT_SITE_DATA(url.searchParams.get('path') || '/'))
+  const view = url.searchParams.get('view')
+  const env: Env = context.env
+  if (view === 'site' || view === 'route') {
+    const load = view === 'route' ? env.CONTENT_ROUTE_DATA : env.CONTENT_SITE_DATA
+    if (!load) throw new ApiError(503, '动态内容服务尚未启动')
+    return json(await load(url.searchParams.get('path') || '/'))
+  }
+  if (view === 'search') {
+    if (!env.CONTENT_SEARCH_INDEX) throw new ApiError(503, '动态内容服务尚未启动')
+    const { version, items } = await env.CONTENT_SEARCH_INDEX()
+    const etag = `"search-v1-${version}"`
+    const headers = { 'Cache-Control': 'private, no-cache', ETag: etag }
+    if (context.request.headers.get('If-None-Match') === etag)
+      return new Response(null, { status: 304, headers })
+    return json({ version, items }, 200, headers)
   }
   const result = await context.env.CONTENT_DB.prepare(
     "SELECT COALESCE(published_path, path) AS path, published_frontmatter AS frontmatter, published_body AS body FROM content_pages WHERE state = 'published' AND published_at IS NOT NULL ORDER BY COALESCE(published_path, path) ASC",

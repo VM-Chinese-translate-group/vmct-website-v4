@@ -1,19 +1,13 @@
 import type { AvailableLocales } from '@/plugins/i18n'
-import { convertInlineText } from '@/utils/zhconv'
 
-const loadingLabels = {
+const loadingLabels: Record<AvailableLocales, string> = {
   'zh-CN': '图片加载中…',
+  'zh-TW': '圖片載入中…',
   'en-US': 'Loading image…',
-} as const
+}
 
-let labelRequestId = 0
-
-export async function syncImageLoadingLabel(locale: AvailableLocales) {
-  const requestId = ++labelRequestId
-  const source = locale === 'en-US' ? loadingLabels['en-US'] : loadingLabels['zh-CN']
-  const label = await convertInlineText(source, locale)
-
-  if (requestId !== labelRequestId) return
+export function syncImageLoadingLabel(locale: AvailableLocales) {
+  const label = loadingLabels[locale]
   document.documentElement.style.setProperty('--image-loading-label', JSON.stringify(label))
 }
 

@@ -33,42 +33,18 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
+import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute } from 'vue-router'
 import { Icon } from '@iconify/vue'
 import { announcementConfig } from '@/locales/announcement'
-import { convertInlineText } from '@/utils/zhconv'
 
 const route = useRoute()
 const { locale } = useI18n()
-const announcement = ref({ ...announcementConfig.messages['zh-CN'] })
-let conversionVersion = 0
-
-watch(
-  locale,
-  async (targetLocale) => {
-    const currentVersion = ++conversionVersion
-    const source =
-      targetLocale === 'en-US'
-        ? announcementConfig.messages['en-US']
-        : announcementConfig.messages['zh-CN']
-
-    if (targetLocale !== 'zh-TW') {
-      announcement.value = { ...source }
-      return
-    }
-
-    const [label, body, action] = await Promise.all([
-      convertInlineText(source.label, targetLocale),
-      convertInlineText(source.body, targetLocale),
-      convertInlineText(source.action, targetLocale),
-    ])
-
-    if (currentVersion !== conversionVersion) return
-    announcement.value = { label, body, action }
-  },
-  { immediate: true },
+const announcement = computed(
+  () =>
+    announcementConfig.messages[locale.value as keyof typeof announcementConfig.messages] ??
+    announcementConfig.messages['zh-CN'],
 )
 
 const isHomePage = computed(() => route.path === '/')

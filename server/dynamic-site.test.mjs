@@ -14,10 +14,11 @@ async function fixture(t, extra = {}) {
   const token = 'test-admin-session'
   await db.prepare("INSERT INTO cms_sessions(token_hash, expires_at) VALUES(?, '2099-01-01')").bind(createHash('sha256').update(token).digest('base64url')).run()
   const env = { CONTENT_DB: db, CONTENT_CHANGED: content.invalidate, CONTENT_SITE_DATA: content.forPath,
+    CONTENT_ROUTE_DATA: content.forRoute, CONTENT_SEARCH_INDEX: content.searchIndex,
     async VALIDATE_CONTENT(page) { pageMetadata(page.frontmatter); await renderContent(page) }, ...extra }
-  const request = (path, method = 'GET', body, session = token, origin = 'https://site.test') => onRequest({ env,
+  const request = (path, method = 'GET', body, session = token, origin = 'https://site.test', headers = {}) => onRequest({ env,
     params: { path: path.split('?')[0].split('/') }, request: new Request('https://site.test/api/content/' + path, {
-      method, headers: { Origin: origin, ...(session ? { Cookie: 'cms_content_session=' + session } : {}) },
+      method, headers: { Origin: origin, ...(session ? { Cookie: 'cms_content_session=' + session } : {}), ...headers },
       ...(body !== undefined ? { body: JSON.stringify(body) } : {}),
     }),
   })
@@ -53,10 +54,51 @@ test('publish, edit, rename and archive change pages and catalog without any bui
   assert.equal(raw.pages[0].frontmatter, 'title: After')
   const view = await (await request('internal/export?view=site&path=/docs/renamed')).json()
   assert.deepEqual(view.page, live.page)
+  const route = await (await request('internal/export?view=route&path=/docs/renamed')).json()
+  assert.deepEqual(route.page, live.page)
+  assert.equal('catalog' in route, false)
+  const searchPath = 'internal/export?view=search'
+  const search = await request(searchPath, 'GET', undefined, '')
+  const etag = search.headers.get('etag')
+  assert.ok(etag)
+  assert.deepEqual((await search.json()).items.map(item => item.url), ['/docs/renamed'])
+  const revalidate = () => request(searchPath, 'GET', undefined, '', undefined, { 'If-None-Match': etag })
+  assert.equal((await revalidate()).status, 304)
   assert.equal((await request(`admin/pages/${page.id}/archive`, 'POST', { expectedDraftVersion: page.draftVersion })).status, 200)
+  const refreshed = await revalidate()
+  assert.equal(refreshed.status, 200)
+  assert.deepEqual((await refreshed.json()).items, [])
   assert.equal((await content.forPath('/docs/renamed')).page, null)
   assert.equal((await content.forPath('/community')).page, null, 'archiving final page must not resurrect repository content')
   assert.equal((await db.prepare('SELECT COUNT(*) AS n FROM content_revisions').first()).n, 2)
+})
+
+test('home, list pages and search receive only the data they need', async t => {
+  const { content, db } = await fixture(t)
+  const insert = db.prepare("INSERT INTO content_pages(id,path,published_path,published_frontmatter,published_body,state,published_at) VALUES(?,?,?,?,?,'published','2026-10-31')")
+  for (const [path, meta] of [
+    ['modpacks/hot', 'title: 汉语\nfeatured: true\nupdateDate: 2026-01-01'],
+    ['modpacks/new', 'title: New\nupdateDate: 2026-04-01'],
+    ['modpacks/secret', 'title: Secret'],
+    ['map/recent', 'title: Recent\nupdateDate: 2026-05-01'],
+    ['docs/disabled', 'title: Disabled\nsearch: false'],
+    ['docs/noindex', 'title: No index\nnoindex: true'],
+  ]) await insert.bind(path, path, path, meta, '这里是高清搜索内容').run()
+
+  const links = items => items.map(item => item.link)
+  const home = await content.forRoute('/')
+  assert.equal('catalog' in home, false)
+  assert.equal(home.home.modpackCount, 2)
+  assert.equal(home.home.mapCount, 1)
+  assert.deepEqual(links(home.home.hot), ['/modpacks/hot', '/modpacks/new'])
+  assert.deepEqual(links(home.home.updated), ['/modpacks/new', '/modpacks/hot'])
+  assert.deepEqual(links(home.home.carousel), ['/map/recent', '/modpacks/new', '/modpacks/hot'])
+  assert.deepEqual(links((await content.forRoute('/map/')).resources), ['/map/recent'])
+  assert.deepEqual(links((await content.forRoute('/modpacks')).resources), ['/modpacks/new', '/modpacks/hot'])
+  const search = (await content.searchIndex()).items
+  assert.deepEqual(search.map(item => item.url), ['/map/recent', '/modpacks/hot', '/modpacks/new'])
+  assert.equal(search[1].titleTW, '漢語')
+  assert.equal(search[1].textTW, '這裡是高畫質搜尋內容')
 })
 
 test('invalid component expressions are rejected before publication; anonymous and cross-origin writes fail', async t => {

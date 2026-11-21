@@ -143,11 +143,14 @@ export async function resolvePageSeo(
     locale,
     siteName,
   )
-  const titleRaw = await convertInlineText(localizedTitle, locale)
-  const descriptionRaw = await convertInlineText(
-    normalizeText(rawSeo.description, defaultDescription),
-    locale,
-  )
+  const descriptionText = normalizeText(rawSeo.description, defaultDescription)
+  const [titleRaw, descriptionRaw] =
+    route.name === 'Home'
+      ? [localizedTitle, descriptionText]
+      : await Promise.all([
+          convertInlineText(localizedTitle, locale),
+          convertInlineText(descriptionText, locale),
+        ])
   const resolvedSiteName = useAprilFoolsBranding ? transformAprilFoolsText(siteName) : siteName
   const title = useAprilFoolsBranding ? transformAprilFoolsText(titleRaw) : titleRaw
   const description = useAprilFoolsBranding

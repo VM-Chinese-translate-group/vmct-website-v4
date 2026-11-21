@@ -21,7 +21,7 @@ declare global {
 
 const clientLocale = getClientLocale()
 useTheme()
-void syncImageLoadingLabel(clientLocale)
+syncImageLoadingLabel(clientLocale)
 startImageLoadingFrames()
 
 const contentElement = document.getElementById('vmct-content')
@@ -91,7 +91,7 @@ router.isReady().then(async () => {
     async (val) => {
       syncHtmlMeta()
       syncSeo()
-      void syncImageLoadingLabel(val)
+      syncImageLoadingLabel(val)
 
       await nextTick()
       convertMarkdownContainers(val)

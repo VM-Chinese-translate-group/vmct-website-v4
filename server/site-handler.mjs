@@ -24,7 +24,7 @@ export function createSiteHandler({ content, renderer, template, manifest = {}, 
     }
     const route = normalizePagePath(pathname)
     if (!route) return new Response('Not Found', { status: 404 })
-    const state = await content.forPath(route)
+    const state = await content.forRoute(route)
     // The server router uses the requested path (including a trailing slash).
     // Reuse that exact value for the first client navigation during hydration.
     state.path = pathname
