@@ -100,7 +100,7 @@
         />
       </label>
       <label v-if="pageKind !== 'document'" class="cms-label vm-admin-metadata-cms-label">
-        整合包版本
+        {{ pageKind === 'map' ? '地图版本' : '整合包版本' }}
         <input
           v-model="model.pack"
           class="cms-field vm-admin-metadata-cms-field"

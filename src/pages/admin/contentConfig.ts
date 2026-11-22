@@ -56,7 +56,6 @@ const defaultResourceMetadata = () => ({
     { id: 'curseforge', text: '', link: '', icon: '', project: '' },
     { id: 'github', text: '', link: '', icon: '', project: '' },
     { id: 'paratranz', text: '', link: '', icon: '', project: '' },
-    { id: 'i18n', text: '', link: '', icon: '', project: '' },
   ],
 })
 
@@ -66,11 +65,14 @@ export function templateFor(kind: PageKind) {
       metadata: { sidebar: true, search: true },
       body: `<DocLayout :meta="frontmatter">\n\n## 页面简介\n\n在这里填写页面内容。\n\n## 详细说明\n\n在这里补充说明。\n\n</DocLayout>`,
     }
-  if (kind === 'modpack')
+  if (kind === 'modpack') {
+    const metadata = defaultResourceMetadata()
+    metadata.links.push({ id: 'i18n', text: '', link: '', icon: '', project: '' })
     return {
-      metadata: defaultResourceMetadata(),
+      metadata,
       body: `<DownloadLayout :meta="frontmatter">\n\n::: warning 下载前请确认\n请确认 Minecraft、加载器与整合包版本。\n:::\n\n## 整合包简介\n\n在这里介绍玩法与汉化范围。\n\n<DownloadLinks/>\n\n## 安装说明\n\n1. 下载对应版本的整合包和汉化补丁。\n2. 按说明安装补丁。\n\n<DocSupport />\n\n</DownloadLayout>`,
     }
+  }
   return {
     metadata: defaultResourceMetadata(),
     body: `<DownloadLayout :meta="frontmatter">\n\n## 地图信息\n\n在这里介绍地图玩法、人数与规则。\n\n::: warning 安装前确认\n请确认游戏版本，并将存档放入 saves 目录。\n:::\n\n<DownloadLinks/>\n\n## 游玩方式\n\n1. 解压地图文件。\n2. 将存档文件夹放入 Minecraft 的 saves 目录。\n\n<DocSupport />\n\n</DownloadLayout>`,
