@@ -82,7 +82,7 @@ import {
   useSlots,
   watch,
 } from 'vue'
-import { Icon } from '@iconify/vue'
+import { Icon } from '@/icons'
 import { useDialogLayer } from '@/composables/useDialogLayer'
 
 defineOptions({ inheritAttrs: false })

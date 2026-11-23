@@ -9,6 +9,7 @@ import { createSiteContent } from './site-content.mjs'
 import { createSiteHandler } from './site-handler.mjs'
 import { pageMetadata, renderContent } from './content-renderer.mjs'
 import { createVmpmAuth } from './vmpm-auth.mjs'
+import { createFeedbackAdmin } from './feedback-admin.mjs'
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 export async function createApplication({ vite = null } = {}) {
@@ -57,6 +58,7 @@ export async function createApplication({ vite = null } = {}) {
     CONTENT_DB: contentDb,
     DOWNLOAD_SEEDS: JSON.parse(fs.readFileSync(path.join(root, 'database', 'download-seeds.json'), 'utf8')),
     FEEDBACK_DB: feedbackDb,
+    FEEDBACK_ADMIN: createFeedbackAdmin(feedbackDb),
     DB: dictionaryDb,
     CORS_ORIGINS: process.env.CORS_ORIGINS || 'https://www.vmct.top,http://localhost:5173',
     ID_HASH_SECRET: process.env.ID_HASH_SECRET || 'change-me-before-production',

@@ -36,7 +36,7 @@
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute } from 'vue-router'
-import { Icon } from '@iconify/vue'
+import { Icon } from '@/icons'
 import { announcementConfig } from '@/locales/announcement'
 
 const route = useRoute()

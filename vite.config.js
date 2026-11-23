@@ -22,6 +22,7 @@ export default defineConfig(({ command, isPreview, isSsrBuild }) => ({
     'import.meta.env.VITE_GIT_DATE': JSON.stringify(getGitCommitDate()),
   },
   resolve: { alias: { '@': path.resolve(import.meta.dirname, 'src') } },
+  ssr: { noExternal: ['@iconify-icons/lucide', '@iconify-icons/mdi'] },
   plugins: [
     {
       name: 'vmct-development-server',

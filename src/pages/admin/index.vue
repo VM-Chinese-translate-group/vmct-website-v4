@@ -30,9 +30,9 @@
         <div>
           <p class="mb-1 text-xs font-800 tracking-[0.14em] text-[var(--info-1)]">CONTENT CMS</p>
           <h1 class="m-0 text-3xl leading-tight max-sm:text-2xl">
-            {{ isSettingsPage ? '后台设置' : '内容工作台' }}
+            {{ isSettingsPage ? '后台设置' : isFeedbackPage ? '汉化征集管理' : '内容工作台' }}
           </h1>
-          <p class="mb-0 mt-1 text-sm text-[var(--text-2)]">
+          <p v-if="!isFeedbackPage" class="mb-0 mt-1 text-sm text-[var(--text-2)]">
             {{
               isSettingsPage
                 ? '管理内容发布与登录安全。'
@@ -43,8 +43,15 @@
         <div
           class="flex flex-wrap gap-1.5 rounded-xl border border-[var(--switcher-border)] bg-[var(--bg-alt)] p-1.5 shadow-sm"
         >
-          <button class="cms-button" type="button" @click="openSection">
-            {{ isSettingsPage ? '返回工作台' : '后台设置' }}
+          <button
+            v-for="section in adminSections"
+            v-show="route.path !== section.path"
+            :key="section.path"
+            class="cms-button"
+            type="button"
+            @click="openSection(section.path)"
+          >
+            {{ section.label }}
           </button>
           <button class="cms-button" type="button" @click="logout">退出</button>
         </div>
@@ -58,6 +65,8 @@
         @change-password="changePassword"
         @retry-deploy="retryDeploy"
       />
+
+      <AdminFeedback v-else-if="isFeedbackPage" />
 
       <div
         v-else
@@ -283,7 +292,7 @@
 
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
-import { Icon } from '@iconify/vue'
+import { Icon } from '@/icons'
 import { useRoute, useRouter } from 'vue-router'
 import {
   archiveContentPage,
@@ -300,6 +309,7 @@ import {
   setupContentAdmin,
 } from '@/api/contentAdmin'
 import AdminLogin from './AdminLogin.vue'
+import AdminFeedback from './AdminFeedback.vue'
 import AdminSettings from './AdminSettings.vue'
 import ContentLibrary from './ContentLibrary.vue'
 import MarkdownEditor from './MarkdownEditor.vue'
@@ -336,6 +346,12 @@ const tabs = [
 ]
 let noticeTimer: ReturnType<typeof setTimeout> | undefined
 const isSettingsPage = computed(() => route.name === 'content-admin-settings')
+const isFeedbackPage = computed(() => route.name === 'content-admin-feedback')
+const adminSections = [
+  { path: '/admin', label: '内容工作台' },
+  { path: '/admin/feedback', label: '汉化征集' },
+  { path: '/admin/settings', label: '后台设置' },
+]
 const show = (message: string, kind: 'success' | 'error' = 'success') => {
   notice.value = message
   noticeKind.value = kind
@@ -574,10 +590,10 @@ async function restoreRevision(revision: number) {
     busy.value = false
   }
 }
-async function openSection() {
-  if (!isSettingsPage.value && !(await editor.leaveCurrent())) return
+async function openSection(path: string) {
+  if (!isSettingsPage.value && !isFeedbackPage.value && !(await editor.leaveCurrent())) return
   await router.push({
-    path: isSettingsPage.value ? '/admin' : '/admin/settings',
+    path,
     query: embedded ? { embedded: '1' } : {},
   })
 }
@@ -590,7 +606,12 @@ async function logout() {
   await router.push({ path: '/admin', query: embedded ? { embedded: '1' } : {} })
 }
 const keydown = (event: KeyboardEvent) => {
-  if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 's') {
+  if (
+    !isSettingsPage.value &&
+    !isFeedbackPage.value &&
+    (event.ctrlKey || event.metaKey) &&
+    event.key.toLowerCase() === 's'
+  ) {
     event.preventDefault()
     void editor.saveNow()
   }

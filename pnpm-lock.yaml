@@ -175,9 +175,6 @@ importers:
 
   .:
     dependencies:
-      '@iconify/vue':
-        specifier: ^5.0.5
-        version: 5.0.5(vue@3.5.46(typescript@6.0.3))
       '@mdit/plugin-container':
         specifier: ^2.2.0
         version: 2.2.0(markdown-it@15.0.3)
@@ -245,6 +242,12 @@ importers:
         specifier: ^2.9.1
         version: 2.9.1
     devDependencies:
+      '@iconify-icons/lucide':
+        specifier: 2.0.34
+        version: 2.0.34
+      '@iconify-icons/mdi':
+        specifier: 2.0.0
+        version: 2.0.0
       '@types/markdown-it':
         specifier: ^14.2.0
         version: 14.2.0
@@ -360,16 +363,17 @@ packages:
   '@henrygd/queue@1.2.0':
     resolution: {integrity: sha512-jW/BLSTpcvExDhqJGxtIPgGr2O0IFF8XUNDwEbfCfhrXT8a4xztQ9Lv6U/vbYzYC0xVWn+3zv6YnLUh3bEFUKA==}
 
+  '@iconify-icons/lucide@2.0.34':
+    resolution: {integrity: sha512-z0WZheAbD+iJe9m8/A6KhW8PQywH0JToqGbX9mFNzDvz3KsjGJpA/jj8krBrJgwYsT+nbX7sQJYve/PhfKtPXg==}
+
+  '@iconify-icons/mdi@2.0.0':
+    resolution: {integrity: sha512-ppVItcrp6uRn9XYA4e8XkJC6VnFfBGSLJVrTrHrc7ft9iwLVat3u4ol/UldokaSZ2EyWYukdYYT2AhZP0uNOjg==}
+
   '@iconify/types@2.0.0':
     resolution: {integrity: sha512-+wluvCrRhXrhyOmRDJ3q8mux9JkKy5SJ/v8ol2tu4FVjyYvtEzkc/3pK15ET6RKg4b4w4BmTk1+gsCUhf21Ykg==}
 
   '@iconify/utils@3.1.7':
     resolution: {integrity: sha512-JZHlwdID+dy+lTgbYC8NEC4zeugqeYsc6jewvzb4c58kHauJn+X7rNwQjxz5p2qSjqaEeQoLkCIQ9v/H4PK0/w==}
-
-  '@iconify/vue@5.0.5':
-    resolution: {integrity: sha512-O4SHjEKCQ2KTupa0tOd7MIuDdi8Pg6y9fCvsqccX8nYW8Wuy+ZbEgpzw7gZTN3ThyFjY9uo29ZLZ8MQjjMJRBw==}
-    peerDependencies:
-      vue: '>=3.0.0'
 
   '@intlify/core-base@11.4.23':
     resolution: {integrity: sha512-V8a3BQ7iTVPDetJ/LJfGn3lDx4Ir35OjjO4BLgVrFuL+0egWzwUyfdLIPAEYWlMGdo14eC5p6uk3tSlTYY0YmQ==}
@@ -2230,6 +2234,14 @@ snapshots:
 
   '@henrygd/queue@1.2.0': {}
 
+  '@iconify-icons/lucide@2.0.34':
+    dependencies:
+      '@iconify/types': 2.0.0
+
+  '@iconify-icons/mdi@2.0.0':
+    dependencies:
+      '@iconify/types': 2.0.0
+
   '@iconify/types@2.0.0': {}
 
   '@iconify/utils@3.1.7':
@@ -2237,11 +2249,6 @@ snapshots:
       '@antfu/install-pkg': 2.1.0
       '@iconify/types': 2.0.0
       import-meta-resolve: 4.2.0
-
-  '@iconify/vue@5.0.5(vue@3.5.46(typescript@6.0.3))':
-    dependencies:
-      '@iconify/types': 2.0.0
-      vue: 3.5.46(typescript@6.0.3)
 
   '@intlify/core-base@11.4.23':
     dependencies:

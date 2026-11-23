@@ -51,7 +51,7 @@
 <script setup lang="ts">
 import { computed, useId } from 'vue'
 import { useMounted } from '@vueuse/core'
-import { Icon } from '@iconify/vue'
+import { Icon } from '@/icons'
 import { useI18n } from 'vue-i18n'
 import { useTheme } from '@/utils/theme'
 

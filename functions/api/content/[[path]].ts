@@ -1,5 +1,6 @@
 interface Env {
   CONTENT_DB: any
+  FEEDBACK_ADMIN?: (request: Request, segments: string[]) => Promise<Response>
   CMS_ADMIN_VERIFIER?: string
   CMS_ADMIN_SALT?: string
   SITE_REBUILD_HOOK_URL?: string
@@ -949,6 +950,11 @@ export const onRequest = async (context: any) => {
     if (path === 'admin/auth/logout' && context.request.method === 'POST')
       return await logout(context)
     await requireAdmin(context)
+    if (path === 'admin/feedback' || path.startsWith('admin/feedback/')) {
+      requireSameOrigin(context.request)
+      if (!context.env.FEEDBACK_ADMIN) throw new ApiError(503, '汉化征集数据库未接入')
+      return await context.env.FEEDBACK_ADMIN(context.request, path.split('/').slice(2))
+    }
     if (path === 'admin/auth/password' && context.request.method === 'PUT')
       return await changePassword(context)
     if (path === 'admin/settings' && context.request.method === 'GET')

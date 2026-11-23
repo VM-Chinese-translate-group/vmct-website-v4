@@ -79,7 +79,7 @@
 <script setup lang="ts" generic="T extends string | number">
 import { computed, nextTick, onMounted, onUnmounted, ref, useId, watch } from 'vue'
 import type { CSSProperties } from 'vue'
-import { Icon } from '@iconify/vue'
+import { Icon } from '@/icons'
 
 const props = defineProps<{
   ariaLabel: string

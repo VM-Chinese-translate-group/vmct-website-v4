@@ -693,12 +693,15 @@ async function handleSubmission(request, env, visitorHash) {
   const normalizedUrls = sources.map((source) => source.normalizedUrl)
 
   const exact = await env.FEEDBACK_DB.prepare(
-    `SELECT fi.* FROM feedback_items fi JOIN feedback_sources fs ON fs.item_id = fi.id WHERE fi.status != ? AND fi.category = ? AND fs.normalized_url IN (${normalizedUrls.map(() => '?').join(',')}) LIMIT 1`,
+    `SELECT fi.* FROM feedback_items fi JOIN feedback_sources fs ON fs.item_id = fi.id
+     WHERE fs.normalized_url IN (${normalizedUrls.map(() => '?').join(',')})
+     ORDER BY CASE WHEN fi.status = 'hidden' THEN 0 WHEN fi.category = ? THEN 1 ELSE 2 END, fi.id LIMIT 1`,
   )
-    .bind('hidden', body.category, ...normalizedUrls)
+    .bind(...normalizedUrls, body.category)
     .first()
 
   if (exact) {
+    if (exact.status === 'hidden') throw new Error('item is hidden')
     item = exact
     result = 'merged'
   }
@@ -714,6 +717,7 @@ async function handleSubmission(request, env, visitorHash) {
       .first()
 
     if (existing) {
+      if (existing.status === 'hidden') throw new Error('item is hidden')
       item = existing
       result = 'merged'
     } else {
@@ -776,7 +780,8 @@ async function handleSubmission(request, env, visitorHash) {
   const existingSubtypes = String(item.subtypes || item.subtype || '')
     .split(',')
     .filter(Boolean)
-  const mergedSubtypes = [...new Set([...existingSubtypes, ...subtypes])]
+  const mergedSubtypes =
+    item.category === body.category ? [...new Set([...existingSubtypes, ...subtypes])] : existingSubtypes
 
   const existingSubtypeString = existingSubtypes.join(',')
   const mergedSubtypeString = mergedSubtypes.join(',')
@@ -849,19 +854,21 @@ async function handleVote(request, env, visitorHash) {
       .bind(body.itemId),
     env.FEEDBACK_DB.prepare(
       `INSERT INTO feedback_votes (item_id, voter_hash, active, created_at, updated_at)
-       VALUES (?, ?, ?, ?, ?)
+       SELECT id, ?, ?, ?, ? FROM feedback_items WHERE id = ? AND status != 'hidden'
        ON CONFLICT (item_id, voter_hash) DO UPDATE
        SET active = excluded.active, updated_at = excluded.updated_at
        WHERE feedback_votes.active != excluded.active`,
-    ).bind(body.itemId, visitorHash, activeValue, now, now),
+    ).bind(visitorHash, activeValue, now, now, body.itemId),
     env.FEEDBACK_DB.prepare(
       `UPDATE feedback_items SET vote_count =
        (SELECT COUNT(*) FROM feedback_votes WHERE item_id = ? AND active = 1),
-       updated_at = ? WHERE id = ?`,
+       updated_at = ? WHERE id = ? AND status != 'hidden'`,
     ).bind(body.itemId, now, body.itemId),
   ])
 
-  return { item: await loadSingleItem(env, body.itemId, visitorHash) }
+  const updated = await loadSingleItem(env, body.itemId, visitorHash)
+  if (updated.status === 'hidden') throw new Error('item not found')
+  return { item: updated }
 }
 __name(handleVote, 'handleVote')
 
@@ -920,4 +927,4 @@ var index_default = {
   },
 }
 
-export { index_default as default }
+export { index_default as default, ALLOWED_PLATFORMS, normalizeName, parseSubtypes, safeCoverUrl, safeSources }

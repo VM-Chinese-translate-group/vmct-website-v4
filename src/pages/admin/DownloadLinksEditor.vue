@@ -235,7 +235,7 @@
 
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
-import { Icon } from '@iconify/vue'
+import { Icon } from '@/icons'
 import SelectMenu from '@/components/SelectMenu.vue'
 import { getDownloads, saveDownloads, type DownloadConfiguration } from '@/api/contentAdmin'
 import type { DownloadMethodSource } from '@/components/DownloadPage/downloadMethods'

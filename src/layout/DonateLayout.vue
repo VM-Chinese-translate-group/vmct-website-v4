@@ -148,7 +148,7 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
-import { Icon } from '@iconify/vue'
+import { Icon } from '@/icons'
 import Coins from '@/components/Coins.vue'
 
 const API = '/api/afdian/'

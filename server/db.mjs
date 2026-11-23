@@ -18,7 +18,8 @@ export class SQLiteD1 {
     this.database.exec('BEGIN')
     try {
       const results = []
-      for (const statement of statements) results.push(await statement.execute())
+      // Keep synchronous SQLite statements in the same turn as BEGIN and COMMIT.
+      for (const statement of statements) results.push(statement.execute())
       this.database.exec('COMMIT')
       return results
     } catch (error) {
@@ -49,17 +50,26 @@ class SQLiteStatement {
   }
 
   async all() {
-    return { success: true, results: this.database.prepare(this.sql).all(...this.params) }
+    return this.readRows(this.database.prepare(this.sql))
   }
 
-  async execute() {
+  execute() {
     // SQLite's run() discards rows. Inspect the prepared statement so SELECT,
     // WITH and RETURNING queries retain their results in a D1 batch.
-    return this.database.prepare(this.sql).columns().length > 0 ? this.all() : this.run()
+    const statement = this.database.prepare(this.sql)
+    return statement.columns().length ? this.readRows(statement) : this.writeRows(statement)
   }
 
   async run() {
-    const result = this.database.prepare(this.sql).run(...this.params)
+    return this.writeRows(this.database.prepare(this.sql))
+  }
+
+  readRows(statement) {
+    return { success: true, results: statement.all(...this.params) }
+  }
+
+  writeRows(statement) {
+    const result = statement.run(...this.params)
     return {
       success: true,
       meta: {

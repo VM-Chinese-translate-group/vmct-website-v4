@@ -140,7 +140,7 @@
 
 <script setup lang="ts">
 import { computed, ref, provide, watch, nextTick } from 'vue'
-import { Icon } from '@iconify/vue'
+import { Icon } from '@/icons'
 import { useI18n } from 'vue-i18n'
 import { convertMarkdownContainers } from '@/utils/zhconv'
 import { useImagePreview } from '@/composables/useImagePreview'

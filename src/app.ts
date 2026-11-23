@@ -1,5 +1,5 @@
 import { createApp as createClientApp, createSSRApp, type Directive } from 'vue'
-import { Icon } from '@iconify/vue'
+import { Icon } from './icons'
 
 import App from './App.vue'
 import { createAppRouter } from './router'

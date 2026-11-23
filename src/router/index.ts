@@ -27,6 +27,12 @@ const routes: RouteRecordRaw[] = [
         meta: { noindex: true },
       },
       {
+        path: 'admin/feedback',
+        name: 'content-admin-feedback',
+        component: ContentAdmin,
+        meta: { noindex: true },
+      },
+      {
         path: 'translation-feedback',
         name: 'translation-feedback',
         component: () => import('@/layout/TranslationFeedbackLayout.vue'),

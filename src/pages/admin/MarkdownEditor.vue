@@ -57,7 +57,7 @@
 </template>
 <script setup lang="ts">
 import { ref } from 'vue'
-import { Icon } from '@iconify/vue'
+import { Icon } from '@/icons'
 const model = defineModel<string>({ required: true })
 const textarea = ref<HTMLTextAreaElement>()
 const tools = [

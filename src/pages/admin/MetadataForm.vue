@@ -260,7 +260,7 @@
 </template>
 <script setup lang="ts">
 import { computed, nextTick, ref, watch } from 'vue'
-import { Icon } from '@iconify/vue'
+import { Icon } from '@/icons'
 import SelectMenu from '@/components/SelectMenu.vue'
 import type { ContentLink, ContentMetadata } from './types'
 import { LINK_OPTIONS, LOADER_OPTIONS, STATUS_OPTIONS } from './contentConfig'

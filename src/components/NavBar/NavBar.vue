@@ -226,7 +226,7 @@
 import { computed, nextTick, ref, onMounted, onUnmounted, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'
-import { Icon } from '@iconify/vue'
+import { Icon } from '@/icons'
 import { navItems } from '@/data/navigation'
 import { getAprilFoolsLogoPath } from '@/utils/aprilFools'
 import { usePageScrollLock } from '@/composables/usePageScrollLock'

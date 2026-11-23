@@ -92,6 +92,42 @@ export function getContentAuthStatus() {
   }>('/auth/status')
 }
 
+export type FeedbackAdminCollection = 'sources' | 'aliases' | 'submissions' | 'votes'
+export type FeedbackAdminRow = Record<string, string | number | null | undefined>
+
+function feedbackPath(id?: string, collection?: FeedbackAdminCollection) {
+  return (
+    '/feedback' + (id ? `/${encodeURIComponent(id)}` : '') + (collection ? `/${collection}` : '')
+  )
+}
+
+export function listAdminFeedback(
+  params: URLSearchParams,
+  id?: string,
+  collection?: FeedbackAdminCollection,
+) {
+  return request<{ rows: FeedbackAdminRow[]; hasMore: boolean }>(
+    feedbackPath(id, collection) + '?' + params,
+  )
+}
+
+export function getAdminFeedbackItem(id: string) {
+  return request<{ item: FeedbackAdminRow }>(feedbackPath(id))
+}
+
+export function changeAdminFeedback(
+  method: 'POST' | 'PUT' | 'DELETE',
+  id?: string,
+  collection?: FeedbackAdminCollection,
+  key?: string,
+  values?: FeedbackAdminRow,
+) {
+  return request<{ id?: string; ok?: boolean }>(feedbackPath(id, collection), {
+    method,
+    body: key || values ? JSON.stringify({ ...values, key }) : undefined,
+  })
+}
+
 export function loginContentWithVmpm(ticket: string) {
   return request<{ ok: true }>('/auth/login', { method: 'POST', body: JSON.stringify({ ticket }) })
 }

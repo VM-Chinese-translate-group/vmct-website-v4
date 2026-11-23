@@ -100,7 +100,7 @@
 
 <script setup lang="ts" generic="T extends string | number">
 import { computed, nextTick, onMounted, onUnmounted, ref } from 'vue'
-import { Icon } from '@iconify/vue'
+import { Icon } from '@/icons'
 
 interface SelectOption<T> {
   label: string

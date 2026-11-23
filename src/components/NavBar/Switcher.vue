@@ -64,7 +64,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { Icon } from '@iconify/vue'
+import { Icon } from '@/icons'
 import AppearanceControl from './AppearanceControl.vue'
 
 type LocaleCode = 'zh-CN' | 'zh-TW' | 'en-US'
