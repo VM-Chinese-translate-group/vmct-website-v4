@@ -185,7 +185,7 @@
             <span>{{ $t('DownloadCards.itemsPerPage') }}</span>
             <SelectMenu
               v-model="itemsPerPage"
-              class="catalog-select page-count-select [.page-count-select&]:[--select-width:76px] [.page-count-select&]:[--select-menu-min-width:76px]"
+              class="catalog-select page-count-select [.page-count-select&]:[--select-width:76px] [.page-count-select&]:[--select-menu-min-width:88px]"
               :ariaLabel="$t('DownloadCards.itemsPerPage')"
               :options="pageSizeOptions"
             />
@@ -496,7 +496,9 @@ const mcVersionOptions = computed(() =>
 const visibleMcVersionOptions = computed(() =>
   showAllMcVersions.value
     ? mcVersionOptions.value
-    : mcVersionOptions.value.slice(0, COLLAPSED_OPTION_LIMIT),
+    : [...mcVersionOptions.value]
+        .sort((a, b) => b.count - a.count)
+        .slice(0, COLLAPSED_OPTION_LIMIT),
 )
 
 const loaderOptions = computed(() =>

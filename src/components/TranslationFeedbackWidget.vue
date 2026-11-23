@@ -31,7 +31,12 @@
       @focus="handleFocus"
       @blur="handleBlur"
     >
-      <MinecraftPlayerModel :key="activityRevision" :activity="activity" />
+      <MinecraftPlayerModel
+        :activity="activity"
+        :duration="ACTIVITY_DURATION[activity]"
+        :activity-revision="activityRevision"
+        :speaking="bubbleVisible"
+      />
     </button>
   </div>
 
@@ -68,7 +73,8 @@ const SCROLL_SETTLE_DELAY = 320
 const DISMISSED_STORAGE_KEY = 'vmct.translation-feedback-widget.dismissed'
 
 type WidgetActivity = 'idle' | 'wave' | 'walk' | 'jump' | 'cheer' | 'point'
-const ACTIVITY_DURATION: Record<Exclude<WidgetActivity, 'idle'>, number> = {
+const ACTIVITY_DURATION: Record<WidgetActivity, number> = {
+  idle: 0,
   wave: 1_350,
   walk: 2_600,
   jump: 1_200,
