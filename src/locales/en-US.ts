@@ -88,7 +88,7 @@ export default {
     modpacks: 'Modpack Translation',
     maps: 'Map Translation',
     dict: 'Mod Translation Dictionary',
-    vmtu: 'VM Translation Update Mod',
+    vmtu: 'VM Translation Utility Mod',
     tools: 'Translation Tools',
     disclaimer:
       'The content provided on this site is not related to official Minecraft and has not been endorsed or authorized by Mojang or Microsoft in any form',

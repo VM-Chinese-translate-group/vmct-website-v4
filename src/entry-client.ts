@@ -22,7 +22,6 @@ declare global {
 const clientLocale = getClientLocale()
 useTheme()
 syncImageLoadingLabel(clientLocale)
-startImageLoadingFrames()
 
 const contentElement = document.getElementById('vmct-content')
 const initialContent = contentElement?.textContent
@@ -74,6 +73,7 @@ const scheduleAprilFoolsBranding = () => {
 
 router.isReady().then(async () => {
   app.mount('#app')
+  startImageLoadingFrames()
 
   const { locale } = i18n.global as any
   if (locale.value !== clientLocale) {

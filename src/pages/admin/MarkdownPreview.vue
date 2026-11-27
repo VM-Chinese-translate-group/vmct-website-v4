@@ -14,7 +14,7 @@
     </div>
 
     <div
-      class="admin-preview-viewport max-h-[42rem] overflow-auto [background:var(--bg-off-white)] [&_.pack-page-container]:min-h-0 [&_.pack-page-container]:p-[1.25rem] [&_.doc-page-container]:min-h-0 [&_.doc-page-container]:p-[1.25rem] [&_.doc-main]:block [&_.doc-sidebar]:hidden [&_.pack-header]:mb-[1.25rem] [&_.pack-header]:pb-[1.25rem] [&_.header-content]:gap-[1.25rem] [&_.pack-icon]:w-[5rem] [&_.pack-icon]:h-[5rem] [&_.pack-icon]:rounded-[0.875rem] [&_.pack-icon-placeholder]:w-[5rem] [&_.pack-icon-placeholder]:h-[5rem] [&_.pack-icon-placeholder]:rounded-[0.875rem] [&_.title-row_h1]:text-[1.65rem] [&_.pack-main]:grid-cols-[minmax(0,_1fr)] [&_.pack-main_>_aside]:hidden [&_.pack-content-body]:p-[1.5rem] max-[640px]:[&_.pack-page-container]:p-[1rem] max-[640px]:[&_.header-content]:items-start max-[640px]:[&_.header-content]:flex-row max-[640px]:[&_.header-content]:text-left max-[640px]:[&_.title-row]:items-start max-[640px]:[&_.title-row]:flex-col max-[640px]:[&_.author-row]:items-start max-[640px]:[&_.author-row]:justify-start max-[640px]:[&_.download-button-wrapper]:items-start max-[640px]:[&_.download-button-wrapper]:justify-start"
+      class="admin-preview-viewport max-h-[42rem] overflow-auto [background:var(--bg-off-white)] [&_.pack-page-container]:min-h-0 [&_.pack-page-container]:p-[1.25rem] [&_.doc-page-container]:min-h-0 [&_.doc-page-container]:p-[1.25rem] [&_.doc-main]:block [&_.doc-sidebar]:hidden [&_.pack-header]:mb-[1.25rem] [&_.pack-header]:pb-[1.25rem] [&_.header-content]:gap-[1.25rem] [&_.pack-icon]:w-[5rem] [&_.pack-icon]:h-[5rem] [&_.pack-icon]:rounded-[0.875rem] [&_.pack-icon-placeholder]:w-[5rem] [&_.pack-icon-placeholder]:h-[5rem] [&_.pack-icon-placeholder]:rounded-[0.875rem] [&_.title-row_h1]:text-[1.65rem] [&_.pack-main_>_aside]:hidden [&_.pack-content-body]:p-[1.5rem] max-[640px]:[&_.pack-page-container]:p-[1rem] max-[640px]:[&_.header-content]:items-start max-[640px]:[&_.header-content]:flex-row max-[640px]:[&_.header-content]:text-left max-[640px]:[&_.title-row]:items-start max-[640px]:[&_.title-row]:flex-col max-[640px]:[&_.author-row]:items-start max-[640px]:[&_.author-row]:justify-start max-[640px]:[&_.download-button-wrapper]:items-start max-[640px]:[&_.download-button-wrapper]:justify-start"
     >
       <DocLayout v-if="pageKind === 'document'" :meta="previewMeta">
         <article
@@ -123,3 +123,9 @@ function previewSource(body: string) {
 
 const rendered = computed(() => md.render(previewSource(props.body)))
 </script>
+
+<style scoped>
+.admin-preview-viewport :deep(.pack-main) {
+  grid-template-columns: minmax(0, 1fr);
+}
+</style>

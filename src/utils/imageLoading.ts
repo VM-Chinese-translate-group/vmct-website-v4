@@ -27,7 +27,9 @@ function syncLoadingFrame(frame: Element, failed = false) {
     Boolean(image.dataset.src) &&
     (lazyState === 'loading' || (image.currentSrc || image.src).startsWith('data:image/'))
   const hasFinishedDirectLoading =
-    !isWaitingForLazySource && image.complete && image.naturalWidth > 0
+    !isWaitingForLazySource &&
+    image.complete &&
+    Boolean(image.naturalWidth || image.getAttribute('src') || image.getAttribute('srcset'))
 
   frame.classList.toggle(
     'is-image-loaded',

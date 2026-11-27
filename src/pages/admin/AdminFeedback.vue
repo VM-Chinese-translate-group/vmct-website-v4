@@ -148,8 +148,10 @@
         {{ editError }}
       </p>
       <template v-for="field in editTable.fields" :key="field.key">
-        <fieldset v-if="field.key === 'subtypes'">
-          <legend class="text-sm font-600">类型</legend>
+        <fieldset v-if="field.key === 'subtypes'" class="min-w-0 m-0 border-0 p-0">
+          <legend class="mb-1.5 p-0 text-sm font-600 text-[var(--text-2)]">
+            {{ field.label }}
+          </legend>
           <div class="flex flex-wrap gap-x-4 gap-y-2">
             <label
               v-for="subtype in availableSubtypes"

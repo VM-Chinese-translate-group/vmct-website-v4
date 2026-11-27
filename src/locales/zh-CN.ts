@@ -84,7 +84,7 @@ export default {
     modpacks: '整合包汉化',
     maps: '地图汉化',
     dict: ' 模组翻译参考词典',
-    vmtu: 'VM汉化更新模组',
+    vmtu: 'VM汉化实用工具模组',
     tools: '翻译工具',
     disclaimer:
       '本站所提供内容与 Minecraft 官方无关，未获 Mojang 或 Microsoft 任何形式的认可或授权',
