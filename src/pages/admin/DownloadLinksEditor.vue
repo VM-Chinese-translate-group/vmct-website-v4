@@ -79,7 +79,7 @@
             <SelectMenu
               :model-value="platform(method)"
               :options="platforms"
-              :ariaLabel="`下载方式 ${index + 1}`"
+              :ariaLabel="`${$t('downloadModal.driveTitle')} ${index + 1}`"
               variant="flat"
               class="[--select-width:100%] [--select-menu-min-width:100%]"
               @update:model-value="changePlatform(method, String($event))"
@@ -92,7 +92,9 @@
             <input
               v-model="method.text"
               class="cms-field vm-admin-downloads-cms-field"
-              :placeholder="platform(method) === 'lazy' ? '懒汉下载' : '例如：下载汉化'"
+              :placeholder="
+                $t(platform(method) === 'lazy' ? 'downloadModal.lazyTitle' : 'pack.downloadPatch')
+              "
             />
           </label>
           <button
@@ -110,7 +112,7 @@
           class="download-urls grid grid-cols-[repeat(2,_minmax(0,_1fr))] gap-3 max-[640px]:grid-cols-[minmax(0,_1fr)]"
         >
           <label class="cms-label vm-admin-downloads-cms-label">
-            蓝奏云链接
+            {{ $t('downloadModal.lanzouTitle') }}
             <input
               v-model="method.lanzouLink"
               class="cms-field vm-admin-downloads-cms-field"
@@ -119,7 +121,7 @@
             />
           </label>
           <label class="cms-label vm-admin-downloads-cms-label">
-            夸克网盘链接
+            {{ $t('downloadModal.quarkTitle') }}
             <input
               v-model="method.quarkLink"
               class="cms-field vm-admin-downloads-cms-field"
@@ -235,11 +237,13 @@
 
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { Icon } from '@/icons'
 import SelectMenu from '@/components/SelectMenu.vue'
 import { getDownloads, saveDownloads, type DownloadConfiguration } from '@/api/contentAdmin'
 import type { DownloadMethodSource } from '@/components/DownloadPage/downloadMethods'
 const props = defineProps<{ pageId: string }>()
+const { t } = useI18n()
 const config = ref<DownloadConfiguration>({ methods: [], version: 0 })
 const busy = ref(false)
 const loaded = ref(false)
@@ -248,18 +252,22 @@ const saved = ref(false)
 const baseline = ref('[]')
 const dirty = computed(() => JSON.stringify(config.value.methods) !== baseline.value)
 const driveIds = new Set(['quark-lanzou', 'lanzou-quake', 'lanzou-quark-mapdl'])
-const platforms = [
-  { value: 'drive', label: '蓝奏云 / 夸克', icon: 'lucide:cloud-download' },
-  { value: 'lazy', label: '懒汉下载', icon: 'lucide:folder-down' },
-  { value: 'lanzou', label: '蓝奏云', icon: '/imgs/svg/lanzou.svg' },
+const platforms = computed(() => [
+  {
+    value: 'drive',
+    label: `${t('downloadModal.lanzouTitle')} / ${t('downloadModal.quarkTitle')}`,
+    icon: 'lucide:cloud-download',
+  },
+  { value: 'lazy', label: t('downloadModal.lazyTitle'), icon: 'lucide:folder-down' },
+  { value: 'lanzou', label: t('downloadModal.lanzouTitle'), icon: '/imgs/svg/lanzou.svg' },
   { value: 'baidu-drive', label: '百度网盘', icon: '/imgs/svg/baidu-drive.svg' },
   { value: 'curseforge', label: 'CurseForge', icon: '/imgs/svg/curseforge.svg' },
   { value: 'mediafire', label: 'MediaFire', icon: '/imgs/svg/mediafire.svg' },
   { value: '__custom__', label: '自定义链接', icon: 'lucide:link' },
-]
+])
 function platform(method: DownloadMethodSource) {
   if (driveIds.has(method.id || '')) return 'drive'
-  return platforms.some((option) => option.value === method.id) ? method.id! : '__custom__'
+  return platforms.value.some((option) => option.value === method.id) ? method.id! : '__custom__'
 }
 function changePlatform(method: DownloadMethodSource, value: string) {
   const id = value === 'drive' ? 'quark-lanzou' : value === '__custom__' ? nextCustomId() : value

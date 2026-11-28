@@ -12,7 +12,12 @@
           <h2 class="m-0 text-xl">版本历史</h2>
           <p class="mb-0 mt-1 text-sm text-[var(--text-2)]">恢复只会生成草稿，不会自动发布。</p>
         </div>
-        <button class="cms-icon-button" type="button" aria-label="关闭" @click="$emit('close')">
+        <button
+          class="cms-icon-button"
+          type="button"
+          :aria-label="$t('downloadModal.close')"
+          @click="$emit('close')"
+        >
           ×
         </button>
       </header>

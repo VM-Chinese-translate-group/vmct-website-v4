@@ -6,21 +6,21 @@ export interface AnnouncementMessage {
 
 export const announcementConfig = {
   enabled: true,
-  link: '/modpacks/prominence2',
+  link: '/map/eisoptrophobia',
   messages: {
     'zh-CN': {
       label: '站点公告',
-      body: '8月最新成果！卓越 II 汉化现已发布！',
+      body: '11月最新成果！恐镜症汉化现已发布！',
       action: '查看',
     },
     'zh-TW': {
       label: '站點公告',
-      body: '8月最新成果！卓越 II 漢化現已釋出！',
+      body: '11月最新成果！恐镜症漢化現已釋出！',
       action: '檢視',
     },
     'en-US': {
       label: 'Site announcement',
-      body: 'Latest August release: Prominence II localization is now available!',
+      body: 'Latest November release: Eisoptrophobia localization is now available!',
       action: 'View',
     },
   },

@@ -22,7 +22,7 @@
         v-if="pageKind !== 'document'"
         class="cms-label vm-admin-metadata-cms-label col-span-2 max-md:col-span-1"
       >
-        英文名
+        {{ $t('translationFeedback.originalNameLabel') }}
         <input
           v-model="model.originalName"
           class="cms-field vm-admin-metadata-cms-field"
@@ -70,29 +70,29 @@
         </div>
       </div>
       <label v-if="pageKind !== 'document'" class="cms-label vm-admin-metadata-cms-label">
-        发布状态
+        {{ $t('DownloadCards.status') }}
         <SelectMenu
           :model-value="model.statusType"
           :options="statusOptions"
-          ariaLabel="发布状态"
+          :ariaLabel="$t('DownloadCards.status')"
           variant="flat"
           class="[--select-width:100%] [--select-menu-min-width:100%]"
           @update:model-value="model.statusType = $event"
         />
       </label>
       <label v-if="pageKind !== 'document'" class="cms-label vm-admin-metadata-cms-label">
-        加载器
+        {{ $t('pack.loader') }}
         <SelectMenu
           :model-value="model.loader"
           :options="loaderOptions"
-          ariaLabel="加载器"
+          :ariaLabel="$t('pack.loader')"
           variant="flat"
           class="[--select-width:100%] [--select-menu-min-width:100%]"
           @update:model-value="model.loader = $event"
         />
       </label>
       <label v-if="pageKind !== 'document'" class="cms-label vm-admin-metadata-cms-label">
-        Minecraft 版本
+        {{ $t('pack.minecraftVersion') }}
         <input
           v-model="model.minecraft"
           class="cms-field vm-admin-metadata-cms-field"
@@ -100,7 +100,7 @@
         />
       </label>
       <label v-if="pageKind !== 'document'" class="cms-label vm-admin-metadata-cms-label">
-        {{ pageKind === 'map' ? '地图版本' : '整合包版本' }}
+        {{ $t('pack.packVersion') }}
         <input
           v-model="model.pack"
           class="cms-field vm-admin-metadata-cms-field"
@@ -139,14 +139,14 @@
         class="flex cursor-pointer list-none items-center gap-2 px-3 py-2 text-sm font-600 text-[var(--text-2)]"
       >
         <span class="transition-transform group-open:rotate-90">›</span>
-        <span>作者与相关链接</span>
+        <span>{{ $t('pack.authorsTitle') }} · {{ $t('pack.relatedLinks') }}</span>
         <small class="ml-auto font-normal text-[var(--text-muted)]">
           {{ model.authors.filter(Boolean).length }} 位作者 · {{ model.links.length }} 个链接
         </small>
       </summary>
       <div class="grid gap-3 border-t border-[var(--switcher-border)] p-3">
         <label class="cms-label vm-admin-metadata-cms-label">
-          作者
+          {{ $t('pack.authorsTitle') }}
           <div class="flex flex-wrap gap-2">
             <div
               v-for="(_, index) in model.authors"
@@ -178,7 +178,7 @@
         </label>
         <div class="grid gap-3 border-t border-[var(--switcher-border)] pt-3">
           <div class="flex flex-wrap items-center justify-between gap-3">
-            <strong>相关链接</strong>
+            <strong>{{ $t('pack.relatedLinks') }}</strong>
             <button
               class="cms-button vm-admin-metadata-cms-button"
               type="button"
@@ -212,7 +212,7 @@
               v-if="link.id === 'i18n'"
               class="col-span-2 flex min-h-9 items-center rounded-lg border border-[var(--switcher-border)] bg-[var(--bg-alt)] px-3 text-sm text-[var(--text-2)] max-lg:col-span-1"
             >
-              显示为“i18n 下载”，链接由网站自动提供，无需填写。
+              {{ $t('pack.links.i18n') }} · 链接由网站自动提供，无需填写。
             </div>
             <label
               v-else-if="link.id === 'paratranz'"
@@ -260,12 +260,14 @@
 </template>
 <script setup lang="ts">
 import { computed, nextTick, ref, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { Icon } from '@/icons'
 import SelectMenu from '@/components/SelectMenu.vue'
 import type { ContentLink, ContentMetadata } from './types'
 import { LINK_OPTIONS, LOADER_OPTIONS, STATUS_OPTIONS } from './contentConfig'
 const model = defineModel<ContentMetadata>({ required: true })
 const props = defineProps<{ pageKind: 'document' | 'modpack' | 'map'; isNew?: boolean }>()
+const { t } = useI18n()
 const authorsLinksDetails = ref<HTMLDetailsElement | null>(null)
 
 watch(
@@ -289,11 +291,26 @@ const datePending = computed(
   () => !model.value.updateDate.trim() || model.value.updateDate.trim() === '待定',
 )
 const dateDisplay = computed(() => model.value.updateDate.trim() || '待定')
-const statusOptions = STATUS_OPTIONS
-const loaderOptions = LOADER_OPTIONS
-const linkOptions = LINK_OPTIONS
+const statusOptions = computed(() =>
+  STATUS_OPTIONS.map((option) => ({
+    ...option,
+    label: option.value ? t(`pack.status.${option.value}`) : '未设置',
+  })),
+)
+const loaderOptions = computed(() =>
+  LOADER_OPTIONS.map((option) => ({
+    ...option,
+    label: option.value ? t(`loader.${option.value}`) : '未设置',
+  })),
+)
+const linkOptions = computed(() =>
+  LINK_OPTIONS.map(({ value, label, labelKey }) => ({
+    value,
+    label: labelKey === undefined ? label : t(labelKey),
+  })),
+)
 function selectedLinkPlatform(id: string) {
-  return linkOptions.some((option) => option.value === id) ? id : '__custom__'
+  return LINK_OPTIONS.some((option) => option.value === id) ? id : '__custom__'
 }
 function updateLinkPlatform(link: ContentLink, value: string) {
   link.id = value === '__custom__' ? '' : value

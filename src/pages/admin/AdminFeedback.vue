@@ -39,17 +39,19 @@
       <label class="cms-label">
         状态
         <select v-model="searchStatus" class="cms-field">
-          <option value="">全部</option>
+          <option value="">{{ $t('translationFeedback.allTypes') }}</option>
           <option v-for="(label, key) in statuses" :key="key" :value="key">{{ label }}</option>
         </select>
       </label>
-      <button type="submit" class="cms-button">筛选</button>
+      <button type="submit" class="cms-button">{{ $t('DownloadCards.filters') }}</button>
     </form>
 
     <div class="flex flex-wrap items-center justify-between gap-2">
       <h2 class="m-0 text-lg">{{ activeTable.label }}</h2>
       <div class="flex flex-wrap gap-2">
-        <button type="button" class="cms-button" :disabled="loading" @click="reload()">刷新</button>
+        <button type="button" class="cms-button" :disabled="loading" @click="reload()">
+          {{ $t('translationFeedback.refresh') }}
+        </button>
         <button
           type="button"
           class="cms-primary-button"
@@ -62,7 +64,9 @@
     </div>
     <p v-if="notice" class="m-0 text-sm" role="status">{{ notice }}</p>
     <p v-if="error" class="m-0 text-sm text-[var(--warning-1)]" role="alert">{{ error }}</p>
-    <p v-if="loading" class="m-0 text-sm" role="status">正在加载…</p>
+    <p v-if="loading" class="m-0 text-sm" role="status">
+      {{ itemId ? '正在加载…' : $t('translationFeedback.loading') }}
+    </p>
     <div v-if="rows.length" class="overflow-x-auto" :aria-busy="loading">
       <table class="w-full border-collapse text-left text-sm">
         <thead>
@@ -116,16 +120,16 @@
         :disabled="loading || page === 1"
         @click="goToPage(page - 1)"
       >
-        上一页
+        {{ $t('translationFeedback.previousPage') }}
       </button>
-      <span class="text-sm">第 {{ page }} 页</span>
+      <span class="text-sm">{{ $t('translationFeedback.page', { page }) }}</span>
       <button
         type="button"
         class="cms-button"
         :disabled="loading || !hasMore"
         @click="goToPage(page + 1)"
       >
-        下一页
+        {{ $t('translationFeedback.nextPage') }}
       </button>
     </nav>
   </section>
@@ -133,7 +137,7 @@
   <BaseDialog
     :open="Boolean(editing)"
     :title="`${editing?.row ? '编辑' : '新增'}${editTable.singular}`"
-    close-label="关闭"
+    :close-label="$t('downloadModal.close')"
     :close-on-backdrop="!saving"
     :close-on-escape="!saving"
     :show-close="!saving"
@@ -159,7 +163,7 @@
               class="flex items-center gap-1.5 text-sm"
             >
               <input v-model="selectedSubtypes" type="checkbox" :value="subtype" />
-              {{ subtypeLabels[subtype] }}
+              {{ subtypeLabel(form.category, subtype) }}
             </label>
           </div>
         </fieldset>
@@ -206,7 +210,7 @@
           删除{{ editTable.singular }}
         </button>
         <button type="button" class="cms-button" :disabled="saving" @click="editing = null">
-          取消
+          {{ $t('translationFeedback.cancel') }}
         </button>
         <button type="submit" class="cms-primary-button" :disabled="saving">
           {{ saving ? '保存中…' : '保存' }}
@@ -218,6 +222,7 @@
 
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
+import { useI18n } from 'vue-i18n'
 import BaseDialog from '@/components/BaseDialog.vue'
 import {
   changeAdminFeedback,
@@ -233,25 +238,19 @@ type Column = { key: string; label: string }
 type Field = Column & { options?: Option[]; required?: boolean; maxlength?: number; type?: string }
 type Table = { label: string; singular: string; key: string; columns: Column[]; fields: Field[] }
 
-const categories = { modpack: '整合包', map: '地图', other: '其他' }
-const statuses = {
-  candidate: '候选',
-  planned: '已计划',
-  translating: '翻译中',
-  completed: '已完成',
+const { t, te } = useI18n()
+const categories = computed(() => ({
+  modpack: t('translationFeedback.categories.modpack'),
+  map: t('translationFeedback.categories.map'),
+  other: t('translationFeedback.categories.other'),
+}))
+const statuses = computed(() => ({
+  candidate: t('translationFeedback.status.candidate'),
+  planned: t('translationFeedback.status.planned'),
+  translating: t('translationFeedback.status.translating'),
+  completed: t('translationFeedback.status.completed'),
   hidden: '已隐藏',
-}
-const subtypeLabels: Record<string, string> = {
-  technology: '科技',
-  adventure: '冒险',
-  kitchen_sink: '综合',
-  magic: '魔法',
-  puzzle: '解谜',
-  minigame: '小游戏',
-  horror: '恐怖',
-  parkour: '跑酷',
-  other: '其他',
-}
+}))
 const subtypeOptions: Record<string, string[]> = {
   modpack: ['technology', 'adventure', 'kitchen_sink', 'magic', 'other'],
   map: ['puzzle', 'minigame', 'adventure', 'horror', 'parkour', 'other'],
@@ -265,31 +264,38 @@ const optionFlag = (yes: string, no: string) => [
   { value: 1, label: yes },
   { value: 0, label: no },
 ]
-const categoryField = {
+const categoryField = computed(() => ({
   key: 'category',
-  label: '分类',
-  options: options(categories),
+  label: t('translationFeedback.categoryLabel'),
+  options: options(categories.value),
   required: true,
-}
-const subtypeField = { key: 'subtypes', label: '类型' }
+}))
+const subtypeField = computed(() => ({
+  key: 'subtypes',
+  label: t('translationFeedback.filterTypeLabel'),
+}))
+const originalNameField = computed(() => ({
+  key: 'original_name',
+  label: t('translationFeedback.originalNameLabel'),
+}))
 const voterField = { key: 'voter_hash', label: '访客哈希', required: true, maxlength: 64 }
 const created = { key: 'created_at', label: '创建时间' }
-const itemTable: Table = {
+const itemTable = computed<Table>(() => ({
   label: '征集项目',
   singular: '项目',
   key: 'id',
   columns: [
     { key: 'display_name', label: '名称' },
-    categoryField,
-    subtypeField,
+    categoryField.value,
+    subtypeField.value,
     { key: 'status', label: '状态' },
     { key: 'vote_count', label: '票数' },
   ],
   fields: [
     { key: 'display_name', label: '项目名称', required: true, maxlength: 120 },
-    categoryField,
-    subtypeField,
-    { key: 'status', label: '状态', options: options(statuses), required: true },
+    categoryField.value,
+    subtypeField.value,
+    { key: 'status', label: '状态', options: options(statuses.value), required: true },
     { key: 'cover_url', label: '封面地址', type: 'url', maxlength: 2048 },
     {
       key: 'cover_platform',
@@ -297,10 +303,10 @@ const itemTable: Table = {
       options: platforms.map((value) => ({ value, label: value })),
     },
   ],
-}
-const collections: Record<FeedbackAdminCollection, Table> = {
+}))
+const collections = computed<Record<FeedbackAdminCollection, Table>>(() => ({
   sources: {
-    label: '来源链接',
+    label: t('translationFeedback.sourceUrlLabel'),
     singular: '来源',
     key: 'normalized_url',
     columns: [
@@ -310,7 +316,13 @@ const collections: Record<FeedbackAdminCollection, Table> = {
       created,
     ],
     fields: [
-      { key: 'url', label: '项目链接', type: 'url', required: true, maxlength: 2048 },
+      {
+        key: 'url',
+        label: t('translationFeedback.sourceUrlLabel'),
+        type: 'url',
+        required: true,
+        maxlength: 2048,
+      },
       { key: 'is_primary', label: '主要来源', options: optionFlag('是', '否'), required: true },
     ],
   },
@@ -326,17 +338,17 @@ const collections: Record<FeedbackAdminCollection, Table> = {
     singular: '提交记录',
     key: 'id',
     columns: [
-      { key: 'original_name', label: '原始名称' },
-      categoryField,
-      subtypeField,
+      originalNameField.value,
+      categoryField.value,
+      subtypeField.value,
       { key: 'note', label: '备注' },
       { key: 'result', label: '处理结果' },
       created,
     ],
     fields: [
-      { key: 'original_name', label: '原始名称', required: true, maxlength: 120 },
-      categoryField,
-      subtypeField,
+      { ...originalNameField.value, required: true, maxlength: 120 },
+      categoryField.value,
+      subtypeField.value,
       { key: 'note', label: '备注', maxlength: 500 },
       voterField,
       { key: 'result', label: '处理结果', options: options(results), required: true },
@@ -356,13 +368,13 @@ const collections: Record<FeedbackAdminCollection, Table> = {
       { key: 'active', label: '状态', options: optionFlag('有效', '已撤回'), required: true },
     ],
   },
-}
+}))
 
 const itemId = ref('')
 const item = ref<FeedbackAdminRow>()
 const section = ref<Section>('items')
 const activeTable = computed(() =>
-  section.value === 'items' ? itemTable : collections[section.value],
+  section.value === 'items' ? itemTable.value : collections.value[section.value],
 )
 const rows = ref<FeedbackAdminRow[]>([])
 const page = ref(1)
@@ -379,24 +391,29 @@ let requestId = 0
 const editing = ref<{ section: Section; row?: FeedbackAdminRow } | null>(null)
 const editTable = computed(() => {
   const current = editing.value?.section
-  return !current || current === 'items' ? itemTable : collections[current]
+  return !current || current === 'items' ? itemTable.value : collections.value[current]
 })
 const form = ref<FeedbackAdminRow>({})
 const selectedSubtypes = ref<string[]>([])
 const availableSubtypes = computed(() => subtypeOptions[String(form.value.category)] || [])
 const editError = ref('')
 
+function subtypeLabel(category: unknown, subtype: string) {
+  const key = `translationFeedback.types.${category}.${subtype}`
+  return te(key) ? t(key) : subtype
+}
+
 function cell(row: FeedbackAdminRow, key: string) {
   const value = row[key]
-  if (key === 'category') return categories[value as keyof typeof categories] || value
-  if (key === 'status') return statuses[value as keyof typeof statuses] || value
+  if (key === 'category') return categories.value[value as keyof typeof categories.value] || value
+  if (key === 'status') return statuses.value[value as keyof typeof statuses.value] || value
   if (key === 'result') return results[value as keyof typeof results] || value
   if (key === 'subtypes')
     return (
       String(value || row.subtype || '')
         .split(',')
         .filter(Boolean)
-        .map((type) => subtypeLabels[type] || type)
+        .map((type) => subtypeLabel(row.category, type))
         .join('、') || '—'
     )
   if (key === 'is_primary') return value === 1 ? '是' : '否'
@@ -458,7 +475,7 @@ function selectSection(collection: FeedbackAdminCollection) {
 }
 
 function openEditor(row?: FeedbackAdminRow, target = section.value) {
-  const table = target === 'items' ? itemTable : collections[target]
+  const table = target === 'items' ? itemTable.value : collections.value[target]
   const defaults: FeedbackAdminRow = {
     category: item.value?.category || 'modpack',
     status: 'candidate',

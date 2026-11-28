@@ -2,33 +2,45 @@ import type { ContentMetadata, PageKind, ValidationIssue } from './types'
 
 export const PAGE_TYPES: {
   value: PageKind
-  label: string
+  label: (t: (key: string) => string) => string
   hint: string
   prefix: string
   icon: string
 }[] = [
-  { value: 'document', label: '文档', hint: '普通说明页面', prefix: '', icon: 'lucide:file-text' },
+  {
+    value: 'document',
+    label: () => '文档',
+    hint: '普通说明页面',
+    prefix: '',
+    icon: 'lucide:file-text',
+  },
   {
     value: 'modpack',
-    label: '整合包',
+    label: (t) => t('translationFeedback.categories.modpack'),
     hint: '/modpacks/',
     prefix: 'modpacks/',
     icon: 'lucide:package',
   },
-  { value: 'map', label: '地图', hint: '/map/', prefix: 'map/', icon: 'lucide:map' },
+  {
+    value: 'map',
+    label: (t) => t('translationFeedback.categories.map'),
+    hint: '/map/',
+    prefix: 'map/',
+    icon: 'lucide:map',
+  },
 ]
 export const STATUS_OPTIONS = [
-  { value: '', label: '未设置', icon: 'lucide:circle-dashed' },
-  { value: 'maintaining', label: '维护中', icon: 'lucide:circle-check' },
-  { value: 'translating', label: '翻译中', icon: 'lucide:languages' },
-  { value: 'stopped', label: '暂不跟进', icon: 'lucide:circle-pause' },
+  { value: '', icon: 'lucide:circle-dashed' },
+  { value: 'maintaining', icon: 'lucide:circle-check' },
+  { value: 'translating', icon: 'lucide:languages' },
+  { value: 'stopped', icon: 'lucide:circle-pause' },
 ]
 export const LOADER_OPTIONS = [
-  { value: '', label: '未设置', icon: 'lucide:circle-dashed' },
-  { value: 'vanilla', label: '原版', icon: '/imgs/svg/vanilla.svg' },
-  { value: 'forge', label: 'Forge', icon: '/imgs/svg/forge.svg' },
-  { value: 'neoforge', label: 'NeoForge', icon: '/imgs/svg/neoforge.svg' },
-  { value: 'fabric', label: 'Fabric', icon: '/imgs/svg/fabric.svg' },
+  { value: '', icon: 'lucide:circle-dashed' },
+  { value: 'vanilla', icon: '/imgs/svg/vanilla.svg' },
+  { value: 'forge', icon: '/imgs/svg/forge.svg' },
+  { value: 'neoforge', icon: '/imgs/svg/neoforge.svg' },
+  { value: 'fabric', icon: '/imgs/svg/fabric.svg' },
 ]
 export const LINK_OPTIONS = [
   { value: 'curseforge', label: 'CurseForge' },
@@ -38,7 +50,7 @@ export const LINK_OPTIONS = [
   { value: 'planetminecraft', label: 'PlanetMinecraft' },
   { value: 'minecraftmaps', label: 'Minecraft Maps' },
   { value: 'paratranz', label: 'Paratranz' },
-  { value: 'i18n', label: 'i18n 下载（自动）' },
+  { value: 'i18n', labelKey: 'pack.links.i18n' },
   { value: '__custom__', label: '自定义平台' },
 ]
 

@@ -1,6 +1,7 @@
 import fs from 'node:fs/promises'
 import path from 'node:path'
 import { spawnSync } from 'node:child_process'
+import { createRequire } from 'node:module'
 
 const root = process.cwd()
 const sourcePath = path.join(root, 'functions', 'api', 'content', '[[path]].ts')
@@ -9,14 +10,15 @@ const tempDir = path.join(outputDir, '.compile')
 const tempSource = path.join(tempDir, 'content-api.ts')
 const tempOutput = path.join(tempDir, 'content-api.js')
 const outputPath = path.join(outputDir, 'content-api.mjs')
-const tsc = path.join(root, 'node_modules', '.bin', process.platform === 'win32' ? 'tsc.cmd' : 'tsc')
+const tsc = createRequire(import.meta.url).resolve('typescript/bin/tsc')
 
 await fs.mkdir(tempDir, { recursive: true })
 await fs.writeFile(tempSource, await fs.readFile(sourcePath, 'utf8'), 'utf8')
 
 const result = spawnSync(
-  tsc,
+  process.execPath,
   [
+    tsc,
     tempSource,
     '--target',
     'ES2022',
@@ -33,7 +35,7 @@ const result = spawnSync(
     'false',
     '--ignoreConfig',
   ],
-  { stdio: 'inherit', cwd: root, shell: process.platform === 'win32' },
+  { stdio: 'inherit', cwd: root },
 )
 
 if (result.error) throw result.error

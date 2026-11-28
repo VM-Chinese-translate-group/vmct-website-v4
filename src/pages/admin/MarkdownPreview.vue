@@ -34,6 +34,7 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import MarkdownIt from 'markdown-it'
 import { container } from '@mdit/plugin-container'
 import DownloadLayout from '@/layout/DownloadLayout.vue'
@@ -41,6 +42,7 @@ import DocLayout from '@/layout/DocLayout.vue'
 import type { ContentMetadata, PageKind } from './types'
 
 const props = defineProps<{ body: string; metadata: ContentMetadata; pageKind: PageKind }>()
+const { t } = useI18n()
 const md = new MarkdownIt({ html: false, linkify: true })
 
 for (const type of ['tip', 'warning', 'info', 'details']) {
@@ -90,9 +92,10 @@ function downloadPreview(source: string) {
   if (!methods.length)
     return '\n> **下载组件**\n> 下载链接在「下载链接」编辑区配置，保存后在页面显示。\n'
 
-  return `\n### 下载方式\n${methods
+  return `\n### ${t('downloadModal.driveTitle')}\n${methods
     .map((method) => {
-      const name = method.text || (method.id === 'lazy' ? '懒汉下载' : method.id || '下载')
+      const name =
+        method.text || (method.id === 'lazy' ? t('downloadModal.lazyTitle') : method.id || '下载')
       const detail = method.subText ? ` — ${method.subText}` : ''
       return method.link ? `- [**${name}**](${method.link})${detail}` : `- **${name}**${detail}`
     })
@@ -107,16 +110,18 @@ function previewSource(body: string) {
     .replace(/<\/DocLayout>/g, '')
     .replace(
       /<DocSupport\s*\/>/g,
-      `
-## 支持我们
+      () => `
+## ${t('supportUs.supportTitle')}
 
-您的支持与鼓励是我们前进的动力！如果可以，请向他人推荐我们的汉化作品，十分感谢！
+${t('supportUs.supportParagraph1')}
 
-我们一直在用爱发电。您也可以在爱发电支持我们，或在 B 站关注我们的账号。
+${t('supportUs.supportParagraph2', { afd: t('supportUs.afdText') })}
 
-## 加入社区
+## ${t('supportUs.joinTitle')}
 
-加入我们的 QQ 交流群，可以进一步了解翻译进度等最新消息。也欢迎参与贡献并加入 VM 汉化组！`,
+${t('supportUs.joinParagraph1', { community: t('supportUs.communityText') })}
+
+${t('supportUs.joinParagraph2', { review: t('supportUs.reviewText') })}`,
     )
     .replace(/<DownloadLinks[\s\S]*?\/>/g, (source) => downloadPreview(source))
 }

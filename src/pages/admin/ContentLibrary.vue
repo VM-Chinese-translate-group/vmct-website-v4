@@ -84,7 +84,7 @@
           type="button"
           @click="create(type.value)"
         >
-          <span>{{ type.label }}</span>
+          <span>{{ type.label($t) }}</span>
           <small class="text-[var(--text-muted)]">{{ type.hint }}</small>
         </button>
       </div>
@@ -111,7 +111,7 @@
           <span class="w-4 shrink-0 text-center transition-transform group-open/category:rotate-90">
             ›
           </span>
-          <span>{{ group.type.label }}</span>
+          <span>{{ group.type.label($t) }}</span>
           <small class="ml-auto text-[var(--text-muted)]">{{ group.pages.length }}</small>
         </summary>
         <div class="grid gap-0.5 pl-3">

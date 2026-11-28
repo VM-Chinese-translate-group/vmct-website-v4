@@ -194,7 +194,7 @@
                     @click="editor.selectPageType(type.value)"
                   >
                     <Icon :icon="type.icon" />
-                    <span>{{ type.label }}</span>
+                    <span>{{ type.label($t) }}</span>
                     <small class="ml-auto text-[var(--text-muted)]">{{ type.hint }}</small>
                   </button>
                 </div>

@@ -39,7 +39,7 @@
         />
       </label>
       <div class="mt-5 flex justify-end gap-2">
-        <button class="cms-button" @click="$emit('close')">取消</button>
+        <button class="cms-button" @click="$emit('close')">{{ $t('downloadModal.cancel') }}</button>
         <button
           class="cms-primary-button"
           :disabled="busy || errors.length > 0"
